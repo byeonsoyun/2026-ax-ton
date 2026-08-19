@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>사업장 · 설비 등록 — 안전교육 이해도 검증 플랫폼</title>
+<meta name="description" content="기능1 사업장·공정·설비·노동자 언어 등록. 최초 1회 설정.">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style-admin.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+
+<header class="adminbar apphead">
+  <div class="who">
+    <strong id="head-site">사업장 미등록</strong>
+    <span id="head-size">설정을 마치면 이 구성을 기준으로 모든 교육이 만들어집니다</span>
+  </div>
+  <span class="role-chip admin"><span aria-hidden="true">🛠</span> 담당자</span>
+</header>
+
+<main class="page">
+
+  <div class="pagehead">
+    <h1>사업장 · 설비 등록</h1>
+    <p class="lead">
+      최초 1회 설정입니다. <b>여기서 등록한 것만 이후 화면에 나옵니다.</b>
+      등록하지 않은 언어는 교육 콘텐츠에도, 노동자 화면에도 제공되지 않습니다.
+    </p>
+  </div>
+
+  <!-- 저장이 막힌 환경에서만 보인다 -->
+  <p class="blocked" id="blocked" hidden>
+    이 브라우저에서는 저장소를 쓸 수 없습니다. 입력은 되지만 새로고침하면 사라집니다.
+    시크릿 모드이거나 사이트 데이터가 차단된 상태인지 확인해 주세요.
+  </p>
+
+  <!-- 기능1은 AI가 개입하지 않는다 -->
+  <div class="ai-note off">
+    <span class="tag">AI 개입 없음</span>
+    <span>이 화면은 입력한 값을 그대로 저장합니다. 추정하거나 채워 넣지 않습니다.</span>
+  </div>
+
+  <div class="setup-grid">
+
+    <div class="col-main">
+
+      <!-- 1. 사업장 기본정보 ------------------------------------------ -->
+      <section class="card" aria-labelledby="t-site">
+        <div class="sec-head">
+          <div>
+            <h2 id="t-site"><span class="step-no">1</span>사업장 기본정보</h2>
+            <p class="why">교육일지에 그대로 기록될 이름입니다.</p>
+          </div>
+          <span class="badge badge-neutral" id="b-site"><span aria-hidden="true">○</span> 미설정</span>
+        </div>
+
+        <form id="form-site" autocomplete="off">
+          <div class="field-pair">
+            <div class="field">
+              <label for="site-name">사업장명</label>
+              <input id="site-name" name="name" type="text" placeholder="대성정밀" maxlength="40">
+            </div>
+            <div class="field">
+              <label for="site-size">사업장 규모</label>
+              <select id="site-size" name="sizeBand"></select>
+            </div>
+          </div>
+          <button class="btn btn-primary" type="submit">
+            <span aria-hidden="true">💾</span> 사업장 정보 저장
+          </button>
+        </form>
+      </section>
+
+      <!-- 2. 사용 언어 등록 ------------------------------------------- -->
+      <section class="card" aria-labelledby="t-lang">
+        <div class="sec-head">
+          <div>
+            <h2 id="t-lang"><span class="step-no">2</span>사용 언어 등록</h2>
+            <p class="why">
+              <b>여기서 넣지 않은 언어는 어떤 화면에서도 제공되지 않습니다.</b>
+              실제로 그 언어를 쓰는 노동자가 있는 것만 켜 주세요.
+            </p>
+          </div>
+          <span class="badge badge-neutral" id="b-lang"><span aria-hidden="true">○</span> 미설정</span>
+        </div>
+
+        <div class="picker" id="pick-lang" role="group" aria-label="사용 언어"></div>
+        <p class="field-hint">고르는 즉시 저장됩니다.</p>
+      </section>
+
+      <!-- 3. 공정 등록 ------------------------------------------------ -->
+      <section class="card" aria-labelledby="t-proc">
+        <div class="sec-head">
+          <div>
+            <h2 id="t-proc"><span class="step-no">3</span>공정 등록</h2>
+            <p class="why">설비의 상위 분류입니다. 신고와 교육이 이 단위로 묶입니다.</p>
+          </div>
+          <span class="badge badge-neutral" id="b-proc"><span aria-hidden="true">○</span> 미설정</span>
+        </div>
+
+        <form id="form-proc" autocomplete="off">
+          <div class="field">
+            <label for="proc-name">공정 이름</label>
+            <input id="proc-name" name="name" type="text" placeholder="프레스" maxlength="30">
+          </div>
+          <div class="field">
+            <label id="l-proc-icon">픽토그램</label>
+            <div class="picker icons" id="pick-proc-icon" role="radiogroup" aria-labelledby="l-proc-icon"></div>
+          </div>
+          <button class="btn btn-ghost" type="submit">
+            <span aria-hidden="true">＋</span> 공정 추가
+          </button>
+        </form>
+
+        <hr class="hr">
+        <ul class="item-list" id="list-proc"></ul>
+      </section>
+
+      <!-- 4. 설비 등록 — 이 화면의 핵심 ------------------------------- -->
+      <section class="card" aria-labelledby="t-equip">
+        <div class="sec-head">
+          <div>
+            <h2 id="t-equip"><span class="step-no">4</span>설비 등록</h2>
+            <p class="why">
+              위험유형은 나중에 이해도 검증 문항이 만들어지는 기준이 됩니다.
+              실제로 그 설비에 있는 위험만 고르세요.
+            </p>
+          </div>
+          <span class="badge badge-neutral" id="b-equip"><span aria-hidden="true">○</span> 미설정</span>
+        </div>
+
+        <p class="lockmsg" id="equip-lock" hidden>
+          먼저 <b>3. 공정</b>을 하나 이상 등록해 주세요. 설비는 공정에 속합니다.
+        </p>
+
+        <form id="form-equip" autocomplete="off">
+          <fieldset class="formset" id="equip-fields">
+            <div class="field-pair">
+              <div class="field">
+                <label for="equip-name">설비 이름</label>
+                <input id="equip-name" name="name" type="text" placeholder="프레스 3호기" maxlength="40">
+              </div>
+              <div class="field">
+                <label for="equip-proc">소속 공정</label>
+                <select id="equip-proc" name="processId"></select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label id="l-hazard">위험유형</label>
+              <p class="field-hint" style="margin:-2px 0 6px">여러 개 고를 수 있습니다.</p>
+              <div class="picker" id="pick-hazard" role="group" aria-labelledby="l-hazard"></div>
+            </div>
+
+            <div class="field">
+              <label id="l-equip-icon">픽토그램</label>
+              <div class="picker icons" id="pick-equip-icon" role="radiogroup" aria-labelledby="l-equip-icon"></div>
+            </div>
+
+            <button class="btn btn-primary" type="submit">
+              <span aria-hidden="true">＋</span> 설비 추가
+            </button>
+          </fieldset>
+        </form>
+
+        <hr class="hr">
+        <ul class="item-list" id="list-equip"></ul>
+      </section>
+
+      <!-- 5. 노동자 등록 ---------------------------------------------- -->
+      <section class="card" aria-labelledby="t-worker">
+        <div class="sec-head">
+          <div>
+            <h2 id="t-worker"><span class="step-no">5</span>노동자 등록</h2>
+            <p class="why">
+              <b>외국인등록번호와 여권번호는 받지 않습니다.</b>
+              사업장 안에서만 쓰는 식별번호와 언어, 소속 공정만 기록합니다.
+            </p>
+          </div>
+          <span class="badge badge-neutral" id="b-worker"><span aria-hidden="true">○</span> 미설정</span>
+        </div>
+
+        <p class="lockmsg" id="worker-lock" hidden>
+          먼저 <b>2. 사용 언어</b>와 <b>3. 공정</b>을 등록해 주세요.
+        </p>
+
+        <form id="form-worker" autocomplete="off">
+          <fieldset class="formset" id="worker-fields">
+            <div class="field">
+              <label for="worker-id">식별번호</label>
+              <input id="worker-id" name="id" type="text" placeholder="W-4821-07" maxlength="24">
+              <p class="field-hint">사업장 안에서만 통하는 번호입니다. 사번이나 조끼 번호를 그대로 쓰셔도 됩니다.</p>
+            </div>
+            <div class="field-pair">
+              <div class="field">
+                <label for="worker-lang">사용 언어</label>
+                <select id="worker-lang" name="lang"></select>
+              </div>
+              <div class="field">
+                <label for="worker-proc">소속 공정</label>
+                <select id="worker-proc" name="processId"></select>
+              </div>
+            </div>
+            <button class="btn btn-ghost" type="submit">
+              <span aria-hidden="true">＋</span> 노동자 추가
+            </button>
+          </fieldset>
+        </form>
+
+        <hr class="hr">
+        <ul class="item-list" id="list-worker"></ul>
+      </section>
+
+    </div><!-- /col-main -->
+
+    <!-- 우측 요약 ---------------------------------------------------- -->
+    <div class="col-side">
+
+      <section class="card" aria-labelledby="t-sum">
+        <h2 class="card-title" id="t-sum">설정 완료 상태</h2>
+        <ul class="checklist" id="checklist"></ul>
+        <hr class="hr">
+        <dl class="kpi-row" style="margin:0">
+          <div class="kpi">
+            <dt>설비</dt>
+            <dd id="kpi-equip">0<small>대</small></dd>
+          </div>
+          <div class="kpi">
+            <dt>노동자</dt>
+            <dd id="kpi-worker">0<small>명</small></dd>
+          </div>
+        </dl>
+        <p class="muted" style="margin-top:10px" id="updated-at">아직 저장된 내용이 없습니다.</p>
+      </section>
+
+      <section class="card" aria-labelledby="t-store">
+        <h2 class="card-title" id="t-store">저장 위치</h2>
+        <p class="storagenote">
+          입력한 내용은 서버로 보내지 않고 <b>이 브라우저 안에만</b> 남습니다
+          (<code>localStorage</code> · 키 <code>safety.setup.v1</code>).
+        </p>
+        <p class="storagenote" style="margin-top:10px">
+          그래서 <b>다른 기기나 다른 브라우저에서는 보이지 않고</b>,
+          사이트 데이터를 지우면 함께 사라집니다.
+          옮기거나 백업하려면 아래 내보내기를 쓰세요.
+        </p>
+      </section>
+
+      <section class="card" aria-labelledby="t-data">
+        <h2 class="card-title" id="t-data">데이터 주고받기</h2>
+        <div class="btn-row" style="margin-bottom:10px">
+          <button class="btn-sm" type="button" id="btn-export">내보내기</button>
+          <button class="btn-sm" type="button" id="btn-import">불러오기</button>
+          <button class="btn-sm danger" type="button" id="btn-reset">전체 초기화</button>
+        </div>
+        <label class="sr-only" for="jsonbox">설정 JSON</label>
+        <textarea class="jsonbox" id="jsonbox" spellcheck="false" placeholder="내보내기를 누르면 여기에 JSON 이 나옵니다. 되돌릴 때는 JSON 을 붙여넣고 불러오기를 누르세요."></textarea>
+      </section>
+
+    </div><!-- /col-side -->
+
+  </div><!-- /setup-grid -->
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="assets/store.js"></script>
+<script src="assets/setup.js"></script>
+</body>
+</html>

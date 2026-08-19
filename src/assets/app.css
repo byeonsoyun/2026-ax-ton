@@ -1,0 +1,348 @@
+/* ===================================================================
+   app.css — 기능1 화면에서 새로 필요한 것만
+
+   style.css(토큰·버튼·배지·폼) + style-admin.css(adminbar·sec-head·kpi·btn-sm)
+   위에 얹는다. 두 파일에 이미 있는 것은 다시 만들지 않는다.
+
+   기존 프로토타입의 .stage / .phone / .app 목업 껍데기는 쓰지 않는다.
+   그건 "설계도로 읽히게" 만든 장치였고, 여기는 실제로 배포되는 화면이다.
+   =================================================================== */
+
+html { font-size: var(--font-base); }
+
+body {
+  background: var(--bg);
+  line-height: 1.55;
+  min-height: 100vh;
+}
+
+/* -------------------------------------------------------------------
+   페이지 골격
+   ------------------------------------------------------------------- */
+
+.apphead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.pagehead h1 {
+  margin: 0;
+  font-size: 1.5em;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+.pagehead .lead {
+  margin: 8px 0 0;
+  max-width: 62ch;
+  font-size: .88em;
+  color: var(--ink-2);
+  line-height: 1.7;
+}
+
+/* 데스크톱에서만 본문 / 요약 2단. 좁으면 요약이 아래로 내려간다 */
+.setup-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gap);
+  align-items: start;
+}
+.col-main,
+.col-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .setup-grid { grid-template-columns: minmax(0, 1fr) 330px; }
+  .col-side { position: sticky; top: 84px; }
+}
+
+/* 단계 번호 — 순서가 있는 설정이라는 걸 눈으로 알린다 */
+.step-no {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--brand-soft);
+  color: var(--brand);
+  border: 1px solid #c3d8ef;
+  font-size: .72em;
+  font-weight: 800;
+  vertical-align: 2px;
+}
+
+/* -------------------------------------------------------------------
+   선택 칩 — 언어 / 위험유형 / 픽토그램
+
+   체크박스를 감춘 label 이다. :has() 없이 :checked + span 으로 칠해서
+   구형 안드로이드 웹뷰에서도 상태가 보이게 한다 (PRD §9.1 저사양 지원).
+   색만으로 구분하지 않도록 선택 시 ✓ 를 함께 띄운다.
+   ------------------------------------------------------------------- */
+
+.picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.picker input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.picker .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: var(--tap-min);
+  padding: 8px 14px;
+  border: 1px solid #c8d0d8;
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: .9em;
+  font-weight: 700;
+  color: var(--ink-2);
+  cursor: pointer;
+  user-select: none;
+}
+.picker .chip .ico { font-size: 1.15em; line-height: 1; }
+.picker .chip .sub {
+  font-size: .78em;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.picker .chip .mark {
+  font-size: .85em;
+  font-weight: 800;
+  visibility: hidden;
+}
+
+.picker input:checked + .chip {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand);
+  box-shadow: inset 0 0 0 1px var(--brand);
+}
+.picker input:checked + .chip .sub { color: var(--brand); }
+.picker input:checked + .chip .mark { visibility: visible; }
+.picker input:focus-visible + .chip { outline: 3px solid #7aa8d8; outline-offset: 2px; }
+
+/* 픽토그램만 고르는 좁은 형태 */
+.picker.icons .chip {
+  width: var(--tap-min);
+  min-width: var(--tap-min);
+  justify-content: center;
+  padding: 0;
+  font-size: 1.4em;
+}
+.picker.icons .chip .mark { display: none; }
+
+/* -------------------------------------------------------------------
+   등록 목록
+   ------------------------------------------------------------------- */
+
+.item-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 13px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.item > .ico {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  background: #eef1f4;
+  border: 1px solid var(--line);
+  font-size: 21px;
+}
+.item .body { flex: 1 1 auto; min-width: 0; }
+.item .body strong {
+  display: block;
+  font-size: .95em;
+  font-weight: 800;
+}
+.item .body .meta {
+  margin: 3px 0 0;
+  font-size: .76em;
+  color: var(--ink-3);
+}
+.item .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+.item .btn-row { flex: 0 0 auto; }
+
+/* 빈 상태 — 무엇을 하면 되는지 한 줄로 말한다 */
+.empty {
+  margin: 0;
+  padding: 18px 14px;
+  border: 1px dashed #c8d0d8;
+  border-radius: 12px;
+  background: #fbfcfd;
+  font-size: .84em;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+/* 선행 조건이 안 채워진 폼 — 잠그고 이유를 적는다 */
+.lockmsg {
+  margin: 0;
+  padding: 14px;
+  border: 1px solid #e6d3a6;
+  border-radius: 12px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: .84em;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+fieldset.formset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+fieldset.formset[disabled] { opacity: .5; }
+
+/* 짧은 입력 두 칸 묶기 */
+.field-pair {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 12px;
+}
+@media (min-width: 560px) {
+  .field-pair { grid-template-columns: 1fr 1fr; }
+}
+
+/* -------------------------------------------------------------------
+   설정 완료 요약 (우측)
+   ------------------------------------------------------------------- */
+
+.checklist {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.checklist li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: .88em;
+  font-weight: 700;
+}
+.checklist li:last-child { border-bottom: 0; }
+.checklist li .what { color: var(--ink-2); min-width: 0; }
+.checklist li[data-done="yes"] .what { color: var(--ink); }
+
+/* 저장 위치 안내 — 로컬 저장소라는 성질을 화면에서 숨기지 않는다 */
+.storagenote {
+  font-size: .78em;
+  line-height: 1.7;
+  color: var(--ink-2);
+  margin: 0;
+}
+.storagenote code {
+  background: #eef1f4;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-size: .95em;
+}
+
+/* 저장이 막힌 환경(시크릿 모드 등)에서만 뜬다 */
+.blocked {
+  margin: 0 0 var(--gap);
+  padding: 13px;
+  border: 1px solid #edbdb8;
+  border-radius: 12px;
+  background: var(--stop-soft);
+  color: var(--stop);
+  font-size: .85em;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+/* 저장 직후 잠깐 뜨는 알림 — 저장됐다는 사실이 보여야 한다 */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 50;
+  max-width: calc(100vw - 32px);
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: var(--admin-ink);
+  color: #fff;
+  font-size: .86em;
+  font-weight: 700;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .25);
+}
+.toast[hidden] { display: none; }
+
+/* JSON 주고받기 */
+.jsonbox {
+  width: 100%;
+  min-height: 120px;
+  padding: 10px 12px;
+  border: 1px solid #c8d0d8;
+  border-radius: 12px;
+  background: var(--surface);
+  font-family: ui-monospace, Consolas, "D2Coding", monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink);
+  resize: vertical;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

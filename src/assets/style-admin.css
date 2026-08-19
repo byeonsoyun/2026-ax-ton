@@ -1,0 +1,353 @@
+/* ===================================================================
+   담당자 · 운영자 화면 공통 컴포넌트
+
+   style.css(토큰·버튼·배지·폼) 위에 얹는다.
+   PC 화면은 style-pc.css(상단바·좌측 내비·레이아웃)도 함께 읽는다.
+
+   노동자 화면과 다른 점 — 의도된 차이다.
+   · SCREEN §4 의 터치 타깃 60×60px 는 장갑 낀 손으로 현장에서 조작하는 것을 전제한 규칙이다.
+     담당자·운영자는 마우스와 키보드로 표를 다루므로, 표 안의 보조 조작만 40px 로 낮추고
+     주요 조작 버튼(.btn)은 60px 를 그대로 유지한다.
+   · 문해력 비전제(음성으로 완주) 규칙도 노동자 화면(기능3·4·7·8)에 걸린 것이라 여기서는 적용하지 않는다.
+   · 색상만으로 상태를 구분하지 않는 규칙은 여기서도 지킨다 — 정답률 막대에 숫자와 등급 글자를 함께 쓴다.
+   =================================================================== */
+
+:root {
+  --admin-ink: #232a33;   /* 담당자·운영자 화면임을 알리는 짙은 머리 */
+  --admin-line: #39424e;
+}
+
+/* -------------------------------------------------------------------
+   역할 머리띠 — 노동자 화면과 헷갈리지 않게 한다
+   ------------------------------------------------------------------- */
+
+.adminbar {
+  flex: 0 0 auto;
+  background: var(--admin-ink);
+  color: #fff;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.adminbar .who { min-width: 0; flex: 1 1 auto; }
+.adminbar .who strong {
+  display: block;
+  font-size: .95em;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.adminbar .who span { font-size: .74em; color: #a9b4c0; }
+
+.role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: .72em;
+  font-weight: 800;
+  white-space: nowrap;
+  border: 1px solid;
+}
+.role-chip.admin    { background: #1d3a57; color: #bcdcff; border-color: #35618c; }
+.role-chip.operator { background: #4a3410; color: #ffd899; border-color: #7d5a1c; }
+
+/* PC 상단바 안에서 쓸 때 */
+.topbar.is-admin { background: var(--admin-ink); border-bottom-color: var(--admin-line); }
+.topbar.is-admin .logo { color: #fff; }
+.topbar.is-admin .site { border-left-color: var(--admin-line); }
+.topbar.is-admin .site strong { color: #fff; }
+.topbar.is-admin .site span { color: #a9b4c0; }
+.topbar.is-admin .textsize { border-color: var(--admin-line); }
+.topbar.is-admin .textsize button { background: #2d3540; color: #cfd6dd; }
+.topbar.is-admin .textsize button + button { border-left-color: var(--admin-line); }
+.topbar.is-admin .textsize button[aria-pressed="true"] { background: #fff; color: var(--admin-ink); }
+
+/* -------------------------------------------------------------------
+   AI 역할 고지 — 어느 화면에서 AI가 개입하고 어디서 개입하지 않는지 밝힌다
+   ------------------------------------------------------------------- */
+
+.ai-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 11px 13px;
+  border-radius: 12px;
+  font-size: .82em;
+  line-height: 1.6;
+  border: 1px solid;
+}
+.ai-note .tag {
+  flex: 0 0 auto;
+  font-weight: 800;
+  font-size: .92em;
+}
+.ai-note.off { background: #eef1f4; border-color: var(--line); color: var(--ink-2); }
+.ai-note.off .tag { color: var(--ink); }
+.ai-note.on  { background: var(--brand-soft); border-color: #c3d8ef; color: #1c4a7c; }
+.ai-note.on .tag { color: var(--brand); }
+
+/* -------------------------------------------------------------------
+   요약 타일
+   ------------------------------------------------------------------- */
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 13px 14px;
+}
+.kpi dt {
+  margin: 0 0 6px;
+  font-size: .76em;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+.kpi dd {
+  margin: 0;
+  font-size: 1.6em;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -.02em;
+}
+.kpi dd small {
+  font-size: .5em;
+  font-weight: 700;
+  color: var(--ink-3);
+  margin-left: 3px;
+}
+.kpi .hint { margin: 6px 0 0; font-size: .74em; color: var(--ink-3); }
+.kpi.alert { border-color: #edbdb8; background: var(--stop-soft); }
+.kpi.alert dt, .kpi.alert dd { color: var(--stop); }
+.kpi.alert .hint { color: #8a3229; }
+
+/* -------------------------------------------------------------------
+   정답률 막대 — 기능6 의 핵심 화면.
+   이수율이 아니라 "언어별·항목별 취약점"을 크게 보여 준다.
+   색을 지워도 뜻이 남도록 숫자와 등급 글자를 함께 쓴다.
+   ------------------------------------------------------------------- */
+
+.bar-list { display: grid; gap: 12px; }
+
+.bar-item { display: grid; gap: 6px; }
+
+.bar-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: .86em;
+}
+.bar-head .what { font-weight: 700; min-width: 0; }
+.bar-head .what em {
+  font-style: normal;
+  color: var(--ink-3);
+  font-weight: 600;
+  margin-left: 6px;
+  font-size: .9em;
+}
+.bar-head .num { flex: 0 0 auto; font-weight: 800; }
+
+.bar-track {
+  height: 14px;
+  background: #e7ebef;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.bar-fill { height: 100%; }
+
+.bar-item[data-level="low"]  .bar-fill { background: var(--stop); }
+.bar-item[data-level="mid"]  .bar-fill { background: var(--warn); }
+.bar-item[data-level="ok"]   .bar-fill { background: var(--ok); }
+.bar-item[data-level="low"]  .bar-head .num { color: var(--stop); }
+.bar-item[data-level="mid"]  .bar-head .num { color: var(--warn); }
+.bar-item[data-level="ok"]   .bar-head .num { color: var(--ok); }
+
+/* -------------------------------------------------------------------
+   표 — PC 전용. 좁아지면 가로로 스크롤한다
+   ------------------------------------------------------------------- */
+
+.tablewrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+table.data {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88em;
+  min-width: 620px;
+}
+table.data th,
+table.data td {
+  padding: 11px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+table.data thead th {
+  background: #f0f3f6;
+  font-size: .86em;
+  font-weight: 800;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+table.data tbody tr:last-child td { border-bottom: 0; }
+table.data tbody tr:hover td { background: #fafcfe; }
+table.data td.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.data .sub { display: block; font-size: .84em; color: var(--ink-3); }
+
+/* 표 안의 보조 조작 — 마우스 전제이므로 40px */
+.btn-sm {
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-family: inherit;
+  font-size: .88em;
+  font-weight: 700;
+  color: var(--ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-sm:hover { border-color: var(--brand); color: var(--brand); }
+.btn-sm.danger { color: var(--stop); border-color: #edbdb8; background: var(--stop-soft); }
+.btn-sm.go { color: var(--brand-ink); background: var(--brand); border-color: var(--brand); }
+
+.btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* -------------------------------------------------------------------
+   처리 큐 — 신고 조치(기능8) / 오역 신고(기능9)
+   ------------------------------------------------------------------- */
+
+.queue { display: grid; gap: 10px; }
+
+.queue-item {
+  display: grid;
+  gap: 8px;
+  padding: 13px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--line);
+  border-radius: 12px;
+}
+.queue-item[data-urgent="yes"] { border-left-color: var(--stop); background: #fffbfb; }
+.queue-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.queue-top strong { font-size: .95em; font-weight: 800; }
+.queue-item .meta { margin: 0; font-size: .78em; color: var(--ink-3); }
+.queue-item .body { margin: 0; font-size: .86em; color: var(--ink-2); line-height: 1.6; }
+
+/* -------------------------------------------------------------------
+   언어별 검수 상태 칩 묶음 (기능9)
+   ------------------------------------------------------------------- */
+
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+
+/* -------------------------------------------------------------------
+   역번역 대조 — AI 는 초안과 대조까지만, 판정은 사람이 한다 (기능9)
+   ------------------------------------------------------------------- */
+
+.diff {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.diff-cell {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fbfcfd;
+}
+.diff-cell h4 {
+  margin: 0 0 6px;
+  font-size: .74em;
+  font-weight: 800;
+  color: var(--ink-3);
+  letter-spacing: .03em;
+}
+.diff-cell p { margin: 0; font-size: .95em; line-height: 1.55; font-weight: 600; }
+.diff-cell.flag { background: var(--warn-soft); border-color: #e6d3a6; }
+.diff-cell.flag mark {
+  background: #ffdf9e;
+  color: #6b4400;
+  padding: 0 3px;
+  border-radius: 3px;
+  font-weight: 800;
+}
+
+/* -------------------------------------------------------------------
+   섹션 머리
+   ------------------------------------------------------------------- */
+
+.sec-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.sec-head h2 {
+  margin: 0;
+  font-size: 1.05em;
+  font-weight: 800;
+}
+.sec-head .why {
+  margin: 4px 0 0;
+  font-size: .8em;
+  color: var(--ink-2);
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+/* -------------------------------------------------------------------
+   모바일 하단 탭바 (담당자·운영자 폰 화면)
+   ------------------------------------------------------------------- */
+
+.tabbar {
+  flex: 0 0 auto;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  padding-bottom: 6px;
+}
+.tabbar button {
+  min-height: var(--tap-min);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: .68em;
+  font-weight: 700;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.tabbar button .ico { font-size: 20px; }
+.tabbar button[aria-current="page"] { color: var(--brand); }
+
+@media (max-width: 720px) {
+  .diff { grid-template-columns: 1fr; }
+}
