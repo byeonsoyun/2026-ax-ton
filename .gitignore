@@ -43,3 +43,6 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# accidental nested clone (byeonsoyun/2026-ax-ton) — not part of this project
+/2026-ax-ton/
