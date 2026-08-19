@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>이해도 검증 — 안전교육 이해도 검증 플랫폼</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/style-admin.css">
+<link rel="stylesheet" href="../assets/app.css">
+<link rel="stylesheet" href="worker.css">
+<script src="../assets/store.js"></script>
+<script src="../assets/auth.js"></script>
+<script>Auth.require('worker');</script>
+</head>
+<body class="has-tabbar">
+
+<header class="workerbar apphead">
+  <div class="who">
+    <strong id="head-site"></strong>
+    <span id="head-sub"></span>
+  </div>
+  <button class="btn-sm" type="button" id="btn-logout">로그아웃</button>
+</header>
+
+<main class="page">
+
+  <div class="pagehead">
+    <h1>이해도 검증</h1>
+    <p class="lead">글자를 한 자도 읽지 않고 끝낼 수 있어야 합니다. 이 제품의 심장입니다.</p>
+  </div>
+
+  <p class="blocked" id="blocked" hidden>
+    이 브라우저에서는 저장소를 쓸 수 없습니다. 입력해도 새로고침하면 사라집니다.
+  </p>
+
+  <section class="todo">
+    <h2>아직 만들지 않은 화면입니다</h2>
+    <p class="why">문항 유형 세 가지 — hotspot(사진에서 위험 지점 터치) · choice(올바른 작업 고르기) · match(보호구 연결하기). 문항은 음성으로 읽어 주고, 통과하지 못하면 progress 에 passed:false 로 남아 교육 완료로 기록되지 않습니다. 미통과는 노동자의 실패가 아니라 교육의 실패로 적습니다. 최초 통과율 100%는 문항이 쉬운 것이라 지표 실패로 봅니다(목표 70~85%).</p>
+    <dl>
+      <dt>담당</dt><dd>노동자 A</dd>
+      <dt>기능번호</dt><dd>기능4</dd>
+      <dt>이 파일</dt><dd><code>worker/quiz.html</code> · <code>worker/quiz.js</code></dd>
+      <dt>읽는 키</dt><dd><code>courses</code> · <code>setup</code></dd>
+      <dt>쓰는 키</dt><dd><code>progress</code></dd>
+      <dt>근거 문서</dt><dd>SCREEN 기능4 · PRD §2.2 · 발표 대본 ②-둘째</dd>
+    </dl>
+  </section>
+
+  <section class="card" aria-labelledby="t-peek">
+    <div class="sec-head">
+      <div>
+        <h2 id="t-peek">지금 읽을 수 있는 데이터</h2>
+        <p class="why">
+          로그인 화면의 <b>예시 데이터 채우기</b>를 눌렀다면 아래에 숫자가 보입니다.
+          상대 팀 화면이 아직 없어도 이 값으로 개발하시면 됩니다.
+        </p>
+      </div>
+    </div>
+    <dl class="kpi-row" id="peek" style="margin:0"></dl>
+  </section>
+
+</main>
+
+<nav class="tabbar fixed" aria-label="메뉴">
+  <a href="home.html"><span class="ico" aria-hidden="true">🏠</span>홈</a>
+  <a href="learn.html"><span class="ico" aria-hidden="true">🎧</span>교육</a>
+  <a href="report.html"><span class="ico" aria-hidden="true">📷</span>신고</a>
+  <a href="talk.html"><span class="ico" aria-hidden="true">💬</span>소통</a>
+  <a href="my.html"><span class="ico" aria-hidden="true">🙋</span>마이</a>
+</nav>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="../assets/ui.js"></script>
+<script src="quiz.js"></script>
+</body>
+</html>

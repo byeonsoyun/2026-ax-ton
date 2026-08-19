@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>교육 증빙 생성 — 안전교육 이해도 검증 플랫폼</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/style-admin.css">
+<link rel="stylesheet" href="../assets/app.css">
+<link rel="stylesheet" href="admin.css">
+<script src="../assets/store.js"></script>
+<script src="../assets/auth.js"></script>
+<script>Auth.require('admin');</script>
+</head>
+<body class="has-tabbar">
+
+<header class="adminbar apphead">
+  <div class="who">
+    <strong id="head-site">사업장 미등록</strong>
+    <span id="head-sub"></span>
+  </div>
+  <span class="role-chip admin" id="role-chip"></span>
+  <button class="btn-sm" type="button" id="btn-logout">로그아웃</button>
+</header>
+
+<main class="page">
+
+  <div class="pagehead">
+    <h1>교육 증빙 생성</h1>
+    <p class="lead">증빙 작성 시간을 2시간에서 5분으로 줄이는 것이 도입의 현실적인 이유입니다.</p>
+  </div>
+
+  <p class="blocked" id="blocked" hidden>
+    이 브라우저에서는 저장소를 쓸 수 없습니다. 입력해도 새로고침하면 사라집니다.
+  </p>
+
+  <section class="todo">
+    <h2>아직 만들지 않은 화면입니다</h2>
+    <p class="why">일시 · 언어 · 문항 · 점수 · 서명을 그대로 담은 교육일지를 만듭니다. ★ 생성된 기록은 수정할 수 없고, 미이수자와 이해도 미달자를 문서에서 숨기는 경로를 만들지 않습니다. ★ "면책" 표현을 쓰지 않습니다. 교육 실시의 증빙일 뿐 법적 책임을 대신하지 않습니다. PDF는 브라우저 인쇄(window.print + @media print)로 충분합니다 — 외부 라이브러리를 넣지 마세요.</p>
+    <dl>
+      <dt>담당</dt><dd>관리자 D</dd>
+      <dt>기능번호</dt><dd>기능5</dd>
+      <dt>이 파일</dt><dd><code>admin/proof.html</code> · <code>admin/proof.js</code></dd>
+      <dt>읽는 키</dt><dd><code>progress</code> · <code>courses</code> · <code>setup</code></dd>
+      <dt>쓰는 키</dt><dd>없음</dd>
+      <dt>근거 문서</dt><dd>SCREEN 기능5 · 발표 대본 ②-셋째</dd>
+    </dl>
+  </section>
+
+  <section class="card" aria-labelledby="t-peek">
+    <div class="sec-head">
+      <div>
+        <h2 id="t-peek">지금 읽을 수 있는 데이터</h2>
+        <p class="why">
+          로그인 화면의 <b>예시 데이터 채우기</b>를 눌렀다면 아래에 숫자가 보입니다.
+          상대 팀 화면이 아직 없어도 이 값으로 개발하시면 됩니다.
+        </p>
+      </div>
+    </div>
+    <dl class="kpi-row" id="peek" style="margin:0"></dl>
+  </section>
+
+</main>
+
+<nav class="tabbar fixed" aria-label="담당자 메뉴">
+  <a href="dashboard.html"><span class="ico" aria-hidden="true">📊</span>대시보드</a>
+  <a href="setup.html"><span class="ico" aria-hidden="true">🏭</span>설비</a>
+  <a href="content.html"><span class="ico" aria-hidden="true">📝</span>콘텐츠</a>
+  <a href="proof.html"><span class="ico" aria-hidden="true">📄</span>증빙</a>
+  <a href="library.html"><span class="ico" aria-hidden="true">🔍</span>문구</a>
+</nav>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="../assets/ui.js"></script>
+<script src="proof.js"></script>
+</body>
+</html>

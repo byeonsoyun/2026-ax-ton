@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>안전 문구 라이브러리 — 안전교육 이해도 검증 플랫폼</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/style-admin.css">
+<link rel="stylesheet" href="../assets/app.css">
+<link rel="stylesheet" href="admin.css">
+<script src="../assets/store.js"></script>
+<script src="../assets/auth.js"></script>
+<script>Auth.require('operator');</script>
+</head>
+<body class="has-tabbar">
+
+<header class="adminbar apphead">
+  <div class="who">
+    <strong id="head-site">사업장 미등록</strong>
+    <span id="head-sub"></span>
+  </div>
+  <span class="role-chip admin" id="role-chip"></span>
+  <button class="btn-sm" type="button" id="btn-logout">로그아웃</button>
+</header>
+
+<main class="page">
+
+  <div class="pagehead">
+    <h1>안전 문구 라이브러리</h1>
+    <p class="lead">사용자에게 보이지 않지만 제품 신뢰의 단일 최대 요인입니다.</p>
+  </div>
+
+  <p class="blocked" id="blocked" hidden>
+    이 브라우저에서는 저장소를 쓸 수 없습니다. 입력해도 새로고침하면 사라집니다.
+  </p>
+
+  <section class="todo">
+    <h2>아직 만들지 않은 화면입니다</h2>
+    <p class="why">오역 신고 큐(본문 맨 위) · 역번역 대조 · 문구 목록 · 검수 상태 3종(완료 / 대기 / 중지). ★ 오역 신고는 접수하는 순간 사용 중지입니다. 확인한 뒤 내리는 순서가 아닙니다. seed 의 ph-3 이 부정이 뒤집혀 정반대 지시가 된 예입니다 — 역번역 대조로 잡는 장면을 만드세요. ★ AI는 초안 · 역번역 대조 · 음성합성까지. 승인은 사람이 합니다. projects/campus-ax-ton/code/13-operator-library.html 에 정적 목업이 있습니다.</p>
+    <dl>
+      <dt>담당</dt><dd>관리자 D</dd>
+      <dt>기능번호</dt><dd>기능9</dd>
+      <dt>이 파일</dt><dd><code>admin/library.html</code> · <code>admin/library.js</code></dd>
+      <dt>읽는 키</dt><dd><code>library</code></dd>
+      <dt>쓰는 키</dt><dd><code>library</code></dd>
+      <dt>근거 문서</dt><dd>SCREEN 기능9 (F-08) · PRD §9.3 §10 · 목업 13-operator-library.html</dd>
+    </dl>
+  </section>
+
+  <section class="card" aria-labelledby="t-peek">
+    <div class="sec-head">
+      <div>
+        <h2 id="t-peek">지금 읽을 수 있는 데이터</h2>
+        <p class="why">
+          로그인 화면의 <b>예시 데이터 채우기</b>를 눌렀다면 아래에 숫자가 보입니다.
+          상대 팀 화면이 아직 없어도 이 값으로 개발하시면 됩니다.
+        </p>
+      </div>
+    </div>
+    <dl class="kpi-row" id="peek" style="margin:0"></dl>
+  </section>
+
+</main>
+
+<nav class="tabbar fixed" aria-label="담당자 메뉴">
+  <a href="dashboard.html"><span class="ico" aria-hidden="true">📊</span>대시보드</a>
+  <a href="setup.html"><span class="ico" aria-hidden="true">🏭</span>설비</a>
+  <a href="content.html"><span class="ico" aria-hidden="true">📝</span>콘텐츠</a>
+  <a href="proof.html"><span class="ico" aria-hidden="true">📄</span>증빙</a>
+  <a href="library.html"><span class="ico" aria-hidden="true">🔍</span>문구</a>
+</nav>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="../assets/ui.js"></script>
+<script src="library.js"></script>
+</body>
+</html>

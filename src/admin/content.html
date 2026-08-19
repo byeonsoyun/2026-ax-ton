@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>교육 콘텐츠 생성 · 승인 — 안전교육 이해도 검증 플랫폼</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/style-admin.css">
+<link rel="stylesheet" href="../assets/app.css">
+<link rel="stylesheet" href="admin.css">
+<script src="../assets/store.js"></script>
+<script src="../assets/auth.js"></script>
+<script>Auth.require('admin');</script>
+</head>
+<body class="has-tabbar">
+
+<header class="adminbar apphead">
+  <div class="who">
+    <strong id="head-site">사업장 미등록</strong>
+    <span id="head-sub"></span>
+  </div>
+  <span class="role-chip admin" id="role-chip"></span>
+  <button class="btn-sm" type="button" id="btn-logout">로그아웃</button>
+</header>
+
+<main class="page">
+
+  <div class="pagehead">
+    <h1>교육 콘텐츠 생성 · 승인</h1>
+    <p class="lead">설비와 언어를 고르면 검수 완료된 문구만 모아 교육이 만들어집니다.</p>
+  </div>
+
+  <p class="blocked" id="blocked" hidden>
+    이 브라우저에서는 저장소를 쓸 수 없습니다. 입력해도 새로고침하면 사라집니다.
+  </p>
+
+  <section class="todo">
+    <h2>아직 만들지 않은 화면입니다</h2>
+    <p class="why">설비 선택 → 언어 선택 → 문구 고르기 → 승인 · QR 발급. ★ AI는 문구를 새로 쓰지 않고 사람이 검수한 라이브러리에서 고르기만 합니다. 오역이 그대로 사고가 되기 때문입니다. library 에서 status 가 reviewed 인 문구만 선택지에 올리세요. 만든 결과는 courses 에 저장되고, 노동자의 기능3·4가 그것을 읽습니다.</p>
+    <dl>
+      <dt>담당</dt><dd>관리자 C</dd>
+      <dt>기능번호</dt><dd>기능2</dd>
+      <dt>이 파일</dt><dd><code>admin/content.html</code> · <code>admin/content.js</code></dd>
+      <dt>읽는 키</dt><dd><code>setup</code> · <code>library</code></dd>
+      <dt>쓰는 키</dt><dd><code>courses</code></dd>
+      <dt>근거 문서</dt><dd>SCREEN 기능2 · PRD §9.3</dd>
+    </dl>
+  </section>
+
+  <section class="card" aria-labelledby="t-peek">
+    <div class="sec-head">
+      <div>
+        <h2 id="t-peek">지금 읽을 수 있는 데이터</h2>
+        <p class="why">
+          로그인 화면의 <b>예시 데이터 채우기</b>를 눌렀다면 아래에 숫자가 보입니다.
+          상대 팀 화면이 아직 없어도 이 값으로 개발하시면 됩니다.
+        </p>
+      </div>
+    </div>
+    <dl class="kpi-row" id="peek" style="margin:0"></dl>
+  </section>
+
+</main>
+
+<nav class="tabbar fixed" aria-label="담당자 메뉴">
+  <a href="dashboard.html"><span class="ico" aria-hidden="true">📊</span>대시보드</a>
+  <a href="setup.html"><span class="ico" aria-hidden="true">🏭</span>설비</a>
+  <a href="content.html"><span class="ico" aria-hidden="true">📝</span>콘텐츠</a>
+  <a href="proof.html"><span class="ico" aria-hidden="true">📄</span>증빙</a>
+  <a href="library.html"><span class="ico" aria-hidden="true">🔍</span>문구</a>
+</nav>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="../assets/ui.js"></script>
+<script src="content.js"></script>
+</body>
+</html>

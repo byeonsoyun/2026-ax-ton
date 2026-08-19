@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>회원가입 — 안전교육 이해도 검증 플랫폼</title>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style-admin.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body class="gate-body">
+
+<main class="gate gate-narrow">
+
+  <section class="gate-panel">
+
+    <p class="blocked" id="blocked" hidden>
+      이 브라우저에서는 저장소를 쓸 수 없습니다. 가입해도 저장되지 않습니다.
+    </p>
+
+    <div class="card">
+      <div class="sec-head">
+        <div>
+          <h2 id="t-join">회원가입</h2>
+          <p class="why">역할을 먼저 고르면 아래 입력란이 바뀝니다.</p>
+        </div>
+        <a class="btn-sm" href="index.html">← 로그인으로</a>
+      </div>
+
+      <form id="form-signup" autocomplete="off">
+
+        <div class="field">
+          <label id="l-role">역할</label>
+          <div class="picker" id="pick-role" role="radiogroup" aria-labelledby="l-role"></div>
+        </div>
+
+        <div class="field-pair">
+          <div class="field">
+            <label for="join-id">아이디</label>
+            <input id="join-id" type="text" maxlength="40">
+            <p class="field-hint" id="join-id-hint"></p>
+          </div>
+          <div class="field">
+            <label for="join-pw">비밀번호</label>
+            <input id="join-pw" type="password" placeholder="••••••••" maxlength="40">
+          </div>
+        </div>
+
+        <!-- 담당자·운영자 전용 -->
+        <div id="fields-admin" hidden>
+          <div class="field-pair">
+            <div class="field">
+              <label for="join-name">이름</label>
+              <input id="join-name" type="text" placeholder="김현수" maxlength="20">
+            </div>
+            <div class="field">
+              <label for="join-title">직책</label>
+              <select id="join-title">
+                <option>안전 담당자 (겸직)</option>
+                <option selected>현장 관리자 · 생산팀장</option>
+                <option>사업주 · 대표</option>
+                <option>시스템 운영자 (내부)</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label for="join-site">회사 · 기관명</label>
+            <input id="join-site" type="text" placeholder="대성정밀" maxlength="40">
+          </div>
+        </div>
+
+        <!-- 노동자 전용 -->
+        <div id="fields-worker" hidden>
+          <div class="field">
+            <label for="join-lang">사용 언어</label>
+            <select id="join-lang"></select>
+            <p class="field-hint" id="join-lang-hint"></p>
+          </div>
+          <div class="field">
+            <label for="join-proc">소속 공정</label>
+            <select id="join-proc"></select>
+          </div>
+          <p class="muted">
+            <b>외국인등록번호와 여권번호는 받지 않습니다.</b>
+            사업장 안에서만 쓰는 식별번호로 충분합니다.
+          </p>
+        </div>
+
+        <p class="loginerror" id="join-error" hidden></p>
+
+        <div style="height:6px"></div>
+        <button class="btn btn-primary" type="submit">
+          <span aria-hidden="true">＋</span> 가입하고 시작하기
+        </button>
+      </form>
+
+      <hr class="hr">
+      <p class="muted">
+        가입 후 <b>사업장 · 공정 · 설비 · 노동자 언어 등록</b>을 한 번 마치면
+        이후 모든 교육이 그 구성을 기준으로 만들어집니다.
+        <b>여기서 넣지 않은 언어는 어떤 화면에서도 제공되지 않습니다.</b>
+      </p>
+      <p class="muted" style="margin-top:10px">
+        비밀번호는 이 브라우저에 그대로 저장됩니다. <b>시연용 목업</b>이며 실제 인증이 아닙니다.
+      </p>
+    </div>
+
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="assets/store.js"></script>
+<script src="assets/auth.js"></script>
+<script src="assets/ui.js"></script>
+<script src="assets/signup.js"></script>
+</body>
+</html>
