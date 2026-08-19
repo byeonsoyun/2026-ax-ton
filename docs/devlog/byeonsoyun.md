@@ -1,6 +1,8 @@
-# 개발일지 — 변소윤 (P1)
+# 개발일지 — 변소윤
 
-브랜치 `feature/byeonsoyun` · 담당 `learn`(기능3) · `quiz`(기능4) + 뼈대 · 전체 관리
+브랜치 `feature/byeonsoyun`
+포지션: P1 · 관리 + 노동자 핵심
+담당 화면: learn(기능3) · quiz(기능4) · setup(기능1, 완료) + 뼈대 · 전체 관리
 
 ---
 

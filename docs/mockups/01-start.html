@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01. 시작 화면 — 안전교육 이해도 검증 플랫폼</title>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  /* 이 화면에서만 쓰는 조각 */
+
+  .brand {
+    padding: 26px 16px 18px;
+    background: var(--brand);
+    color: var(--brand-ink);
+  }
+  .brand h1 {
+    margin: 0;
+    font-size: 1.5em;
+    font-weight: 800;
+    letter-spacing: -.02em;
+  }
+  .brand p {
+    margin: 8px 0 0;
+    font-size: .88em;
+    line-height: 1.6;
+    color: #cfe0f3;
+  }
+
+  /* 언어 선택 — 최초 1회 선택 후 기억한다 (PRD §8.2) */
+  .lang-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .lang {
+    min-height: var(--tap-min);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 8px 4px;
+    background: var(--surface);
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: .78em;
+    font-weight: 700;
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  .lang .flag { font-size: 22px; line-height: 1.1; }
+  .lang[aria-pressed="true"] {
+    border-color: var(--brand);
+    background: var(--brand-soft);
+    color: var(--brand);
+  }
+  /* 색 외에 체크 표시로도 선택을 알린다 */
+  .lang[aria-pressed="true"] .native::after { content: " ✓"; }
+
+  .lang-memo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 10px 0 0;
+    font-size: .78em;
+    color: var(--ok);
+    font-weight: 700;
+  }
+
+  /* 로그인 / 회원가입 탭 */
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    background: #e5e9ee;
+    border-radius: 14px;
+    padding: 5px;
+  }
+  .tab {
+    min-height: var(--tap-min);
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    font-family: inherit;
+    font-size: .95em;
+    font-weight: 700;
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  .tab[aria-selected="true"] {
+    background: var(--surface);
+    color: var(--brand);
+    box-shadow: 0 1px 2px rgba(0,0,0,.12);
+  }
+
+  .pane[hidden] { display: none; }
+
+  /* 제목 + 음성 버튼을 한 줄에 놓는 공통 머리 */
+  .head-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .head-row h2 {
+    margin: 0;
+    font-size: .95em;
+    font-weight: 800;
+  }
+
+  /* 개인정보 미수집 고지 — PRD §10 "첫 화면에서 자기 언어로 고지" */
+  .notice {
+    background: var(--ok-soft);
+    border: 1px solid #b6ddc5;
+  }
+  .notice .head-row h2 { color: var(--ok); }
+  .notice ul {
+    margin: 0;
+    padding-left: 18px;
+    font-size: .84em;
+    line-height: 1.75;
+    color: #1f4e33;
+  }
+
+  .foot {
+    padding: 4px 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+</style>
+</head>
+<body>
+
+<main class="stage">
+  <h2 class="stage-title">
+    화면 01. 시작 화면
+    <small>일반 사용자(노동자) · 로그인 / 회원가입 — 화면.txt 1~3행</small>
+  </h2>
+
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span>▮▮▮ ᯤ 🔋</span></div>
+
+    <div class="app">
+
+      <header class="brand">
+        <h1>안전한 하루</h1>
+        <p>이해했는지 확인되지 않으면<br>교육이 끝나지 않습니다.</p>
+      </header>
+
+      <div class="scroll">
+
+        <!-- 1. 언어 선택 ------------------------------------------------ -->
+        <section class="card" aria-labelledby="lang-title">
+          <div class="head-row">
+            <h2 class="card-title" id="lang-title" style="margin:0">쓰는 말을 골라 주세요</h2>
+            <button class="btn-audio" type="button" aria-label="언어 선택 안내 음성으로 듣기">🔊</button>
+          </div>
+
+          <div class="lang-grid" role="group" aria-labelledby="lang-title">
+            <button class="lang" type="button" data-lang="ko" data-native="한국어" aria-pressed="true">
+              <span class="flag" aria-hidden="true">🇰🇷</span>
+              <span class="native">한국어</span>
+            </button>
+            <button class="lang" type="button" data-lang="km" data-native="ភាសាខ្មែរ" aria-pressed="false">
+              <span class="flag" aria-hidden="true">🇰🇭</span>
+              <span class="native">ភាសាខ្មែរ</span>
+            </button>
+            <button class="lang" type="button" data-lang="vi" data-native="Tiếng Việt" aria-pressed="false">
+              <span class="flag" aria-hidden="true">🇻🇳</span>
+              <span class="native">Tiếng Việt</span>
+            </button>
+            <button class="lang" type="button" data-lang="ne" data-native="नेपाली" aria-pressed="false">
+              <span class="flag" aria-hidden="true">🇳🇵</span>
+              <span class="native">नेपाली</span>
+            </button>
+            <button class="lang" type="button" data-lang="my" data-native="မြန်မာ" aria-pressed="false">
+              <span class="flag" aria-hidden="true">🇲🇲</span>
+              <span class="native">မြန်မာ</span>
+            </button>
+            <button class="lang" type="button" data-lang="id" data-native="Indonesia" aria-pressed="false">
+              <span class="flag" aria-hidden="true">🇮🇩</span>
+              <span class="native">Indonesia</span>
+            </button>
+          </div>
+
+          <p class="lang-memo" id="lang-memo">
+            <span aria-hidden="true">✓</span>
+            <span>이 언어를 기억합니다 — 다음부터 바로 이 말로 열립니다</span>
+          </p>
+        </section>
+
+        <!-- 2. 로그인 / 회원가입 ---------------------------------------- -->
+        <div class="tabs" role="tablist" aria-label="로그인 또는 회원가입">
+          <button class="tab" type="button" role="tab" id="tab-login"
+                  aria-controls="pane-login" aria-selected="true">로그인</button>
+          <button class="tab" type="button" role="tab" id="tab-join"
+                  aria-controls="pane-join" aria-selected="false">회원가입</button>
+        </div>
+
+        <!-- 2-A. 로그인 -->
+        <section class="card pane" id="pane-login" role="tabpanel" aria-labelledby="tab-login">
+          <div class="field">
+            <label for="login-site"><span aria-hidden="true">🏭</span> 사업장 코드</label>
+            <input id="login-site" type="text" inputmode="numeric" placeholder="예) 4821">
+          </div>
+          <div class="field">
+            <label for="login-name"><span aria-hidden="true">🙋</span> 이름</label>
+            <input id="login-name" type="text" placeholder="공장에서 부르는 이름">
+          </div>
+          <div class="field">
+            <label for="login-pin"><span aria-hidden="true">🔢</span> PIN 6자리</label>
+            <input id="login-pin" type="password" inputmode="numeric" maxlength="6" placeholder="● ● ● ● ● ●">
+            <p class="field-hint">글자가 아니라 숫자만 씁니다. 잊었으면 담당자가 다시 만들어 줍니다.</p>
+          </div>
+          <button class="btn btn-primary" type="button">로그인</button>
+        </section>
+
+        <!-- 2-B. 회원가입 -->
+        <section class="card pane" id="pane-join" role="tabpanel" aria-labelledby="tab-join" hidden>
+          <div class="field">
+            <label for="join-site"><span aria-hidden="true">🏭</span> 사업장 코드</label>
+            <input id="join-site" type="text" inputmode="numeric" placeholder="담당자에게 받은 4자리">
+          </div>
+          <div class="field">
+            <label for="join-name"><span aria-hidden="true">🙋</span> 이름</label>
+            <input id="join-name" type="text" placeholder="공장에서 부르는 이름">
+          </div>
+          <div class="field">
+            <label for="join-lang"><span aria-hidden="true">🗣️</span> 쓰는 말</label>
+            <input id="join-lang" type="text" value="한국어" readonly>
+            <p class="field-hint">위에서 고른 말이 그대로 들어갑니다.</p>
+          </div>
+          <div class="field">
+            <label for="join-line"><span aria-hidden="true">⚙️</span> 일하는 공정</label>
+            <select id="join-line">
+              <option>프레스</option>
+              <option>사출</option>
+              <option>용접</option>
+              <option>도장</option>
+              <option>조립·포장</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="join-pin"><span aria-hidden="true">🔢</span> PIN 6자리 만들기</label>
+            <input id="join-pin" type="password" inputmode="numeric" maxlength="6" placeholder="● ● ● ● ● ●">
+          </div>
+
+          <button class="btn btn-primary" type="button">가입하고 시작하기</button>
+
+          <hr class="hr">
+          <p class="muted">
+            <b>외국인등록번호와 여권번호를 묻지 않습니다.</b>
+            사업장 안에서만 쓰는 익명 ID를 만들어 드립니다.
+            이 앱에는 그 번호를 넣을 칸 자체가 없습니다.
+          </p>
+        </section>
+
+        <!-- 3. 개인정보 미수집 고지 -------------------------------------- -->
+        <section class="card notice" aria-labelledby="notice-title">
+          <div class="head-row">
+            <h2 id="notice-title">이 앱이 하지 않는 일</h2>
+            <button class="btn-audio" type="button" aria-label="고지 내용 음성으로 듣기">🔊</button>
+          </div>
+          <ul>
+            <li>외국인등록번호·여권번호를 받지 않습니다</li>
+            <li>어디에 있는지, 몇 시에 왔는지 기록하지 않습니다</li>
+            <li>위험 신고는 익명입니다 — 누가 썼는지 회사가 볼 수 없습니다</li>
+            <li>교육 점수는 인사·평가 자료로 내보내지 않습니다</li>
+          </ul>
+        </section>
+
+      </div><!-- /scroll -->
+
+      <div class="foot">
+        <button class="btn btn-ghost" type="button">
+          <span aria-hidden="true">📱</span> 공용 태블릿으로 시작하기
+        </button>
+        <button class="btn btn-quiet" type="button">
+          <span aria-hidden="true">❓</span> 로그인이 안 될 때 — 담당자 부르기
+        </button>
+      </div>
+
+    </div><!-- /app -->
+  </div><!-- /phone -->
+
+  <div class="caption">
+    <b>근거</b>
+    <ul>
+      <li><b>화면.txt 1~3행</b> — 일반 사용자 › 시작화면 › 로그인/회원가입</li>
+      <li><b>PRD §8.2-1</b> — 언어는 최초 1회 선택 후 기억한다</li>
+      <li><b>PRD §9.2</b> — 외국인등록번호·여권번호 미수집, 사업장 내 익명 ID 사용</li>
+      <li><b>PRD §10</b> — 개인정보 미수집을 자기 언어로 첫 화면에서 고지 / 개인 기기를 강제하지 않고 공용 태블릿 경로를 함께 제공</li>
+      <li><b>SCREEN §4</b> — 터치 타깃 60×60px 이상, 음성 병행, 색만으로 구분 금지</li>
+      <li>제품 문구에 <b>“면책”</b> 표현을 쓰지 않는다 (PRD §10)</li>
+    </ul>
+  </div>
+</main>
+
+<script>
+  // 언어 선택 — 고른 말을 기억하고 회원가입 폼에 그대로 반영한다
+  var langButtons = document.querySelectorAll('.lang');
+  var joinLang = document.getElementById('join-lang');
+
+  langButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      langButtons.forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+      btn.setAttribute('aria-pressed', 'true');
+      joinLang.value = btn.dataset.native;
+    });
+  });
+
+  // 로그인 / 회원가입 탭 전환
+  var tabs = {
+    'tab-login': 'pane-login',
+    'tab-join': 'pane-join'
+  };
+
+  Object.keys(tabs).forEach(function (tabId) {
+    document.getElementById(tabId).addEventListener('click', function () {
+      Object.keys(tabs).forEach(function (id) {
+        var selected = id === tabId;
+        document.getElementById(id).setAttribute('aria-selected', String(selected));
+        document.getElementById(tabs[id]).hidden = !selected;
+      });
+    });
+  });
+
+  // 음성 재생 버튼 — 실제 재생 대신 눌린 상태만 보여 주는 목업
+  document.querySelectorAll('.btn-audio').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var on = btn.getAttribute('aria-pressed') === 'true';
+      btn.setAttribute('aria-pressed', String(!on));
+      btn.textContent = on ? '🔊' : '⏸';
+    });
+  });
+</script>
+
+</body>
+</html>

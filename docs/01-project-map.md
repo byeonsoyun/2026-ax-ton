@@ -74,7 +74,8 @@
 2026-ax-ton/
 ├── CLAUDE.md                Claude Code 가 자동으로 읽는 규칙
 ├── docs/                    개발 문서 (지금 이 폴더)
-│   └── devlog/              각자의 개발일지
+│   ├── devlog/              각자의 개발일지
+│   └── mockups/             옮겨 오면 되는 정적 화면 (기획 시안)
 ├── git-rules/GIT.md         팀 git 규칙 원본
 └── src/                     ★ 실제 코드. 여기만 고칩니다
     ├── index.html           로그인 — 여기서 역할이 갈린다
@@ -300,9 +301,12 @@ UI.formatDate(iso)
 | 제품 요구사항 원문 | `projects/campus-ax-ton/docs/PRD-safety.pdf` |
 | 화면 구성 원문 | `projects/campus-ax-ton/docs/SCREEN-safety.pdf` |
 | 2분 발표 대본 | `projects/campus-ax-ton/docs/PRESENTATION-safety.md` |
-| 정적 목업 (담당자 대시보드 · 문구 라이브러리 등) | `projects/campus-ax-ton/code/` |
-| 관리자 화면 설계 메모 | `projects/campus-ax-ton/code/ADMIN-SCREENS.md` |
+| **정적 목업 (옮겨 오면 되는 화면들)** | **`docs/mockups/`** |
+| 관리자 화면 설계 메모 | `docs/mockups/ADMIN-SCREENS.md` |
 | 팀 git 규칙 | `git-rules/GIT.md` |
 
-> `projects/` 폴더는 저장소 밖에 있습니다. 관리자에게 받으세요.
+> 위 세 개의 PDF·대본은 `projects/` 폴더에 있고 **저장소 밖입니다.** 필요하면 관리자에게 받으세요.
 > 없어도 개발에는 지장이 없습니다 — 필요한 내용은 각 파일의 주석과 이 문서에 옮겨 두었습니다.
+>
+> **목업은 `docs/mockups/` 에 복사해 두었습니다.** 클론하면 바로 받아집니다.
+> 새로 만들지 말고 그걸 옮겨 오세요 — 사용법은 [`mockups/README.md`](mockups/README.md) 에 있습니다.

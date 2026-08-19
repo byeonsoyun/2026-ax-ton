@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>12. 담당자 대시보드 (PC) — 안전교육 이해도 검증 플랫폼</title>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style-pc.css">
+<link rel="stylesheet" href="assets/style-admin.css">
+</head>
+<body class="pc">
+
+<div class="sheetnote">
+  <div class="wrap">
+    <span><b>화면 12. 담당자 대시보드 — PC</b> · SCREEN 기능6 (F-06)</span>
+    <span>모바일: <a href="12-admin-dashboard.html">12-admin-dashboard.html</a> · 이전: <a href="11-admin-start-pc.html">11. 시작</a></span>
+  </div>
+</div>
+
+<div class="desk">
+
+  <header class="topbar is-admin">
+    <div class="wrap">
+      <span class="logo">안전한 하루 · 관리자</span>
+      <div class="site">
+        <strong>대성정밀 · 41인 · 금속가공</strong>
+        <span>김현수 · 생산팀장 (안전 겸직)</span>
+      </div>
+      <span class="spacer"></span>
+      <span class="role-chip admin"><span aria-hidden="true">🛠</span> 담당자</span>
+      <div class="textsize" role="group" aria-label="글자 크기">
+        <button type="button" id="size-normal" aria-pressed="true">가</button>
+        <button type="button" id="size-large" aria-pressed="false" style="font-size:20px">가</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="layout">
+
+      <!-- 좌측 내비 --------------------------------------------------- -->
+      <nav class="nav" aria-label="주요 메뉴">
+        <button type="button" aria-current="page"><span class="ico" aria-hidden="true">📊</span>대시보드</button>
+        <button type="button"><span class="ico" aria-hidden="true">🏭</span>사업장 · 설비</button>
+        <button type="button"><span class="ico" aria-hidden="true">📝</span>교육 콘텐츠</button>
+        <button type="button"><span class="ico" aria-hidden="true">📄</span>교육 증빙</button>
+        <button type="button"><span class="ico" aria-hidden="true">📷</span>위험요소 신고</button>
+      </nav>
+
+      <!-- 본문 ------------------------------------------------------- -->
+      <main class="main">
+
+        <div class="ai-note off">
+          <span class="tag">AI 개입 없음</span>
+          <span>이 화면의 숫자는 기록을 그대로 센 값입니다. 집계와 통계 표시만 하며, 판단이나 추정이 섞이지 않습니다.</span>
+        </div>
+
+        <!-- 1. 이수 현황 -->
+        <section aria-labelledby="kpi-title">
+          <div class="sec-head">
+            <div>
+              <h2 id="kpi-title">2026 3분기 정기 안전교육</h2>
+              <p class="why">기한 2026-09-30 · 남은 날 47일</p>
+            </div>
+            <button class="btn-sm" type="button">회차 바꾸기</button>
+          </div>
+
+          <dl class="kpi-row" style="margin:0">
+            <div class="kpi">
+              <dt>교육 완료</dt>
+              <dd>9<small>/ 12명</small></dd>
+              <p class="hint">검증까지 통과한 인원</p>
+            </div>
+            <div class="kpi">
+              <dt>검증 미통과</dt>
+              <dd>2<small>명</small></dd>
+              <p class="hint">재교육 후 재검증 필요</p>
+            </div>
+            <div class="kpi alert">
+              <dt>미수강</dt>
+              <dd>1<small>명</small></dd>
+              <p class="hint">QR 재발송 필요</p>
+            </div>
+            <div class="kpi">
+              <dt>최초 통과율</dt>
+              <dd>75<small>%</small></dd>
+              <p class="hint">목표 70~85% 안</p>
+            </div>
+          </dl>
+        </section>
+
+        <!-- 2. 이해도 취약 항목 — 이 화면의 핵심 -->
+        <section class="card" aria-labelledby="weak-title">
+          <div class="sec-head">
+            <div>
+              <h2 id="weak-title">이해도 취약 항목 <span class="badge badge-neutral">언어별 · 항목별</span></h2>
+              <p class="why">
+                <b>이 목록은 노동자 평가가 아니라 콘텐츠 개선 신호입니다.</b>
+                정답률이 낮다는 것은 그 언어로 그 항목이 제대로 전달되지 않았다는 뜻이지,
+                그 사람이 부족하다는 뜻이 아닙니다.
+              </p>
+            </div>
+            <button class="btn-sm go" type="button">취약 항목 콘텐츠 다시 만들기</button>
+          </div>
+
+          <div class="bar-list">
+            <div class="bar-item" data-level="low">
+              <div class="bar-head">
+                <span class="what">화재 대응 <em>인도네시아어 · 대상 3명</em></span>
+                <span class="num">40% 낮음</span>
+              </div>
+              <div class="bar-track"><div class="bar-fill" style="width:40%"></div></div>
+            </div>
+            <div class="bar-item" data-level="low">
+              <div class="bar-head">
+                <span class="what">협착 위험 지점 찾기 <em>크메르어 · 대상 4명</em></span>
+                <span class="num">52% 낮음</span>
+              </div>
+              <div class="bar-track"><div class="bar-fill" style="width:52%"></div></div>
+            </div>
+            <div class="bar-item" data-level="mid">
+              <div class="bar-head">
+                <span class="what">보호구 매칭 <em>네팔어 · 대상 2명</em></span>
+                <span class="num">68% 보통</span>
+              </div>
+              <div class="bar-track"><div class="bar-fill" style="width:68%"></div></div>
+            </div>
+            <div class="bar-item" data-level="mid">
+              <div class="bar-head">
+                <span class="what">잔류 압력 <em>크메르어 · 대상 4명</em></span>
+                <span class="num">74% 보통</span>
+              </div>
+              <div class="bar-track"><div class="bar-fill" style="width:74%"></div></div>
+            </div>
+            <div class="bar-item" data-level="ok">
+              <div class="bar-head">
+                <span class="what">비상정지 위치 <em>베트남어 · 대상 3명</em></span>
+                <span class="num">91% 양호</span>
+              </div>
+              <div class="bar-track"><div class="bar-fill" style="width:91%"></div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. 조치 대상 -->
+        <section aria-labelledby="todo-title">
+          <div class="sec-head">
+            <div>
+              <h2 id="todo-title">조치 대상</h2>
+              <p class="why">미통과는 노동자의 실패가 아니라 교육의 실패로 기록됩니다.</p>
+            </div>
+          </div>
+
+          <div class="tablewrap">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>익명 ID</th>
+                  <th>공정</th>
+                  <th>언어</th>
+                  <th>상태</th>
+                  <th>막힌 항목</th>
+                  <th>조치</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>W-4821-07</td>
+                  <td>프레스</td>
+                  <td>크메르어</td>
+                  <td><span class="badge badge-stop"><span aria-hidden="true">✕</span> 검증 미통과</span></td>
+                  <td>협착 위험 지점 찾기<span class="sub">2회 시도</span></td>
+                  <td><button class="btn-sm go" type="button">재교육 지시</button></td>
+                </tr>
+                <tr>
+                  <td>W-4821-11</td>
+                  <td>도장</td>
+                  <td>인도네시아어</td>
+                  <td><span class="badge badge-stop"><span aria-hidden="true">✕</span> 검증 미통과</span></td>
+                  <td>화재 대응<span class="sub">1회 시도</span></td>
+                  <td><button class="btn-sm go" type="button">재교육 지시</button></td>
+                </tr>
+                <tr>
+                  <td>W-4821-03</td>
+                  <td>조립</td>
+                  <td>네팔어</td>
+                  <td><span class="badge badge-wait"><span aria-hidden="true">●</span> 미수강</span></td>
+                  <td>—</td>
+                  <td><button class="btn-sm" type="button">QR 다시 보내기</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="height:10px"></div>
+          <p class="muted">
+            개인별 점수는 교육 담당자만 볼 수 있고,
+            <b>인사·평가 목적 내보내기는 제공하지 않습니다.</b>
+          </p>
+        </section>
+
+        <!-- 4. 교육 증빙 -->
+        <section class="card">
+          <div class="sec-head">
+            <div>
+              <h2>교육 증빙 생성</h2>
+              <p class="why">
+                수강 이력과 검증 결과, 콘텐츠 스냅샷과 전자 서명, 무결성 해시를 그대로 문서로 만듭니다.
+                <b>생성된 기록은 수정할 수 없고</b>, 미이수자와 이해도 미달자를 문서에서 숨기는 경로는 없습니다.
+              </p>
+            </div>
+            <button class="btn-sm" type="button">교육일지 PDF 만들기 · 준비 중</button>
+          </div>
+        </section>
+
+      </main>
+
+      <!-- 우측: 신고 처리 + 다음 교육 기한 ---------------------------- -->
+      <aside class="aside" aria-label="신고 처리와 교육 기한">
+
+        <section class="card">
+          <div class="aside-head">
+            <h2>위험요소 신고</h2>
+            <span class="badge badge-wait"><span aria-hidden="true">●</span> 미처리 2</span>
+          </div>
+          <p class="why" style="margin:6px 0 12px">모든 신고는 익명입니다. 누가 올렸는지 이 화면에서 알 수 없습니다.</p>
+
+          <div class="queue">
+            <article class="queue-item" data-urgent="yes">
+              <div class="queue-top">
+                <strong>2호 프레스 안전덮개 고정 불량</strong>
+                <span class="badge badge-stop"><span aria-hidden="true">!</span> 즉시</span>
+              </div>
+              <p class="meta">프레스 · 끼임 · 2026-08-09 접수</p>
+              <p class="body">음성 메모(크메르어) 번역: “덮개가 흔들려서 손이 들어갈 틈이 생겼습니다.”</p>
+              <div class="btn-row">
+                <button class="btn-sm go" type="button">조치 등록</button>
+                <button class="btn-sm" type="button">사진 보기</button>
+              </div>
+            </article>
+
+            <article class="queue-item">
+              <div class="queue-top">
+                <strong>도장실 환기팬 소음·진동</strong>
+                <span class="badge badge-wait"><span aria-hidden="true">●</span> 접수됨</span>
+              </div>
+              <p class="meta">도장 · 설비 이상 · 2026-08-13 접수</p>
+              <div class="btn-row">
+                <button class="btn-sm go" type="button">조치 등록</button>
+                <button class="btn-sm" type="button">사진 보기</button>
+              </div>
+            </article>
+
+            <article class="queue-item">
+              <div class="queue-top">
+                <strong>지게차 통로 적재물</strong>
+                <span class="badge badge-ok"><span aria-hidden="true">✓</span> 조치 완료</span>
+              </div>
+              <p class="meta">물류 · 충돌 · 2026-08-02 접수 · 08-04 조치</p>
+            </article>
+          </div>
+
+          <hr class="hr">
+          <p class="muted">
+            조치 결과를 등록하면 <b>신고자의 언어로 번역돼 회신</b>됩니다.
+            익명성이 깨지면 신고가 멈추고, 재해 감소의 선행지표도 함께 사라집니다.
+          </p>
+        </section>
+
+        <section class="card">
+          <h2 class="card-title" style="font-size:1em">다음 교육 기한</h2>
+          <div class="row">
+            <div class="row-main">
+              <strong>정기 안전교육 (분기)</strong>
+              <span>2026-09-30</span>
+            </div>
+            <span class="badge badge-wait"><span aria-hidden="true">●</span> D-47</span>
+          </div>
+          <div class="row">
+            <div class="row-main">
+              <strong>채용 시 교육 · 신규 2명</strong>
+              <span>입사일로부터 기한 내</span>
+            </div>
+            <span class="badge badge-stop"><span aria-hidden="true">!</span> D-6</span>
+          </div>
+          <div class="row">
+            <div class="row-main">
+              <strong>작업내용 변경 시 교육 · 사출</strong>
+              <span>설비 교체 예정</span>
+            </div>
+            <span class="badge badge-neutral"><span aria-hidden="true">○</span> 미정</span>
+          </div>
+          <hr class="hr">
+          <p class="muted">
+            교육 유형과 시수는 법령 원문을 근거로 데이터화한 값이며,
+            <b>구현 전 최신 법령 재확인이 필요합니다.</b>
+          </p>
+        </section>
+
+      </aside>
+    </div><!-- /layout -->
+
+    <div class="caption">
+      <b>근거</b>
+      <ul>
+        <li><b>SCREEN 기능6 (F-06)</b> — 홈은 이수 현황 / 이해도 취약 항목 / 신고 처리 현황 / 다음 교육 기한 네 덩어리다</li>
+        <li><b>SCREEN 기능6 해설</b> — <b>“핵심 화면은 이수율이 아니라 언어별·항목별 취약점”</b>. 이수율은 작은 타일로 두고 취약 항목을 본문 가장 크게 폈다</li>
+        <li><b>SCREEN 기능6 해설</b> — “인도네시아어 사용자의 화재 대응 정답률 40%”는 노동자 평가가 아니라 콘텐츠 개선 신호. 그 문장을 화면 안에 그대로 적었다</li>
+        <li><b>SCREEN 기능6</b> — AI 개입 없음(집계와 통계 표시). 화면 맨 위에 명시</li>
+        <li><b>PRD §2.2</b> — 최초 통과율 목표 70~85%. 100%면 문항이 너무 쉬운 것이므로 지표 실패로 본다</li>
+        <li><b>SCREEN 기능4</b> — 미통과는 노동자의 실패가 아니라 교육의 실패로 기록한다</li>
+        <li><b>SCREEN 기능8 / PRD §9.2</b> — 신고자 식별 불가, 조치 결과는 신고자 언어로 회신 번역</li>
+        <li><b>SCREEN 기능5</b> — 기록은 생성 후 수정 불가, 미이수자를 문서에서 숨기는 경로 없음</li>
+        <li><b>PRD 전제 조건</b> — 법령 조항·교육 시수는 구현 전 최신 법령 재확인이 필요하다</li>
+        <li><b>PC 적응 · 터치 타깃</b> — SCREEN §4의 60×60px는 장갑 낀 현장 조작 전제라, 표 안의 보조 조작만 40px로 낮추고 주요 버튼은 60px를 유지했다</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 글자 크기 조절
+  var desk = document.querySelector('.desk');
+  var sizeNormal = document.getElementById('size-normal');
+  var sizeLarge = document.getElementById('size-large');
+  function setSize(large) {
+    desk.style.fontSize = large ? '19px' : '16px';
+    sizeNormal.setAttribute('aria-pressed', String(!large));
+    sizeLarge.setAttribute('aria-pressed', String(large));
+  }
+  sizeNormal.addEventListener('click', function () { setSize(false); });
+  sizeLarge.addEventListener('click', function () { setSize(true); });
+</script>
+
+</body>
+</html>

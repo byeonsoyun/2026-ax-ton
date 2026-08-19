@@ -2,7 +2,29 @@
 
 **내 포지션 블록을 통째로 복사해서 Claude Code 에 붙여넣고 엔터를 누르세요.**
 
-내 포지션이 뭔지 모르겠으면 → [02-positions.md](02-positions.md) 의 배정표를 보세요.
+---
+
+## 내 포지션이 아직 안 정해졌다면
+
+**아래 블록을 대신 쓰세요.** Claude 가 남아 있는 포지션을 알아서 알려 줍니다.
+
+```
+나는 이 프로젝트 팀원인데 아직 어느 포지션인지 안 정해졌어.
+나는 코드와 깃허브를 잘 몰라. 어려운 말은 한 번 풀어서 설명해 줘.
+
+먼저 이것부터 해 줘.
+1. git branch --show-current 로 내 브랜치를 확인해 줘
+2. docs/devlog/ 안의 파일들을 읽어서 이미 누가 어느 포지션을 가져갔는지 확인해 줘
+3. docs/02-positions.md 를 읽고, 아직 남아 있는 포지션이 각각 무슨 화면을 만드는지
+   한 줄씩 쉽게 설명해 줘
+4. 내가 고르면 docs/devlog/<내브랜치이름>.md 를 만들고 거기에 포지션을 기록해 줘
+   (다음부터는 안 물어봐도 되게)
+
+그다음 docs/03-prompts.md 에서 내 포지션 블록을 읽고 그대로 따라 줘.
+```
+
+고르고 나면 아래에서 내 포지션 블록을 복사해 두시면 됩니다.
+(안 하셔도 됩니다 — Claude 가 위 4번에서 기록해 두면 다음부터 알아서 압니다.)
 
 ---
 
@@ -205,9 +227,9 @@ localStorage 를 직접 부르지 말고 반드시 Store 를 거쳐.
 - "개인별 점수의 인사·평가 목적 내보내기는 제공하지 않습니다"
 - 이 화면은 AI 가 개입하지 않아. 기록을 그대로 센 값만 보여 줘
 
-projects/campus-ax-ton/code/12-admin-dashboard.html 에 정적 목업이 있어.
+docs/mockups/12-admin-dashboard.html 에 정적 목업이 있어.
 새로 만들지 말고 그걸 옮겨 온 뒤 Store 의 실제 데이터로 바꾸는 게 훨씬 빨라.
-그 파일이 없으면 나한테 말해 줘.
+옮길 때 뭘 버리고 뭘 가져오는지는 docs/mockups/README.md 에 있어.
 
 [content — 기능2]
 설비 선택 → 언어 선택 → 문구 고르기 → 승인·QR 발급 → Store.courses 에 저장
@@ -298,8 +320,8 @@ PDF 는 브라우저 인쇄로 충분해. window.print() + @media print CSS 를 
 검수 상태 3종은 Store.PHRASE_STATUS 에 있어 (reviewed / waiting / stopped).
 배지는 UI.phraseBadge(status) 로 만들어.
 
-projects/campus-ax-ton/code/13-operator-library.html 에 정적 목업이 있어.
-그 파일이 없으면 나한테 말해 줘.
+docs/mockups/13-operator-library.html 에 정적 목업이 있어.
+옮기는 법은 docs/mockups/README.md 를 봐.
 
 [그 외 지켜야 할 것]
 - 외부 요청 0건. CDN·웹폰트·외부 이미지·npm 패키지 금지. 픽토그램은 이모지

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>11. 시작 화면 (담당자·운영자) — 안전교육 이해도 검증 플랫폼</title>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style-admin.css">
+<style>
+  .brand {
+    padding: 22px 16px 18px;
+    background: var(--admin-ink);
+    color: #fff;
+  }
+  .brand h1 { margin: 0; font-size: 1.35em; font-weight: 800; letter-spacing: -.02em; }
+  .brand p { margin: 8px 0 0; font-size: .85em; line-height: 1.6; color: #b6c0cb; }
+
+  /* 역할 선택 — 로그인 뒤 도착하는 화면이 달라진다 */
+  .roles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .role {
+    min-height: var(--tap-min);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 2px;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    color: var(--ink-2);
+  }
+  .role .t { font-size: .92em; font-weight: 800; }
+  .role .d { font-size: .72em; color: var(--ink-3); }
+  .role[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); }
+  .role[aria-pressed="true"] .t::after { content: " ✓"; }
+
+  .tabs {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+    background: #e5e9ee; border-radius: 14px; padding: 5px;
+  }
+  .tab {
+    min-height: var(--tap-min); border: 0; border-radius: 10px; background: transparent;
+    font-family: inherit; font-size: .95em; font-weight: 700; color: var(--ink-2); cursor: pointer;
+  }
+  .tab[aria-selected="true"] { background: var(--surface); color: var(--brand); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  .pane[hidden] { display: none; }
+
+  .headline { background: #f0f4f8; border-color: #ccd8e4; }
+  .headline b { color: var(--brand); }
+  .foot { padding: 4px 16px 20px; display: flex; flex-direction: column; gap: 8px; }
+</style>
+</head>
+<body>
+
+<main class="stage">
+  <h2 class="stage-title">
+    화면 11. 시작 화면 — 담당자 · 운영자
+    <small>로그인 / 회원가입 · SCREEN 기능1·2·5·6(담당자) / 기능9(운영자) 진입점</small>
+  </h2>
+
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span>▮▮▮ ᯤ 🔋</span></div>
+
+    <div class="app">
+
+      <header class="brand">
+        <h1>안전한 하루 · 관리자</h1>
+        <p>교육 증빙 작성에 쓰던 <b style="color:#fff">2시간을 5분으로</b> 줄이는 것이<br>이 시스템을 쓰는 현실적인 이유입니다.</p>
+      </header>
+
+      <div class="scroll">
+
+        <!-- 1. 역할 선택 --------------------------------------------- -->
+        <section class="card" aria-labelledby="role-title">
+          <h2 class="card-title" id="role-title">어떤 일로 들어오셨나요</h2>
+          <div class="roles" role="group" aria-labelledby="role-title">
+            <button class="role" type="button" id="role-admin" aria-pressed="true">
+              <span class="t">사업장 담당자</span>
+              <span class="d">교육 실시 · 증빙 · 신고 조치</span>
+            </button>
+            <button class="role" type="button" id="role-operator" aria-pressed="false">
+              <span class="t">시스템 운영자</span>
+              <span class="d">안전 문구 검수 · 배포</span>
+            </button>
+          </div>
+          <p class="field-hint" id="role-dest">로그인하면 <b>담당자 대시보드</b>로 들어갑니다.</p>
+        </section>
+
+        <!-- 2. 로그인 / 회원가입 -------------------------------------- -->
+        <div class="tabs" role="tablist" aria-label="로그인 또는 회원가입">
+          <button class="tab" type="button" role="tab" id="tab-login"
+                  aria-controls="pane-login" aria-selected="true">로그인</button>
+          <button class="tab" type="button" role="tab" id="tab-join"
+                  aria-controls="pane-join" aria-selected="false">회원가입</button>
+        </div>
+
+        <section class="card pane" id="pane-login" role="tabpanel" aria-labelledby="tab-login">
+          <div class="field">
+            <label for="login-email">업무용 이메일</label>
+            <input id="login-email" type="email" placeholder="name@company.co.kr">
+          </div>
+          <div class="field">
+            <label for="login-pw">비밀번호</label>
+            <input id="login-pw" type="password" placeholder="••••••••">
+          </div>
+          <button class="btn btn-primary" type="button">로그인</button>
+          <div style="height:10px"></div>
+          <button class="btn btn-quiet" type="button">비밀번호 재설정</button>
+
+          <p class="field-hint" id="op-2fa" hidden>
+            <b>운영자 계정은 2단계 인증을 거칩니다.</b>
+            문구 라이브러리는 모든 안전 지시의 근거이므로 계정 하나가 뚫리면 전 사업장에 영향이 갑니다.
+          </p>
+        </section>
+
+        <section class="card pane" id="pane-join" role="tabpanel" aria-labelledby="tab-join" hidden>
+          <div class="field">
+            <label for="join-name">이름</label>
+            <input id="join-name" type="text" placeholder="담당자 이름">
+          </div>
+          <div class="field">
+            <label for="join-org">회사 · 기관명</label>
+            <input id="join-org" type="text" placeholder="예) 대성정밀">
+          </div>
+          <div class="field">
+            <label for="join-role">직책</label>
+            <select id="join-role">
+              <option>안전 담당자 (겸직)</option>
+              <option>현장 관리자 · 생산팀장</option>
+              <option>사업주 · 대표</option>
+              <option>시스템 운영자 (내부)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="join-size">사업장 규모</label>
+            <select id="join-size">
+              <option>10인 미만</option>
+              <option selected>10~49인</option>
+              <option>50인 이상</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="join-email">업무용 이메일</label>
+            <input id="join-email" type="email" placeholder="name@company.co.kr">
+          </div>
+          <div class="field">
+            <label for="join-pw">비밀번호</label>
+            <input id="join-pw" type="password" placeholder="••••••••">
+          </div>
+          <button class="btn btn-primary" type="button">가입 신청</button>
+
+          <hr class="hr">
+          <p class="muted">
+            가입 후 <b>사업장 · 공정 · 설비 · 노동자 언어 등록</b>을 한 번 마치면
+            이후 모든 교육이 그 구성을 기준으로 만들어집니다.
+            여기서 넣지 않은 언어는 어떤 화면에서도 제공되지 않습니다.
+          </p>
+        </section>
+
+        <!-- 3. 이 시스템의 범위 고지 ---------------------------------- -->
+        <section class="card headline">
+          <h2 class="card-title">이 시스템이 하는 일과 하지 않는 일</h2>
+          <p class="muted">
+            <b>합니다</b> — 교육 실시를 돕고, 무엇을 어느 언어로 얼마나 이해했는지 기록해
+            감독관에게 낼 교육일지를 자동으로 만듭니다.
+          </p>
+          <div style="height:8px"></div>
+          <p class="muted">
+            <b>하지 않습니다</b> — 법정 안전교육의 공식 인정 기관을 대체하지 않습니다.
+            노동자의 위치·근태를 기록하지 않고, 이해도 점수를 인사·평가 목적으로 내보내지 않습니다.
+          </p>
+        </section>
+
+      </div><!-- /scroll -->
+
+      <div class="foot">
+        <button class="btn btn-quiet" type="button">
+          <span aria-hidden="true">🙋</span> 노동자용 화면으로 가기
+        </button>
+      </div>
+
+    </div><!-- /app -->
+  </div><!-- /phone -->
+
+  <div class="caption">
+    <b>근거</b>
+    <ul>
+      <li><b>SCREEN 2. 기능 상세</b> — 담당자는 기능1·2·5·6, 운영자는 기능9. 로그인 뒤 도착 화면이 달라 역할을 먼저 고른다</li>
+      <li><b>PRD §3.2 페르소나 C</b> — 40인 공장 생산팀장이 안전 업무를 겸직한다. 직책 선택지에 “겸직”을 그대로 둔다</li>
+      <li><b>PRD §2.2</b> — 증빙 문서 작성 2시간 → 5분. 도입의 현실적 유인이라 첫 화면에 내건다</li>
+      <li><b>PRD §2.3 비목표</b> — 공식 인정 기관을 대체하지 않고 교육 실시를 보조·기록한다</li>
+      <li><b>PRD §9.2 · §10</b> — 위치·근태 미기록, 점수의 인사·평가 내보내기 없음을 담당자에게도 먼저 밝힌다</li>
+      <li><b>SCREEN 기능9</b> — 문구 라이브러리는 “제품 신뢰의 단일 최대 요인”이라 운영자 로그인에 2단계 인증을 붙였다</li>
+      <li><b>SCREEN 기능1</b> — 등록되지 않은 언어는 이후 어떤 화면에서도 제공되지 않는다는 경고를 가입 단계에 둔다</li>
+      <li>제품 문구에 <b>“면책”</b> 표현을 쓰지 않는다 (PRD §10)</li>
+    </ul>
+  </div>
+</main>
+
+<script>
+  // 역할 선택 — 로그인 뒤 도착 화면과 운영자 전용 안내가 바뀐다
+  var roleAdmin = document.getElementById('role-admin');
+  var roleOperator = document.getElementById('role-operator');
+  var dest = document.getElementById('role-dest');
+  var twofa = document.getElementById('op-2fa');
+
+  function pickRole(isOperator) {
+    roleAdmin.setAttribute('aria-pressed', String(!isOperator));
+    roleOperator.setAttribute('aria-pressed', String(isOperator));
+    dest.innerHTML = isOperator
+      ? '로그인하면 <b>안전 문구 라이브러리</b>로 들어갑니다.'
+      : '로그인하면 <b>담당자 대시보드</b>로 들어갑니다.';
+    twofa.hidden = !isOperator;
+  }
+  roleAdmin.addEventListener('click', function () { pickRole(false); });
+  roleOperator.addEventListener('click', function () { pickRole(true); });
+
+  // 로그인 / 회원가입 탭 전환
+  var tabs = { 'tab-login': 'pane-login', 'tab-join': 'pane-join' };
+  Object.keys(tabs).forEach(function (tabId) {
+    document.getElementById(tabId).addEventListener('click', function () {
+      Object.keys(tabs).forEach(function (id) {
+        var selected = id === tabId;
+        document.getElementById(id).setAttribute('aria-selected', String(selected));
+        document.getElementById(tabs[id]).hidden = !selected;
+      });
+    });
+  });
+</script>
+
+</body>
+</html>

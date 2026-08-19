@@ -12,14 +12,26 @@
 | 포지션 | 담당자 | 브랜치 | 맡는 화면 |
 |---|---|---|---|
 | **P1** 관리 + 노동자 핵심 | 변소윤 | `feature/byeonsoyun` | `learn`(기능3) · `quiz`(기능4) + 뼈대·`setup`(완료) + 전체 리뷰·머지 |
-| **P2** 노동자 생활 화면 | *(미정)* | `feature/` | `home` · `report`(기능8) · `talk`(기능7) · `my` |
-| **P3** 담당자 화면 | *(미정)* | `feature/` | `dashboard`(기능6) · `content`(기능2) |
-| **P4** 증빙과 검수 | *(미정)* | `feature/` | `proof`(기능5) · `library`(기능9) |
+| **P2** 노동자 생활 화면 | *(미정)* | | `home` · `report`(기능8) · `talk`(기능7) · `my` |
+| **P3** 담당자 화면 | *(미정)* | | `dashboard`(기능6) · `content`(기능2) |
+| **P4** 증빙과 검수 | *(미정)* | | `proof`(기능5) · `library`(기능9) |
 
 남은 브랜치는 `feature/classyb` `feature/smilesy` `feature/yesool` 셋입니다.
-정해지면 위 표의 빈칸을 채우세요.
 
 **트랙은 2대 2입니다.** P1·P2 가 노동자 화면(`src/worker/`), P3·P4 가 관리자 화면(`src/admin/`).
+
+### 아직 내 포지션이 안 정해졌다면
+
+**표가 비어 있어도 그냥 시작하시면 됩니다.**
+
+Claude Code 를 열면 브랜치를 확인하고, 포지션이 기록돼 있지 않으면
+**아직 아무도 안 가져간 포지션만 골라서 여쭤봅니다.**
+고르시면 `docs/devlog/<내브랜치이름>.md` 에 기록해 두고 다음부터는 묻지 않습니다.
+
+누가 무엇을 가져갔는지는 `docs/devlog/` 안의 파일들을 보면 됩니다.
+각 파일 맨 위에 `포지션:` 이 적혀 있습니다.
+
+> 팀에서 미리 정하셨다면 위 표의 빈칸을 채워 두시는 편이 확실합니다.
 
 ---
 
@@ -229,8 +241,9 @@
 | 5 | 다음 교육 기한 | |
 | 6 | 교육 증빙 생성 진입 | |
 
-> `projects/campus-ax-ton/code/12-admin-dashboard.html` 에 **정적 목업이 있습니다.**
+> **`docs/mockups/12-admin-dashboard.html` 에 정적 목업이 있습니다.**
 > 새로 만들지 말고 그걸 옮겨 온 뒤 `Store` 의 실제 데이터로 바꾸세요. 훨씬 빠릅니다.
+> 옮길 때 무엇을 버리고 무엇을 가져오는지는 [`mockups/README.md`](mockups/README.md) 에 있습니다.
 
 화면 안에 반드시 적을 것
 
@@ -313,7 +326,8 @@
 검수 상태 3종은 `Store.PHRASE_STATUS` 에 있습니다 — `reviewed` / `waiting` / `stopped`.
 배지는 `UI.phraseBadge(status)` 로 만듭니다.
 
-> `projects/campus-ax-ton/code/13-operator-library.html` 에 **정적 목업이 있습니다.**
+> **`docs/mockups/13-operator-library.html` 에 정적 목업이 있습니다.**
+> 옮기는 법은 [`mockups/README.md`](mockups/README.md) 를 보세요.
 
 **완료 기준** 오역 신고를 접수하면 그 문구가 즉시 `stopped` 가 되고,
 P3 의 `content` 화면 선택지에서 사라진다.

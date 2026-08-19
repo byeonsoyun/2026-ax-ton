@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>13. 안전 문구 라이브러리 (운영자) — 안전교육 이해도 검증 플랫폼</title>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style-admin.css">
+<style>
+  .row {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--line);
+  }
+  .row:last-of-type { border-bottom: 0; }
+  .row-main { min-width: 0; }
+  .row-main strong { display: block; font-size: .9em; font-weight: 700; line-height: 1.45; }
+  .row-main .meta { margin: 4px 0 6px; font-size: .74em; color: var(--ink-3); }
+</style>
+</head>
+<body>
+
+<main class="stage">
+  <h2 class="stage-title">
+    화면 13. 안전 문구 라이브러리 (모바일)
+    <small>SCREEN 기능9 (F-08, 내부 운영) · 등록 → 검수 요청 → 승인 → 배포 / 오역 신고 처리</small>
+  </h2>
+
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span>▮▮▮ ᯤ 🔋</span></div>
+
+    <div class="app">
+
+      <header class="adminbar">
+        <div class="who">
+          <strong>안전 문구 라이브러리</strong>
+          <span>박지연 · 내부 운영</span>
+        </div>
+        <span class="role-chip operator"><span aria-hidden="true">📚</span> 운영자</span>
+      </header>
+
+      <div class="scroll">
+
+        <!-- AI 역할 고지 — 기능9는 AI가 개입하되 판정은 사람이 한다 -->
+        <div class="ai-note on">
+          <span class="tag">AI 여기까지</span>
+          <span>
+            초벌 번역, 역번역 대조로 의미 왜곡 <b>후보 표시</b>, 음성 합성.
+            <b>검수 승인은 사람이 합니다.</b>
+          </span>
+        </div>
+
+        <!-- 1. 상태 요약 ---------------------------------------------- -->
+        <dl class="kpi-row" style="margin:0">
+          <div class="kpi">
+            <dt>검수 완료</dt>
+            <dd>172<small>/ 200</small></dd>
+            <p class="hint">안전 지시로 쓸 수 있는 문구</p>
+          </div>
+          <div class="kpi">
+            <dt>검수 대기</dt>
+            <dd>21<small>건</small></dd>
+            <p class="hint">화면에 구분 표시됨</p>
+          </div>
+          <div class="kpi alert">
+            <dt>오역 신고</dt>
+            <dd>3<small>건</small></dd>
+            <p class="hint">접수 즉시 사용 중지</p>
+          </div>
+          <div class="kpi">
+            <dt>사용 중지</dt>
+            <dd>7<small>건</small></dd>
+            <p class="hint">재검수 대기</p>
+          </div>
+        </dl>
+
+        <!-- 2. 오역 신고 큐 — 가장 먼저 처리한다 --------------------- -->
+        <section class="card" aria-labelledby="flag-title">
+          <div class="sec-head">
+            <div>
+              <h2 id="flag-title">오역 신고</h2>
+              <p class="why">
+                <b>접수되는 순간 해당 문구는 사용 중지됩니다.</b>
+                안전 지시의 오역은 그대로 사고가 되기 때문에, 확인 뒤 내리는 순서를 쓰지 않습니다.
+              </p>
+            </div>
+          </div>
+
+          <div class="queue">
+            <article class="queue-item" data-urgent="yes">
+              <div class="queue-top">
+                <strong>“잔류 압력에 주의하십시오”</strong>
+                <span class="badge badge-stop"><span aria-hidden="true">■</span> 사용 중지됨</span>
+              </div>
+              <p class="meta">크메르어 · 노동자 신고 · 2026-08-13 · 기능7에서 노출 중이었음</p>
+              <p class="body">신고 내용: “압력이 아니라 ‘무게’로 번역돼 있습니다.”</p>
+              <div class="btn-row">
+                <button class="btn-sm go" type="button">재검수 배정</button>
+                <button class="btn-sm" type="button">원문 보기</button>
+              </div>
+            </article>
+
+            <article class="queue-item" data-urgent="yes">
+              <div class="queue-top">
+                <strong>“전원을 차단한 뒤 점검하십시오”</strong>
+                <span class="badge badge-stop"><span aria-hidden="true">■</span> 사용 중지됨</span>
+              </div>
+              <p class="meta">미얀마어 · 담당자 신고 · 2026-08-12</p>
+              <div class="btn-row">
+                <button class="btn-sm go" type="button">재검수 배정</button>
+                <button class="btn-sm" type="button">원문 보기</button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- 3. 검수 판정 — 역번역 대조 --------------------------------- -->
+        <section class="card" aria-labelledby="review-title">
+          <div class="sec-head">
+            <div>
+              <h2 id="review-title">검수 판정</h2>
+              <p class="why">AI가 표시한 의미 왜곡 후보를 원어민 검수자가 확인하고 승인 여부를 정합니다.</p>
+            </div>
+            <span class="badge badge-wait"><span aria-hidden="true">●</span> 검수 대기</span>
+          </div>
+
+          <p class="muted" style="font-size:.78em;margin-bottom:8px">문구 P-118 · 네팔어 · 검수자 라젠드라</p>
+
+          <div class="diff">
+            <div class="diff-cell">
+              <h4>원문 (한국어)</h4>
+              <p>프레스가 멈춰도 손을 넣지 마십시오.</p>
+            </div>
+            <div class="diff-cell flag">
+              <h4>역번역 (네팔어 → 한국어)</h4>
+              <p>프레스가 <mark>꺼지면</mark> 손을 넣<mark>어도 됩니다</mark>.</p>
+            </div>
+          </div>
+
+          <div class="ai-note off" style="margin-top:10px">
+            <span class="tag">대조 결과</span>
+            <span>부정 표현이 뒤집혔을 가능성 — 사람 확인이 필요합니다.</span>
+          </div>
+
+          <div style="height:12px"></div>
+          <div class="btn-row">
+            <button class="btn-sm danger" type="button">반려 · 재번역</button>
+            <button class="btn-sm" type="button">음성 다시 듣기</button>
+            <button class="btn-sm go" type="button">검수 승인</button>
+          </div>
+        </section>
+
+        <!-- 4. 문구 목록 ---------------------------------------------- -->
+        <section class="card" aria-labelledby="list-title">
+          <div class="sec-head">
+            <div>
+              <h2 id="list-title">문구 목록</h2>
+              <p class="why">검수 완료가 아닌 문구는 어떤 화면에서도 안전 지시로 노출되지 않습니다.</p>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="row-main">
+              <strong>P-101 · 프레스가 멈춰도 손을 넣지 마십시오</strong>
+              <p class="meta">픽토그램 ✋ · 음성 5개 언어 · 기능2·7에서 사용</p>
+              <div class="chips">
+                <span class="badge badge-ok"><span aria-hidden="true">✓</span> 크메르어</span>
+                <span class="badge badge-ok"><span aria-hidden="true">✓</span> 베트남어</span>
+                <span class="badge badge-ok"><span aria-hidden="true">✓</span> 네팔어</span>
+                <span class="badge badge-wait"><span aria-hidden="true">⚠</span> 미얀마어</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="row-main">
+              <strong>P-118 · 잔류 압력에 주의하십시오</strong>
+              <p class="meta">픽토그램 ⚠ · 음성 4개 언어 · 오역 신고 1건</p>
+              <div class="chips">
+                <span class="badge badge-stop"><span aria-hidden="true">■</span> 크메르어 중지</span>
+                <span class="badge badge-ok"><span aria-hidden="true">✓</span> 베트남어</span>
+                <span class="badge badge-wait"><span aria-hidden="true">⚠</span> 네팔어</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="row-main">
+              <strong>P-140 · 이 구역에서는 보호안경을 착용하십시오</strong>
+              <p class="meta">픽토그램 🥽 · 음성 5개 언어</p>
+              <div class="chips">
+                <span class="badge badge-ok"><span aria-hidden="true">✓</span> 5개 언어 모두</span>
+              </div>
+            </div>
+          </div>
+
+          <hr class="hr">
+          <div class="btn-row">
+            <button class="btn-sm" type="button">＋ 문구 등록</button>
+            <button class="btn-sm" type="button">검수 요청 보내기</button>
+            <button class="btn-sm go" type="button">배포</button>
+          </div>
+        </section>
+
+        <!-- 5. 이 화면의 무게 ----------------------------------------- -->
+        <section class="card">
+          <h2 class="card-title">이 화면이 왜 중요한가</h2>
+          <p class="muted">
+            노동자와 담당자 어느 쪽 화면에도 보이지 않지만,
+            <b>기능2의 교육 콘텐츠와 기능7의 현장 지시가 쓰는 모든 문장의 근거</b>가 여기서 나옵니다.
+            여기서 통과한 문구만 안전 지시가 되므로, 이 화면의 판정 하나가 전 사업장에 그대로 전달됩니다.
+          </p>
+        </section>
+
+      </div><!-- /scroll -->
+
+      <nav class="tabbar" aria-label="하단 메뉴">
+        <button type="button" aria-current="page"><span class="ico" aria-hidden="true">📚</span>문구</button>
+        <button type="button"><span class="ico" aria-hidden="true">🚩</span>오역 신고</button>
+        <button type="button"><span class="ico" aria-hidden="true">🔍</span>검수</button>
+        <button type="button"><span class="ico" aria-hidden="true">🔊</span>음성</button>
+        <button type="button"><span class="ico" aria-hidden="true">📦</span>배포</button>
+      </nav>
+
+    </div><!-- /app -->
+  </div><!-- /phone -->
+
+  <div class="caption">
+    <b>근거</b>
+    <ul>
+      <li><b>SCREEN 기능9 (F-08)</b> — 문구 목록 → 언어별 번역 등록 → 검수 요청 → 검수 승인 → 배포 / 오역 신고 처리</li>
+      <li><b>SCREEN 기능9 AI</b> — 초기 번역 초안, 역번역(back-translation) 대조로 의미 왜곡 후보 표시, 음성 합성. 판정은 사람 몫이라 화면 맨 위에 경계를 적었다</li>
+      <li><b>SCREEN 기능9 데이터</b> — 검수 상태 3종(검수 완료 / 검수 대기 / 사용 중지)을 배지로 그대로 옮겼다</li>
+      <li><b>SCREEN 기능9 해설</b> — “검수 완료가 아닌 문구는 어떤 화면에서도 안전 지시로 노출되지 않는다”, “오역 신고가 접수되면 즉시 사용 중지한다”</li>
+      <li><b>SCREEN 기능9 해설</b> — 사용자에게 보이지 않지만 <b>제품 신뢰의 단일 최대 요인</b>. 그 이유를 화면 안에 남겼다</li>
+      <li><b>SCREEN §4 · 기능7</b> — 문구 200개가 오프라인으로 동작해야 하므로 전체 모수를 200으로 뒀다</li>
+      <li><b>PRD §9.3</b> — 원어민 검수를 거친 문구만 사용, 역번역 검토, 오역 신고 채널을 노동자·담당자 양쪽에 제공</li>
+    </ul>
+  </div>
+</main>
+
+</body>
+</html>

@@ -38,15 +38,48 @@
 
 네 명이 동시에 개발해도 충돌이 안 나는 이유의 전부입니다.
 
-**작업을 시작하기 전에 `git branch --show-current` 로 현재 브랜치를 확인하세요.**
-브랜치 이름이 그 사람의 포지션이고, 포지션이 건드릴 파일을 결정합니다.
+| 포지션 | 이 사람이 고치는 파일 |
+|---|---|
+| **P1** 관리 + 노동자 핵심 | `src/worker/learn.*` `src/worker/quiz.*` `src/admin/setup.*` + 공용 `src/assets/**` |
+| **P2** 노동자 생활 화면 | `src/worker/home.*` `src/worker/report.*` `src/worker/talk.*` `src/worker/my.*` `src/worker/worker.css` |
+| **P3** 담당자 화면 | `src/admin/dashboard.*` `src/admin/content.*` `src/admin/admin.css` |
+| **P4** 증빙과 검수 | `src/admin/proof.*` `src/admin/library.*` `src/admin/admin.css` |
 
-| 브랜치 | 포지션 | 이 사람이 고치는 파일 |
-|---|---|---|
-| `feature/byeonsoyun` | P1 · 관리 + 노동자 핵심 | `src/worker/learn.*` `src/worker/quiz.*` `src/admin/setup.*` + 공용 `src/assets/**` |
-| (미정) | P2 · 노동자 생활 화면 | `src/worker/home.*` `src/worker/report.*` `src/worker/talk.*` `src/worker/my.*` `src/worker/worker.css` |
-| (미정) | P3 · 담당자 화면 | `src/admin/dashboard.*` `src/admin/content.*` |
-| (미정) | P4 · 증빙과 검수 | `src/admin/proof.*` `src/admin/library.*` |
+### ★ 세션을 시작하면 가장 먼저 — 이 사람이 누구인지 알아내기
+
+**포지션을 모르면 아무것도 시작하지 마세요.** 순서는 이렇습니다.
+
+**1단계.** `git branch --show-current` 로 브랜치를 확인합니다.
+`feature/byeonsoyun` 이면 **P1** 입니다. 바로 3단계로 갑니다.
+
+**2단계.** `docs/devlog/<브랜치이름>.md` 파일을 읽습니다.
+(브랜치가 `feature/classyb` 면 파일은 `docs/devlog/classyb.md`)
+
+- **파일이 있고 `포지션:` 줄이 있으면** → 그게 이 사람의 포지션입니다. 3단계로.
+- **파일이 없거나 `포지션:` 이 없으면** → 아직 정해지지 않았습니다. 아래를 하세요.
+
+  1. `docs/devlog/` 의 **다른 파일들을 전부 읽어** 이미 누가 어느 포지션을 가져갔는지 확인합니다
+  2. **남아 있는 포지션만** 사용자에게 제시하고 고르게 합니다.
+     각 포지션이 무슨 화면을 만드는지 `docs/02-positions.md` 를 보고 한 줄씩 요약해 주세요.
+     "어느 포지션인지 팀에서 정하셨나요? 아직이면 남은 것 중에 고르시면 됩니다" 처럼 물어보세요
+  3. 답을 들으면 `docs/devlog/_template.md` 를 본떠
+     `docs/devlog/<브랜치이름>.md` 를 만들고 **맨 위에 포지션을 적습니다**
+
+     ```markdown
+     # 개발일지 — (이름)
+
+     브랜치 `feature/classyb`
+     포지션: P3 · 담당자 화면
+     담당 화면: dashboard(기능6) · content(기능2)
+     ```
+  4. 이렇게 적어 두면 **다음부터는 묻지 않습니다.**
+     사용자에게 "포지션을 기록해 뒀으니 다음부터는 안 여쭤봅니다" 라고 알려 주세요
+
+**3단계.** 포지션이 정해졌으면 `docs/02-positions.md` 에서 그 카드를 읽고,
+담당 화면의 현재 상태(껍데기인지 만들다 만 것인지)를 확인한 뒤 무엇부터 할지 제안합니다.
+
+> `main` 이나 `develop` 브랜치에 있으면 **작업하지 말고** 사용자에게 알린 뒤
+> 본인 `feature/` 브랜치로 옮기게 하세요. 브랜치 이름을 모르면 관리자에게 물어보라고 안내하세요.
 
 ### 다른 사람 파일을 고쳐야 할 것 같으면
 
@@ -200,8 +233,17 @@ chore: 예시 데이터에 도장 공정 추가
 
 commit 하기 직전에 `docs/devlog/<브랜치이름>.md` 를 열고,
 오늘 날짜 항목이 없으면 만들고 **한 것**에 한 줄 추가하세요.
+**새 날짜는 맨 위에 쌓습니다.**
 
 ```markdown
+# 개발일지 — 김OO
+
+브랜치 `feature/classyb`
+포지션: P3 · 담당자 화면
+담당 화면: dashboard(기능6) · content(기능2)
+
+---
+
 ## 2026-08-19
 
 **한 것**

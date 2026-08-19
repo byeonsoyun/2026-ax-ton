@@ -1,0 +1,510 @@
+/* ===================================================================
+   PC(데스크톱 · 공용 태블릿) 화면 레이아웃
+
+   style.css 를 먼저 읽고 이 파일을 얹는다.
+   색·간격·터치 타깃 토큰과 .btn / .badge / .card / .field 는 그대로 재사용하고,
+   여기서는 "폰 프레임" 대신 넓은 화면용 골격만 다시 정의한다.
+
+   PRD §9.1 은 노동자 화면을 개인 스마트폰과 현장 공용 태블릿에서 함께 쓴다고 본다.
+   화면이 넓어져도 장갑 낀 손으로 누른다는 조건은 그대로이므로
+   --tap-min(60px)은 PC에서도 낮추지 않는다.
+   =================================================================== */
+
+body.pc {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+/* 글자 크기 토글이 이 값을 바꾼다 */
+.desk {
+  font-size: var(--font-base);
+  line-height: 1.55;
+}
+
+.wrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* 화면 구성안임을 알리는 머리말 */
+.sheetnote {
+  background: #1b1f24;
+  color: #cfd6dd;
+  padding: 10px 0;
+  font-size: 13px;
+}
+.sheetnote .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.sheetnote b { color: #fff; }
+.sheetnote a { color: #9fc0e4; }
+
+/* 설계 근거 캡션 — 폰 목업과 같은 내용을 넓은 폭으로 */
+body.pc .caption {
+  width: auto;
+  max-width: 100%;
+  margin: 28px 0 48px;
+}
+
+/* -------------------------------------------------------------------
+   01. 시작 화면 — 좌: 서비스 설명·고지 / 우: 언어 선택 + 로그인
+   ------------------------------------------------------------------- */
+
+.auth {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  align-items: start;
+  padding: 40px 0 0;
+}
+
+.auth-brand {
+  background: var(--brand);
+  color: var(--brand-ink);
+  border-radius: 20px;
+  padding: 40px 36px;
+}
+.auth-brand h1 {
+  margin: 0;
+  font-size: 2.2em;
+  font-weight: 800;
+  letter-spacing: -.03em;
+  line-height: 1.25;
+}
+.auth-brand .lead {
+  margin: 18px 0 0;
+  font-size: 1.05em;
+  line-height: 1.65;
+  color: #d3e2f3;
+}
+.auth-brand .rule {
+  height: 1px;
+  background: rgba(255, 255, 255, .22);
+  margin: 28px 0;
+  border: 0;
+}
+
+/* 이 앱이 하지 않는 일 — PRD §10 (첫 화면 고지) */
+.pledge h2 {
+  margin: 0 0 12px;
+  font-size: 1em;
+  font-weight: 800;
+  color: #ffffff;
+}
+.pledge ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+.pledge li {
+  display: flex;
+  gap: 8px;
+  font-size: .92em;
+  line-height: 1.6;
+  color: #dbe7f4;
+}
+.pledge li .no {
+  flex: 0 0 auto;
+  font-weight: 800;
+  color: #ffd479;
+}
+
+.auth-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 30px 32px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.panel-head h2 {
+  margin: 0;
+  font-size: 1.15em;
+  font-weight: 800;
+}
+
+/* 언어 선택 — 최초 1회 선택 후 기억한다 (PRD §8.2) */
+.lang-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+.lang {
+  min-height: var(--tap-min);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: .92em;
+  font-weight: 700;
+  color: var(--ink-2);
+  cursor: pointer;
+  text-align: left;
+}
+.lang .flag { font-size: 24px; line-height: 1; }
+.lang[aria-pressed="true"] {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+/* 색 외에 체크 표시로도 선택을 알린다 (색약 고려) */
+.lang[aria-pressed="true"] .native::after { content: " ✓"; }
+
+.lang-memo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 0;
+  font-size: .85em;
+  font-weight: 700;
+  color: var(--ok);
+}
+
+/* 로그인 / 회원가입 탭 */
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  background: #e5e9ee;
+  border-radius: 14px;
+  padding: 5px;
+  margin: 24px 0 18px;
+}
+.tab {
+  min-height: var(--tap-min);
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 1em;
+  font-weight: 700;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.tab[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--brand);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .12);
+}
+
+.pane[hidden] { display: none; }
+
+/* PC는 폭이 넓으므로 짧은 입력은 두 칸으로 나눈다 */
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.auth-foot {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+}
+.auth-foot .btn { flex: 1 1 0; }
+
+/* -------------------------------------------------------------------
+   02. 홈 — 상단바 + 좌측 내비 + 본문 + 우측 마이페이지 패널
+   ------------------------------------------------------------------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.topbar .wrap {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 76px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.logo {
+  font-size: 1.05em;
+  font-weight: 800;
+  color: var(--brand);
+  white-space: nowrap;
+}
+.site {
+  min-width: 0;
+  padding-left: 20px;
+  border-left: 1px solid var(--line);
+}
+.site strong { display: block; font-size: .95em; font-weight: 800; }
+.site span { font-size: .8em; color: var(--ink-3); }
+.spacer { flex: 1 1 auto; }
+
+/* 글자 크기 조절 — PRD §9.4 */
+.textsize {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.textsize button {
+  width: var(--tap-min);
+  height: var(--tap-min);
+  border: 0;
+  background: var(--surface);
+  font-family: inherit;
+  font-weight: 800;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.textsize button + button { border-left: 1px solid var(--line); }
+.textsize button[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); }
+
+.layout {
+  display: grid;
+  grid-template-columns: 236px minmax(0, 1fr) 356px;
+  gap: 24px;
+  align-items: start;
+  padding: 24px 0 0;
+}
+
+/* 좌측 내비 — 폰의 하단 탭바를 세로로 편 것 */
+.nav {
+  position: sticky;
+  top: 100px;
+  display: grid;
+  gap: 6px;
+}
+.nav button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--tap-min);
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  font-family: inherit;
+  font-size: .98em;
+  font-weight: 700;
+  color: var(--ink-2);
+  cursor: pointer;
+  text-align: left;
+}
+.nav button .ico { font-size: 22px; line-height: 1; }
+.nav button:hover { background: #e9edf1; }
+.nav button[aria-current="page"] {
+  background: var(--brand-soft);
+  border-color: #c3d8ef;
+  color: var(--brand);
+}
+/* 색 외에 왼쪽 막대로도 현재 위치를 알린다 */
+.nav button[aria-current="page"]::before {
+  content: "";
+  width: 4px;
+  height: 22px;
+  background: var(--brand);
+  border-radius: 2px;
+  margin-left: -6px;
+}
+
+.main { display: grid; gap: 16px; min-width: 0; }
+
+/* 안전 문구 배너 — 검수 완료 문구만 안전 지시로 쓴다 (기능7·9) */
+.banner {
+  background: #0f2f52;
+  color: #fff;
+  border-radius: 18px;
+  padding: 22px 24px;
+}
+.banner-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.banner-top .label {
+  font-size: .78em;
+  font-weight: 700;
+  color: #9fc0e4;
+  letter-spacing: .04em;
+}
+.banner-body { display: flex; align-items: center; gap: 20px; }
+.picto {
+  flex: 0 0 auto;
+  width: 84px;
+  height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 46px;
+  background: #fff;
+  border-radius: 18px;
+}
+.banner-text { flex: 1 1 auto; min-width: 0; }
+.banner-text p {
+  margin: 0;
+  font-size: 1.5em;
+  font-weight: 800;
+  line-height: 1.35;
+}
+.banner-text small {
+  display: block;
+  margin-top: 6px;
+  font-size: .85em;
+  color: #a9c4e2;
+}
+.banner .btn-audio {
+  background: #fff;
+  color: #0f2f52;
+  border-color: #fff;
+}
+
+/* 이번 교육 상태 — 검증을 통과해야 완료로 기록된다 (PRD §4.2-1) */
+.status-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 20px;
+  align-items: center;
+}
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 0;
+}
+.step {
+  flex: 1 1 0;
+  text-align: center;
+  font-size: .82em;
+  font-weight: 700;
+  color: var(--ink-3);
+  padding: 12px 6px;
+  border-radius: 12px;
+  background: #eef1f4;
+  border: 1px solid var(--line);
+}
+.step[data-state="done"] { background: var(--ok-soft); color: var(--ok); border-color: #b6ddc5; }
+.step[data-state="now"]  { background: var(--warn-soft); color: var(--warn); border-color: #e6d3a6; }
+.step .mark { display: block; font-size: 17px; }
+.arrow { flex: 0 0 auto; color: var(--ink-3); }
+
+/* 메뉴 카드 — 그림과 글자를 항상 함께 쓴다 (문해력 비전제) */
+.menu {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.menu-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 148px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  font-family: inherit;
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+}
+.menu-card:hover { border-color: var(--brand); background: #fbfdff; }
+.menu-card .ico { font-size: 38px; line-height: 1; }
+.menu-card .name { font-size: 1.05em; font-weight: 800; }
+.menu-card .desc { font-size: .82em; color: var(--ink-2); margin: 0; }
+
+/* 우측 마이페이지 패널 — 폰에서는 하단 시트로 열리는 내용 */
+.aside {
+  position: sticky;
+  top: 100px;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.aside-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.aside-head h2 { margin: 0; font-size: 1.05em; font-weight: 800; }
+
+/* 좌측 내비에서 마이페이지를 누르면 잠깐 강조한다 */
+.aside.flash > .card { border-color: var(--brand); background: #fbfdff; }
+
+.kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  font-size: .88em;
+  border-bottom: 1px dashed var(--line);
+}
+.kv:last-child { border-bottom: 0; }
+.kv dt { color: var(--ink-3); margin: 0; }
+.kv dd { margin: 0; font-weight: 700; text-align: right; }
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+.row:last-of-type { border-bottom: 0; }
+.row-main { min-width: 0; }
+.row-main strong { display: block; font-size: .9em; font-weight: 700; }
+.row-main span { font-size: .78em; color: var(--ink-3); }
+
+/* -------------------------------------------------------------------
+   좁은 창 대응 — 창을 줄여도 읽을 수 있어야 한다
+   ------------------------------------------------------------------- */
+
+@media (max-width: 1180px) {
+  .layout { grid-template-columns: 220px minmax(0, 1fr); }
+  .aside { position: static; grid-column: 1 / -1; }
+  .status-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 900px) {
+  .auth-grid { grid-template-columns: 1fr; }
+  .layout { grid-template-columns: 1fr; }
+  .nav {
+    position: static;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    overflow-x: auto;
+  }
+  .nav button { flex-direction: column; gap: 4px; font-size: .8em; text-align: center; }
+  .nav button[aria-current="page"]::before { display: none; }
+  .menu { grid-template-columns: 1fr 1fr; }
+  .field-row { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .menu { grid-template-columns: 1fr; }
+  .banner-body { flex-wrap: wrap; }
+}

@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02. 첫 화면(홈) — 안전교육 이해도 검증 플랫폼</title>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  /* 이 화면에서만 쓰는 조각 */
+
+  .topbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+  .site { min-width: 0; }
+  .site strong {
+    display: block;
+    font-size: .95em;
+    font-weight: 800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .site span {
+    font-size: .74em;
+    color: var(--ink-3);
+  }
+
+  /* 글자 크기 조절 — PRD §9.4 */
+  .textsize {
+    flex: 0 0 auto;
+    display: flex;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .textsize button {
+    width: var(--tap-min);
+    height: var(--tap-min);
+    border: 0;
+    background: var(--surface);
+    font-family: inherit;
+    font-weight: 800;
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  .textsize button + button { border-left: 1px solid var(--line); }
+  .textsize button[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); }
+
+  /* 안전 문구 배너 — 기능7·9, 검수 완료 문구만 안전 지시로 쓴다 */
+  .banner {
+    background: #0f2f52;
+    border-radius: var(--radius);
+    padding: 14px;
+    color: #fff;
+  }
+  .banner-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .banner-top .label {
+    font-size: .72em;
+    font-weight: 700;
+    color: #9fc0e4;
+    letter-spacing: .04em;
+  }
+  .banner-body {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .picto {
+    flex: 0 0 auto;
+    width: 62px;
+    height: 62px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    background: #fff;
+    border-radius: 14px;
+  }
+  .banner-text { flex: 1 1 auto; min-width: 0; }
+  .banner-text p {
+    margin: 0;
+    font-size: 1.05em;
+    font-weight: 800;
+    line-height: 1.4;
+  }
+  .banner-text small {
+    display: block;
+    margin-top: 4px;
+    font-size: .74em;
+    color: #a9c4e2;
+  }
+  .banner .btn-audio {
+    background: #ffffff;
+    color: #0f2f52;
+    border-color: #ffffff;
+  }
+
+  /* 이번 교육 상태 — 검증을 통과해야 완료로 기록된다 (PRD §4.2-1) */
+  .steps {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 10px 0 0;
+  }
+  .step {
+    flex: 1 1 0;
+    text-align: center;
+    font-size: .72em;
+    font-weight: 700;
+    color: var(--ink-3);
+    padding: 8px 2px;
+    border-radius: 10px;
+    background: #eef1f4;
+    border: 1px solid var(--line);
+  }
+  .step[data-state="done"] { background: var(--ok-soft); color: var(--ok); border-color: #b6ddc5; }
+  .step[data-state="now"]  { background: var(--warn-soft); color: var(--warn); border-color: #e6d3a6; }
+  .step .mark { display: block; font-size: 15px; }
+  .arrow { flex: 0 0 auto; color: var(--ink-3); font-size: 12px; }
+
+  /* 메뉴 카드 — 그림 + 글자를 항상 함께 쓴다 (문해력 비전제) */
+  .menu {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .menu-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    min-height: 116px;
+    padding: 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    font-family: inherit;
+    text-align: left;
+    text-decoration: none;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .menu-card .ico { font-size: 30px; line-height: 1; }
+  .menu-card .name { font-size: .98em; font-weight: 800; }
+
+  /* 마이페이지 시트 */
+  .sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(12, 18, 25, .5);
+    display: flex;
+    align-items: flex-end;
+  }
+  .sheet-backdrop[hidden] { display: none; }
+  .sheet {
+    width: 100%;
+    max-height: 84%;
+    background: var(--bg);
+    border-radius: 20px 20px 0 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sheet-head {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+  .sheet-head h2 { margin: 0; font-size: 1.05em; font-weight: 800; }
+  .sheet-close {
+    width: var(--tap-min);
+    height: var(--tap-min);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    font-size: 20px;
+    cursor: pointer;
+  }
+  .sheet-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+  }
+
+  .kv {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 0;
+    font-size: .88em;
+    border-bottom: 1px dashed var(--line);
+  }
+  .kv:last-child { border-bottom: 0; }
+  .kv dt { color: var(--ink-3); margin: 0; }
+  .kv dd { margin: 0; font-weight: 700; text-align: right; }
+
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .row:last-of-type { border-bottom: 0; }
+  .row-main { min-width: 0; }
+  .row-main strong { display: block; font-size: .9em; font-weight: 700; }
+  .row-main span { font-size: .76em; color: var(--ink-3); }
+
+  /* 하단 탭바 */
+  .tabbar {
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    padding-bottom: 6px;
+  }
+  .tabbar button {
+    min-height: var(--tap-min);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border: 0;
+    background: transparent;
+    font-family: inherit;
+    font-size: .68em;
+    font-weight: 700;
+    color: var(--ink-3);
+    cursor: pointer;
+  }
+  .tabbar button .ico { font-size: 20px; }
+  .tabbar button[aria-current="page"] { color: var(--brand); }
+  .tabbar button[aria-current="page"] .ico { transform: translateY(-1px); }
+</style>
+</head>
+<body>
+
+<main class="stage">
+  <h2 class="stage-title">
+    화면 02. 첫 화면(홈)
+    <small>일반 사용자(노동자) · 배너 / 메뉴 / 마이페이지 — 화면.txt 4~29행</small>
+  </h2>
+
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span>▮▮▮ ᯤ 🔋</span></div>
+
+    <div class="app">
+
+      <!-- 헤더 -------------------------------------------------------- -->
+      <header class="topbar">
+        <div class="site">
+          <strong>대성정밀 · 프레스 공정</strong>
+          <span>🇰🇭 ភាសាខ្មែរ · 익명 ID W-4821-07</span>
+        </div>
+        <div class="textsize" role="group" aria-label="글자 크기">
+          <button type="button" id="size-normal" aria-pressed="true">가</button>
+          <button type="button" id="size-large" aria-pressed="false" style="font-size:19px">가</button>
+        </div>
+      </header>
+
+      <div class="scroll">
+
+        <!-- 1. 안전 문구 배너 ----------------------------------------- -->
+        <section class="banner" aria-labelledby="banner-title">
+          <div class="banner-top">
+            <span class="label" id="banner-title">오늘의 안전 문구</span>
+            <span class="badge badge-ok"><span aria-hidden="true">✓</span> 검수 완료</span>
+          </div>
+          <div class="banner-body">
+            <span class="picto" aria-hidden="true">✋</span>
+            <div class="banner-text">
+              <p>프레스가 멈춰도<br>손을 넣지 마세요</p>
+              <small>잔류 압력으로 갑자기 내려올 수 있습니다</small>
+            </div>
+            <button class="btn-audio" type="button" aria-label="안전 문구 크메르어 음성으로 듣기">🔊</button>
+          </div>
+        </section>
+
+        <!-- 2. 이번 교육 상태 ------------------------------------------ -->
+        <section class="card" aria-labelledby="status-title">
+          <h3 class="card-title" id="status-title">2026년 3분기 정기 안전교육</h3>
+          <p class="muted">
+            <b>이해도 검증을 통과해야 교육이 완료됩니다.</b>
+            수강만으로는 완료로 기록되지 않습니다.
+          </p>
+          <div class="steps">
+            <div class="step" data-state="done"><span class="mark" aria-hidden="true">✓</span>수강</div>
+            <span class="arrow" aria-hidden="true">›</span>
+            <div class="step" data-state="now"><span class="mark" aria-hidden="true">●</span>이해도 검증</div>
+            <span class="arrow" aria-hidden="true">›</span>
+            <div class="step"><span class="mark" aria-hidden="true">○</span>완료</div>
+          </div>
+          <div style="height:12px"></div>
+          <button class="btn btn-primary" type="button">
+            <span aria-hidden="true">▶</span> 이해도 검증 이어서 하기
+          </button>
+        </section>
+
+        <!-- 3. 메인 메뉴 ------------------------------------------------ -->
+        <nav class="menu" aria-label="주요 메뉴">
+          <button class="menu-card" type="button">
+            <span class="ico" aria-hidden="true">🎧</span>
+            <span class="name">안전교육 수강</span>
+            <span class="badge badge-wait"><span aria-hidden="true">●</span> 3개 중 1개 남음</span>
+          </button>
+
+          <button class="menu-card" type="button">
+            <span class="ico" aria-hidden="true">📷</span>
+            <span class="name">위험요소 신고</span>
+            <span class="badge badge-neutral"><span aria-hidden="true">🕶</span> 익명으로 접수</span>
+          </button>
+
+          <button class="menu-card" type="button">
+            <span class="ico" aria-hidden="true">💬</span>
+            <span class="name">현장 즉시 소통</span>
+            <span class="badge badge-ok"><span aria-hidden="true">✓</span> 오프라인 가능</span>
+          </button>
+
+          <button class="menu-card" type="button" id="open-my">
+            <span class="ico" aria-hidden="true">🙋</span>
+            <span class="name">마이페이지</span>
+            <span class="badge badge-neutral"><span aria-hidden="true">📄</span> 증빙 출력</span>
+          </button>
+        </nav>
+
+        <!-- 4. 번역 품질 안내 ------------------------------------------ -->
+        <section class="card">
+          <h3 class="card-title">번역이 이상하면 알려 주세요</h3>
+          <p class="muted">
+            뜻이 다르게 적힌 문구를 신고하면 <b>그 문구는 바로 쓰이지 않게 됩니다.</b>
+            검수되지 않은 번역은 화면에 <span class="badge badge-wait"><span aria-hidden="true">⚠</span> 검수 대기</span>
+            로 따로 표시되며 안전 지시로 쓰지 않습니다.
+          </p>
+          <div style="height:10px"></div>
+          <button class="btn btn-quiet" type="button">
+            <span aria-hidden="true">🚩</span> 번역 오류 신고하기
+          </button>
+        </section>
+
+      </div><!-- /scroll -->
+
+      <!-- 하단 탭바 --------------------------------------------------- -->
+      <nav class="tabbar" aria-label="하단 메뉴">
+        <button type="button" aria-current="page"><span class="ico" aria-hidden="true">🏠</span>홈</button>
+        <button type="button"><span class="ico" aria-hidden="true">🎧</span>교육</button>
+        <button type="button"><span class="ico" aria-hidden="true">📷</span>신고</button>
+        <button type="button"><span class="ico" aria-hidden="true">💬</span>소통</button>
+        <button type="button" id="open-my-tab"><span class="ico" aria-hidden="true">🙋</span>마이</button>
+      </nav>
+
+      <!-- 마이페이지 시트 --------------------------------------------- -->
+      <div class="sheet-backdrop" id="my-sheet" hidden>
+        <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="my-title">
+          <div class="sheet-head">
+            <h2 id="my-title">마이페이지</h2>
+            <button class="sheet-close" type="button" id="close-my" aria-label="닫기">✕</button>
+          </div>
+
+          <div class="sheet-body">
+
+            <!-- 회원정보 -->
+            <section class="card">
+              <h3 class="card-title">회원정보</h3>
+              <dl style="margin:0">
+                <div class="kv"><dt>익명 ID</dt><dd>W-4821-07</dd></div>
+                <div class="kv"><dt>이름</dt><dd>소카</dd></div>
+                <div class="kv"><dt>쓰는 말</dt><dd>🇰🇭 ភាសាខ្មែរ</dd></div>
+                <div class="kv"><dt>사업장 · 공정</dt><dd>대성정밀 · 프레스</dd></div>
+              </dl>
+              <hr class="hr">
+              <p class="muted">
+                외국인등록번호와 여권번호는 저장하지 않습니다.
+                이 정보는 사업장 안에서만 쓰입니다.
+              </p>
+            </section>
+
+            <!-- 수강 이력 -->
+            <section class="card">
+              <h3 class="card-title">수강 이력</h3>
+
+              <div class="row">
+                <div class="row-main">
+                  <strong>2026 3분기 정기 안전교육</strong>
+                  <span>2026-08-12 · 크메르어</span>
+                </div>
+                <span class="badge badge-wait"><span aria-hidden="true">●</span> 검증 중</span>
+              </div>
+
+              <div class="row">
+                <div class="row-main">
+                  <strong>프레스 특별교육</strong>
+                  <span>2026-06-03 · 크메르어 · 2차 통과</span>
+                </div>
+                <span class="badge badge-ok"><span aria-hidden="true">✓</span> 완료</span>
+              </div>
+
+              <div class="row">
+                <div class="row-main">
+                  <strong>채용 시 안전교육</strong>
+                  <span>2026-05-20 · 크메르어</span>
+                </div>
+                <span class="badge badge-ok"><span aria-hidden="true">✓</span> 완료</span>
+              </div>
+
+              <div class="row">
+                <div class="row-main">
+                  <strong>화재·대피 교육</strong>
+                  <span>기한 2026-09-30</span>
+                </div>
+                <span class="badge badge-stop"><span aria-hidden="true">✕</span> 미수강</span>
+              </div>
+
+              <div style="height:12px"></div>
+              <button class="btn btn-ghost" type="button">
+                <span aria-hidden="true">📄</span> 수강 증빙 자료 출력 (PDF)
+              </button>
+              <p class="field-hint">
+                교육을 실시했다는 기록이며, 법적 책임을 대신하지 않습니다.
+                이직할 때 본인이 그대로 가져갈 수 있습니다.
+              </p>
+            </section>
+
+            <!-- 신고 이력 -->
+            <section class="card">
+              <h3 class="card-title">
+                신고 이력
+                <span class="badge badge-neutral" style="margin-left:4px"><span aria-hidden="true">🕶</span> 익명</span>
+              </h3>
+
+              <div class="row">
+                <div class="row-main">
+                  <strong>2호 프레스 안전덮개 고정 불량</strong>
+                  <span>2026-08-09 · 조회 6</span>
+                </div>
+                <span class="badge badge-ok"><span aria-hidden="true">✓</span> 조치 완료</span>
+              </div>
+
+              <div class="row">
+                <div class="row-main">
+                  <strong>도장실 환기팬 소음·진동</strong>
+                  <span>2026-08-13 · 조회 2</span>
+                </div>
+                <span class="badge badge-wait"><span aria-hidden="true">●</span> 접수됨</span>
+              </div>
+
+              <hr class="hr">
+              <p class="muted">
+                담당자 화면에서는 <b>누가 신고했는지 볼 수 없습니다.</b>
+                이 목록은 본인 기기에서만 보입니다.
+              </p>
+            </section>
+
+          </div><!-- /sheet-body -->
+        </section>
+      </div><!-- /sheet-backdrop -->
+
+    </div><!-- /app -->
+  </div><!-- /phone -->
+
+  <div class="caption">
+    <b>근거</b>
+    <ul>
+      <li><b>화면.txt 4~29행</b> — 안전 문구 배너 / 마이페이지(회원정보·수강 이력·증빙 출력·신고 이력) / 안전교육 수강 · 신고 · 현장 즉시 소통 링크</li>
+      <li><b>PRD §4.2-1</b> — 이해도 검증을 통과하지 않으면 교육 완료로 기록되지 않는다</li>
+      <li><b>SCREEN 기능9 · §4</b> — <span class="badge badge-ok">✓ 검수 완료</span> 문구만 안전 지시로 노출, 미검수 번역은 구분 표시, 오역 신고 시 즉시 사용 중지</li>
+      <li><b>SCREEN 기능8 / PRD §9.2</b> — 신고는 익명 기본, 담당자 화면에서 신고자 식별 불가</li>
+      <li><b>SCREEN 기능5</b> — 증빙에 “면책을 보장하지 않는다”는 취지를 항상 표기 / <b>PRD §9.2</b> — 본인은 자기 교육 이력을 언제든 조회·내보낼 수 있다</li>
+      <li><b>PRD §9.1 · §9.4</b> — 터치 타깃 60×60px, 음성 + 시각 병행, 글자 크기 조절, 색만으로 구분 금지</li>
+      <li>하위 페이지(수강 목록·퀴즈·신고 작성·소통 게시판)는 이번 범위 밖 — 메뉴 카드까지만 구성</li>
+    </ul>
+  </div>
+</main>
+
+<script>
+  // 글자 크기 조절 — 앱 뷰포트의 기준 폰트 크기를 바꾼다 (PRD §9.4)
+  var app = document.querySelector('.app');
+  var sizeNormal = document.getElementById('size-normal');
+  var sizeLarge = document.getElementById('size-large');
+
+  function setSize(large) {
+    app.style.fontSize = large ? '19px' : '16px';
+    sizeNormal.setAttribute('aria-pressed', String(!large));
+    sizeLarge.setAttribute('aria-pressed', String(large));
+  }
+  sizeNormal.addEventListener('click', function () { setSize(false); });
+  sizeLarge.addEventListener('click', function () { setSize(true); });
+
+  // 마이페이지 시트 열기 / 닫기
+  var sheet = document.getElementById('my-sheet');
+  function openSheet() { sheet.hidden = false; }
+  function closeSheet() { sheet.hidden = true; }
+
+  document.getElementById('open-my').addEventListener('click', openSheet);
+  document.getElementById('open-my-tab').addEventListener('click', openSheet);
+  document.getElementById('close-my').addEventListener('click', closeSheet);
+  sheet.addEventListener('click', function (e) {
+    if (e.target === sheet) closeSheet();   // 바깥을 누르면 닫힌다
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeSheet();
+  });
+
+  // 음성 재생 버튼 — 실제 재생 대신 눌린 상태만 보여 주는 목업
+  document.querySelectorAll('.btn-audio').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var on = btn.getAttribute('aria-pressed') === 'true';
+      btn.setAttribute('aria-pressed', String(!on));
+      btn.textContent = on ? '🔊' : '⏸';
+    });
+  });
+</script>
+
+</body>
+</html>
