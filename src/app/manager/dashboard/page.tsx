@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getAllTrainingRecords } from "@/lib/storage";
+import { getAllTrainingRecords } from "@/lib/api";
 import type { TrainingRecord } from "@/lib/types";
 
 const LANG_LABEL: Record<string, string> = { ko: "한국어", vi: "Tiếng Việt", km: "ភាសាខ្មែរ" };
@@ -10,7 +10,7 @@ export default function DashboardPage() {
   const [records, setRecords] = useState<TrainingRecord[]>([]);
 
   useEffect(() => {
-    setRecords(getAllTrainingRecords());
+    getAllTrainingRecords().then(setRecords).catch(() => {});
   }, []);
 
   const completed = records.filter((r) => r.completedAt);
@@ -22,9 +22,7 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-xl font-semibold">담당자 대시보드</h1>
-        <p className="text-sm text-zinc-500">
-          F-06 최소 버전 — 이 브라우저에 저장된 교육 기록 기준 (데모: 실제 배포 시 Supabase로 교체)
-        </p>
+        <p className="text-sm text-zinc-500">F-06 최소 버전 — Supabase에 저장된 교육 기록 기준</p>
       </div>
 
       <div className="grid grid-cols-3 gap-4">

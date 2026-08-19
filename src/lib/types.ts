@@ -54,6 +54,7 @@ export type TrainingContent = {
   equipmentId: string;
   language: string;
   slides: Slide[];
+  videoUrl: string | null; // F-01 3단계 고도화: 로컬 렌더링된 실제 영상 파일 (로컬 전용)
   status: "draft" | "approved"; // 게이트 3
   createdAt: string;
   approvedAt: string | null;
@@ -97,6 +98,56 @@ export type QuizResult = {
   responseTimeMs: number;
   attempts: number;
 };
+
+export type ScriptDraft = {
+  id: string;
+  stepOrder: number;
+  draftText: string;
+  sourceNotes: string;
+  status: "pending" | "approved" | "rejected";
+  createdAt: string;
+};
+
+export type HazardReportStatus = "received" | "in_progress" | "done";
+
+export type HazardReport = {
+  id: string;
+  equipmentId: string | null;
+  hazardType: string;
+  title: string;
+  photoUrl: string | null;
+  voiceMemoUrl: string | null;
+  status: HazardReportStatus;
+  viewCount: number;
+  createdAt: string;
+};
+
+export type HazardReportComment = {
+  id: string;
+  author: string;
+  body: string;
+  createdAt: string;
+};
+
+export type HazardReportDetail = HazardReport & { comments: HazardReportComment[] };
+
+export type BoardPost = {
+  id: string;
+  authorDisplay: string;
+  title: string;
+  body: string;
+  viewCount: number;
+  createdAt: string;
+};
+
+export type BoardComment = {
+  id: string;
+  authorDisplay: string;
+  body: string;
+  createdAt: string;
+};
+
+export type BoardPostDetail = BoardPost & { comments: BoardComment[] };
 
 export type TrainingRecord = {
   id: string;

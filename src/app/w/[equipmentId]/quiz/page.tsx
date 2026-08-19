@@ -1,14 +1,16 @@
 "use client";
 
-import { use, useMemo, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SequenceQuiz } from "@/components/quiz/SequenceQuiz";
 import { HotspotQuiz } from "@/components/quiz/HotspotQuiz";
 import { BranchQuiz } from "@/components/quiz/BranchQuiz";
-import { EQUIPMENT_ID, LangCode, quizItemsFor } from "@/lib/seed/press-machine";
+import { getQuizItems } from "@/lib/api";
+import { LangCode } from "@/lib/seed/press-machine";
 import type {
   BranchQuizData,
   HotspotQuizData,
+  QuizItem,
   QuizResult,
   SequenceQuizData,
 } from "@/lib/types";
@@ -24,17 +26,25 @@ export default function QuizPage({
   const lang = (searchParams.get("lang") ?? "ko") as LangCode;
   const recordId = searchParams.get("recordId") ?? "";
 
-  const items = useMemo(() => quizItemsFor(lang), [lang]);
+  const [items, setItems] = useState<QuizItem[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [itemIndex, setItemIndex] = useState(0);
   const [results, setResults] = useState<QuizResult[]>([]);
   const [startedAt, setStartedAt] = useState(() => Date.now());
 
-  if (equipmentId !== EQUIPMENT_ID) {
+  useEffect(() => {
+    getQuizItems(equipmentId, lang)
+      .then(setItems)
+      .catch((err) => setLoadError(err.message));
+  }, [equipmentId, lang]);
+
+  if (loadError) {
     return (
-      <div className="flex flex-1 items-center justify-center p-6 text-center text-zinc-500">
-        설비를 찾을 수 없습니다.
-      </div>
+      <div className="flex flex-1 items-center justify-center p-6 text-center text-zinc-500">{loadError}</div>
     );
+  }
+  if (!items) {
+    return <div className="flex flex-1 items-center justify-center p-6 text-zinc-400">불러오는 중...</div>;
   }
 
   const item = items[itemIndex];
@@ -53,7 +63,7 @@ export default function QuizPage({
     ];
     setResults(updated);
 
-    if (itemIndex + 1 < items.length) {
+    if (itemIndex + 1 < items!.length) {
       setItemIndex((i) => i + 1);
       setStartedAt(Date.now());
     } else {

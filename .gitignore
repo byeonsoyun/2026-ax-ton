@@ -46,3 +46,9 @@ next-env.d.ts
 
 # accidental nested clone (byeonsoyun/2026-ax-ton) — not part of this project
 /2026-ax-ton/
+
+# 로컬 전용 도구 (Piper TTS 바이너리+모델) — 플랫폼 종속 대용량 파일이라 git에 안 올림.
+# 없는 사람은 tools/README.md 참고해서 각자 받아야 함
+/tools/*
+!/tools/README.md
+/rendered-videos/
