@@ -1,4 +1,0 @@
-file 'C:\Users\yesol\AppData\Local\Temp\safelang-render-EZQ7Cr\clip-1.mp4'
-file 'C:\Users\yesol\AppData\Local\Temp\safelang-render-EZQ7Cr\clip-2.mp4'
-file 'C:\Users\yesol\AppData\Local\Temp\safelang-render-EZQ7Cr\clip-3.mp4'
-file 'C:\Users\yesol\AppData\Local\Temp\safelang-render-EZQ7Cr\clip-4.mp4'

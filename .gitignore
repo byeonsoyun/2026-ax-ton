@@ -51,4 +51,5 @@ next-env.d.ts
 # 없는 사람은 tools/README.md 참고해서 각자 받아야 함
 /tools/*
 !/tools/README.md
-/rendered-videos/
+/public/rendered-videos/
+/supabase/.temp/
