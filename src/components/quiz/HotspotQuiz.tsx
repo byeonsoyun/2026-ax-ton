@@ -18,16 +18,15 @@ export function HotspotQuiz({
   const [activeConsequence, setActiveConsequence] = useState<string | null>(null);
   const [attempts, setAttempts] = useState(0);
 
+  const allFound = foundIds.length === hazards.length;
+  const remaining = hazards.length - foundIds.length;
+
   function handleSelect(id: string) {
     if (foundIds.includes(id)) return;
     setAttempts((a) => a + 1);
     const hazard = hazards.find((h) => h.id === id)!;
     setActiveConsequence(hazard.consequenceText);
-    const updated = [...foundIds, id];
-    setFoundIds(updated);
-    if (updated.length === hazards.length) {
-      setTimeout(() => onDone({ passed: true, attempts: attempts + 1 }), 1200);
-    }
+    setFoundIds((prev) => [...prev, id]);
   }
 
   return (
@@ -39,7 +38,7 @@ export function HotspotQuiz({
       <HotspotOverlay
         hotspots={hazards.map((h) => ({ id: h.id, rect: h.hotspot, label: h.label }))}
         markedIds={foundIds}
-        markedVariant="incorrect"
+        markedVariant="correct"
         onSelect={handleSelect}
       >
         <PressMachineDiagram />
@@ -48,7 +47,21 @@ export function HotspotQuiz({
       {activeConsequence && (
         <div className="max-w-md rounded-lg border border-amber-300 bg-amber-50 p-4 text-center text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
           {activeConsequence}
+          {!allFound && (
+            <p className="mt-2 text-sm font-medium">
+              위험한 곳이 {remaining}곳 더 있습니다. 도식의 다른 부분도 눌러보세요.
+            </p>
+          )}
         </div>
+      )}
+
+      {allFound && (
+        <button
+          onClick={() => onDone({ passed: true, attempts })}
+          className="min-h-[60px] rounded-lg bg-zinc-900 px-6 font-medium text-white dark:bg-white dark:text-black"
+        >
+          다음으로 →
+        </button>
       )}
     </div>
   );

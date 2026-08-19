@@ -1,10 +1,16 @@
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Font } from "@react-pdf/renderer";
 import type { QuizResult, TrainingRecord } from "@/lib/types";
 
 // F-03 증빙 PDF. 표준 라이브러리(@react-pdf/renderer)로 렌더링만 하고,
 // 여기서는 "무엇을 채울지"를 결정하는 데이터 조립만 담당한다 (§4.3 개발 원칙).
+//
+// react-pdf 기본 내장 폰트(Helvetica)는 한글 글리프가 없어 한국어 텍스트가 깨진다.
+// 감독관 제출용 문서는 한국어로 고정하기로 했으므로(§ 대화 결정), 한글 전체 글리프를
+// 포함한 Noto Sans KR을 등록해서 쓴다.
+Font.register({ family: "NotoSansKR", src: "/fonts/NotoSansKR.ttf" });
+
 const styles = StyleSheet.create({
-  page: { padding: 32, fontSize: 11, fontFamily: "Helvetica" },
+  page: { padding: 32, fontSize: 11, fontFamily: "NotoSansKR" },
   title: { fontSize: 18, marginBottom: 16, fontWeight: 700 },
   row: { flexDirection: "row", marginBottom: 6 },
   label: { width: 140, color: "#555" },
