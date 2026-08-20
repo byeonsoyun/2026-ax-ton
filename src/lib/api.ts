@@ -6,6 +6,7 @@ import type {
   Equipment,
   HazardReport,
   HazardReportDetail,
+  ManualUpload,
   QuizItem,
   QuizResult,
   ScriptDraft,
@@ -141,6 +142,19 @@ export function updateScriptDraftStatus(id: string, status: "approved" | "reject
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status }),
   }).then((res) => json(res));
+}
+
+// F-09 (v0.4, 경로 B): 매뉴얼 업로드·추출
+export function getManualUploads(equipmentId: string): Promise<ManualUpload[]> {
+  return fetch(`/api/equipment/${equipmentId}/manual-upload`).then((res) => json(res));
+}
+
+export function uploadManual(equipmentId: string, file: File): Promise<ManualUpload> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return fetch(`/api/equipment/${equipmentId}/manual-upload`, { method: "POST", body: formData }).then(
+    (res) => json(res)
+  );
 }
 
 // F-01 3단계 고도화: 로컬 ffmpeg 렌더링 (Vercel에는 배포되지 않는 로컬 전용 기능)

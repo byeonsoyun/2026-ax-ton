@@ -3,12 +3,14 @@
 import { use, useEffect, useState } from "react";
 import {
   getEquipment,
+  getManualUploads,
   getScriptDrafts,
   renderEquipmentVideo,
   synthesizeScriptDrafts,
   updateScriptDraftStatus,
+  uploadManual,
 } from "@/lib/api";
-import type { ChecklistStep, Equipment, ScriptDraft } from "@/lib/types";
+import type { ChecklistStep, Equipment, ManualUpload, ScriptDraft } from "@/lib/types";
 
 export default function EquipmentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -18,10 +20,14 @@ export default function EquipmentDetailPage({ params }: { params: Promise<{ id: 
   const [rendering, setRendering] = useState<string | null>(null);
   const [videoUrls, setVideoUrls] = useState<Record<string, string>>({});
   const [renderError, setRenderError] = useState<string | null>(null);
+  const [manuals, setManuals] = useState<ManualUpload[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   function load() {
     getEquipment(id).then(setEquipment);
     getScriptDrafts(id).then(setDrafts);
+    getManualUploads(id).then(setManuals);
   }
 
   useEffect(load, [id]);
@@ -55,11 +61,58 @@ export default function EquipmentDetailPage({ params }: { params: Promise<{ id: 
   }
 
   const stepLabel = (order: number, steps: ChecklistStep[]) =>
-    steps.find((s) => s.order === order)?.label ?? `단계 ${order}`;
+    order >= 1000 ? "매뉴얼 발췌" : steps.find((s) => s.order === order)?.label ?? `단계 ${order}`;
+
+  async function handleManualUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadError(null);
+    try {
+      await uploadManual(id, file);
+      load();
+    } catch (err) {
+      setUploadError((err as Error).message);
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  }
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
       <h1 className="text-xl font-semibold">{equipment?.name ?? "설비"}</h1>
+
+      <div>
+        <h2 className="text-lg font-medium">매뉴얼 업로드 (경로 B, F-09)</h2>
+        <p className="mt-1 text-sm text-zinc-500">
+          이 설비의 실제 매뉴얼 PDF가 있으면 표준 템플릿보다 더 정확한 항목을 페이지 근거와 함께
+          추출합니다. 추출 결과도 검수 대기 큐로 들어가며, 매뉴얼 근거라는 이유로 검수를 건너뛰지
+          않습니다.
+        </p>
+        <div className="mt-3">
+          <input type="file" accept="application/pdf" onChange={handleManualUpload} disabled={uploading} />
+          {uploading && <span className="ml-2 text-sm text-zinc-500">추출 중...</span>}
+        </div>
+        {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
+        <div className="mt-3 flex flex-col gap-2">
+          {manuals.map((m) => (
+            <div key={m.id} className="rounded-lg border border-zinc-200 p-3 text-sm dark:border-zinc-800">
+              <p className="font-medium">{m.fileName}</p>
+              <ul className="mt-1 list-disc pl-5 text-zinc-600 dark:text-zinc-400">
+                {m.extractedItems.map((item, i) => (
+                  <li key={i}>
+                    {item.text}{" "}
+                    <span className="text-xs text-zinc-400">
+                      ({item.page ? `${item.page}페이지` : "근거 없음"} {item.section ?? ""})
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div>
         <div className="flex items-center justify-between">

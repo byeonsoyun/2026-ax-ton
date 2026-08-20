@@ -99,6 +99,17 @@ export type QuizResult = {
   attempts: number;
 };
 
+export type ManualExtractedItem = { text: string; page: number | null; section: string | null };
+
+export type ManualUpload = {
+  id: string;
+  equipmentId: string;
+  fileName: string;
+  extractedItems: ManualExtractedItem[];
+  status: "processing" | "done" | "failed";
+  createdAt: string;
+};
+
 export type ScriptDraft = {
   id: string;
   stepOrder: number;
