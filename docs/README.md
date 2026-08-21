@@ -14,6 +14,7 @@
 | **개발을 시작합니다** | [03-prompts.md](03-prompts.md) — 내 포지션 프롬프트를 복사해 Claude Code 에 붙여넣기 |
 | **내가 뭘 맡았죠?** | [02-positions.md](02-positions.md) — 포지션 카드 4장 |
 | **이 프로젝트가 뭐죠?** | [01-project-map.md](01-project-map.md) — 폴더 · 데이터 · 화면 전체 지도 |
+| **무엇부터 만들죠?** | [06-feature-priority.md](06-feature-priority.md) — 없으면 깨지는 것 / 있으면 좋은 것 / 나중에 |
 | **오늘 한 일을 남깁니다** | [04-devlog.md](04-devlog.md) — 개발일지 쓰는 법 |
 | **뭔가 막혔습니다** | [05-troubleshooting.md](05-troubleshooting.md) — 충돌 · push 실패 · 화면이 안 뜸 |
 | **화면을 새로 안 만들고 싶습니다** | [mockups/README.md](mockups/README.md) — 기획 시안 옮겨 오는 법 |
