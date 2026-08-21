@@ -82,7 +82,8 @@ function openQuiz(opts) {
 
   click(t.win, choices[1]);   // 정답: 전원을 차단하고 관리자를 부른다
   eq('정답 표시', choices[1].getAttribute('data-mark'), 'ok');
-  has('결과를 말한다', text(t.$('consequence-text')), '램이 떨어지지 않습니다');
+  // ★ 이 노동자는 크메르어다. 결과 문장도 크메르어로 나온다 (i18n)
+  has('결과를 크메르어로 말한다', text(t.$('consequence-text')), 'ដុំដែកនឹងមិនធ្លាក់ទេ');
   eq('맞았을 때 아이콘', text(t.$('consequence-ico')), '✅');
 
   /* --- 문항 3: match --- */
@@ -211,7 +212,8 @@ function openQuiz(opts) {
   // 문항1 은 choice. 오답을 골라 결과 문장을 확인한다.
   const choices = t.$('quiz-body').querySelectorAll('.choice-btn');
   click(t.win, choices[0]);   // 물을 뿌린다
-  has('오답의 결과를 말한다', text(t.$('consequence-text')), '물을 뿌리면 불이 퍼집니다');
+  has('오답의 결과를 인도네시아어로 말한다', text(t.$('consequence-text')),
+    'Menyiram air pada api cat membuat api menyebar');
   eq('틀렸을 때 아이콘', text(t.$('consequence-ico')), '⚠');
   eq('정답도 함께 표시', choices[1].getAttribute('data-mark'), 'ok');
 
@@ -307,6 +309,127 @@ function openQuiz(opts) {
   ok('<img> 없음 — 도해는 인라인 SVG 다', !/<img/i.test(html));
   ok('"면책" 표현 없음', !/면책/.test(html + js));
   has('통과 기준이 코드에 한 곳', js, 'var PASS_SCORE = 100');
+}
+
+/* =================================================================
+   10. 문항 다국어화 — 문해력 독립 이해도 검증의 전제
+
+   문항이 한국어로만 나오면 이 기능은 기존 필기시험이 된다.
+   ================================================================= */
+{
+  const t = openQuiz({ login: 'W-4821-07', query: '?course=c-press' });   // 크메르어
+
+  has('문항이 크메르어로 나온다', text(t.$('quiz-prompt')), 'សូមចុចកន្លែងដែលដៃអាចជាប់');
+  eq('★ 번역이 온전하면 준비중 배지가 없다', t.$('prompt-note').hidden, true);
+
+  // 문항 2 (choice) — 선택지도 크메르어로 나온다
+  click(t.win, t.$('btn-next'));
+  const choices = [...t.$('quiz-body').querySelectorAll('.choice-btn')];
+  eq('선택지 3개 그대로', choices.length, 3);
+  has('선택지가 크메르어로 나온다', text(choices[0]), 'ដាក់ដៃចូល');
+
+  /* ★ 정답 인덱스가 번역 뒤에도 같은 자리를 가리키는가.
+       answer 는 1 = "전원을 차단하고 관리자를 부른다" 다. */
+  has('정답 자리의 선택지가 그 뜻의 크메르어다', text(choices[1]), 'កាត់ចរន្តអគ្គិសនី');
+  click(t.win, choices[1]);
+  eq('★ 번역된 선택지로도 정답 판정이 맞다', choices[1].getAttribute('data-mark'), 'ok');
+
+  // 문항 3 (match) — 번역을 일부러 넣지 않은 문항
+  click(t.win, t.$('btn-next'));
+  eq('★ 번역 없는 문항은 배지를 띄운다', t.$('prompt-note').hidden, false);
+  has('배지에 이유가 글자로 적힌다', text(t.$('prompt-note')), '내 언어 번역 준비 중');
+  has('★ 번역이 없으면 한국어를 띄운다 — 조용히 숨기지 않는다',
+    text(t.$('quiz-prompt')), '작업에 맞는 보호구를 연결하세요');
+}
+
+/* --- 인도네시아어 노동자는 인도네시아어를 본다 --- */
+{
+  const t = openQuiz({ login: 'W-4821-11', query: '?course=c-paint' });
+  has('문항이 인도네시아어로 나온다', text(t.$('quiz-prompt')), 'Terjadi kebakaran saat pengecatan');
+  has('선택지도 인도네시아어로 나온다',
+    text(t.$('quiz-body').querySelectorAll('.choice-btn')[1]), 'Matikan kipas ventilasi');
+}
+
+/* --- ★ 번역 배열의 길이가 다르면 한국어로 되돌아간다 ---
+
+   여기가 이 기능에서 가장 위험한 자리다. answer 는 options 의 인덱스라서,
+   번역 배열이 한 칸 짧거나 순서가 다르면 정답이 엉뚱한 선택지를 가리킨다.
+   안전교육에서 그것은 틀린 작업을 맞다고 가르치는 것이다. */
+{
+  const t = openQuiz({
+    login: 'W-4821-07',
+    query: '?course=c-press',
+    before(win) {
+      win.Store.courses.update((list) => {
+        const q = list.find((c) => c.id === 'c-press').quiz[1];
+        q.i18n.km.options = ['ក', 'ខ'];        // 3개여야 하는데 2개
+      });
+    },
+  });
+
+  click(t.win, t.$('btn-next'));
+  const choices = [...t.$('quiz-body').querySelectorAll('.choice-btn')];
+  eq('선택지 개수가 한국어 기준으로 유지된다', choices.length, 3);
+  has('★ 길이가 어긋난 번역은 쓰지 않고 한국어로 되돌린다',
+    text(choices[1]), '전원을 차단하고 관리자를 부른다');
+  eq('★ 되돌린 뒤에도 배지로 그 사실을 남긴다', t.$('prompt-note').hidden, false);
+
+  click(t.win, choices[1]);
+  eq('★ 정답 인덱스가 어긋나지 않았다', choices[1].getAttribute('data-mark'), 'ok');
+}
+
+/* --- 빈 칸이 섞인 번역도 쓰지 않는다 --- */
+{
+  const t = openQuiz({
+    login: 'W-4821-07',
+    query: '?course=c-press',
+    before(win) {
+      win.Store.courses.update((list) => {
+        const q = list.find((c) => c.id === 'c-press').quiz[1];
+        q.i18n.km.options = ['ក', '', 'គ'];    // 가운데가 비었다 — 정답 자리다
+      });
+    },
+  });
+
+  click(t.win, t.$('btn-next'));
+  const choices = [...t.$('quiz-body').querySelectorAll('.choice-btn')];
+  has('빈 선택지를 화면에 내보내지 않는다', text(choices[1]), '전원을 차단하고 관리자를 부른다');
+}
+
+/* --- 결과 복기도 같은 언어로 --- */
+{
+  const t = openQuiz({ login: 'W-4821-11', query: '?course=c-paint' });
+
+  click(t.win, t.$('quiz-body').querySelectorAll('.choice-btn')[1]);   // 정답
+  click(t.win, t.$('btn-next'));
+  // 문항 2 는 hotspot — 정답 구역을 눌러 끝낸다
+  const zones = [...t.$('quiz-body').querySelectorAll('.zone')];
+  if (zones.length) {
+    click(t.win, zones[0]);
+    click(t.win, t.$('btn-next'));
+    has('결과 복기도 인도네시아어로 보인다',
+      text(t.$('result-review')), 'Terjadi kebakaran');
+  } else {
+    ok('도해에 구역이 있다 (복기 확인을 위해)', false, '구역이 0개');
+  }
+}
+
+/* --- Store.qtext 규칙 자체 --- */
+{
+  const t = openQuiz({ login: 'W-4821-07', query: '?course=c-press' });
+  const S = t.win.Store;
+  const q = { prompt: '한국어', options: ['A', 'B'], answer: 0,
+    i18n: { km: { prompt: 'KM', options: ['ក', 'ខ'] }, id: { prompt: 'ID' } } };
+
+  eq('lang 이 ko 면 한국어', S.qtext(q, 'ko', 'prompt'), '한국어');
+  eq('lang 이 없으면 한국어', S.qtext(q, '', 'prompt'), '한국어');
+  eq('번역이 있으면 번역', S.qtext(q, 'km', 'prompt'), 'KM');
+  eq('번역이 없는 언어는 한국어', S.qtext(q, 'vi', 'prompt'), '한국어');
+  eq('★ 선택지 번역이 빠지면 한국어 배열', S.qtext(q, 'id', 'options')[0], 'A');
+  eq('온전한 번역은 qhas true', S.qhas(q, 'km'), true);
+  eq('★ 문구만 번역된 것은 qhas false — 언어가 섞인 화면을 숨기지 않는다',
+    S.qhas(q, 'id'), false);
+  eq('번역이 아예 없으면 qhas false', S.qhas(q, 'vi'), false);
 }
 
 report('기능4 이해도 검증');

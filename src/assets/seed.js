@@ -109,7 +109,11 @@ var Seed = (function () {
      ★ results 와 why 는 "그 선택이 실제로 어떤 사고가 되는지" 를 적는 자리다.
        맞고 틀림만 알려 주면 다음에 또 같은 선택을 한다.
        results 는 선택지 순서와 같은 길이로 맞춘다. 없으면 기능4 가 일반 문장으로 넘긴다.
-       기능2(관리자 콘텐츠 생성)가 앞으로 이 문장을 함께 만들어야 한다. */
+       기능2(관리자 콘텐츠 생성)가 앞으로 이 문장을 함께 만들어야 한다.
+
+     ★ i18n 은 문항을 노동자의 언어로 읽는 자리다. 한국어 필드는 그대로 남고
+       그 언어에 없는 필드만 한국어로 내려간다. 읽을 때는 Store.qtext() 를 쓴다 —
+       answer 가 options 의 인덱스라서 번역 배열의 길이가 다르면 정답이 어긋난다. */
   var COURSES = [
     { id: 'c-press', title: '프레스 3호기 안전교육', equipmentId: 'e-press3',
       languages: ['km', 'id', 'vi'], phraseIds: ['ph-1', 'ph-2', 'ph-6'],
@@ -117,7 +121,11 @@ var Seed = (function () {
       quiz: [
         { id: 'q1', type: 'hotspot', hazard: 'pinch',
           prompt: '이 설비에서 손이 끼일 수 있는 곳을 누르세요',
-          answer: { x: 52, y: 44, r: 14 } },
+          answer: { x: 52, y: 44, r: 14 },
+          i18n: {
+            km: { prompt: 'សូមចុចកន្លែងដែលដៃអាចជាប់ក្នុងម៉ាស៊ីននេះ' },
+            id: { prompt: 'Tekan bagian yang dapat menjepit tangan pada mesin ini' }
+          } },
         { id: 'q2', type: 'choice', hazard: 'pinch',
           prompt: '프레스가 멈췄습니다. 어떻게 해야 합니까?',
           options: ['손을 넣어 부품을 꺼낸다', '전원을 차단하고 관리자를 부른다', '발로 눌러 본다'],
@@ -126,7 +134,40 @@ var Seed = (function () {
             '멈춘 것처럼 보여도 남아 있는 압력으로 램이 떨어집니다. 손이 끼입니다.',
             '맞습니다. 전원을 차단하고 관리자를 부르면 램이 떨어지지 않습니다.',
             '발로 눌러 보는 동안 램이 내려오면 발이 끼입니다.'
-          ] },
+          ],
+          i18n: {
+            km: {
+              prompt: 'ម៉ាស៊ីនកិនបានឈប់។ តើគួរធ្វើអ្វី?',
+              options: [
+                'ដាក់ដៃចូលដើម្បីយកគ្រឿងបន្លាស់',
+                'កាត់ចរន្តអគ្គិសនី ហើយហៅអ្នកគ្រប់គ្រង',
+                'ជាន់ដោយជើងសាកល្បង'
+              ],
+              results: [
+                'ទោះបីមើលទៅដូចជាឈប់ក៏ដោយ សម្ពាធនៅសល់អាចធ្វើឲ្យដុំដែកធ្លាក់។ ដៃនឹងជាប់។',
+                'ត្រឹមត្រូវ។ កាត់ចរន្តអគ្គិសនី ហើយហៅអ្នកគ្រប់គ្រង ដុំដែកនឹងមិនធ្លាក់ទេ។',
+                'ពេលជាន់ដោយជើង ដុំដែកអាចធ្លាក់មកលើជើង។'
+              ]
+            },
+            id: {
+              prompt: 'Mesin press berhenti. Apa yang harus dilakukan?',
+              options: [
+                'Masukkan tangan untuk mengambil komponen',
+                'Matikan daya dan panggil pengawas',
+                'Coba tekan dengan kaki'
+              ],
+              results: [
+                'Meski terlihat berhenti, tekanan yang tersisa dapat menjatuhkan ram. Tangan terjepit.',
+                'Benar. Matikan daya dan panggil pengawas, ram tidak akan jatuh.',
+                'Jika ram turun saat Anda menekan dengan kaki, kaki terjepit.'
+              ]
+            }
+          } },
+        /* ★ q3 은 번역을 일부러 넣지 않았다.
+             크메르어 노동자가 이 문항에 오면 "내 언어 번역 준비 중" 배지와 함께
+             한국어가 그대로 보인다. 번역이 없는 것을 조용히 숨기지 않는다는 규칙이
+             화면에서 실제로 보여야 한다. vi 는 세 문항 다 번역이 없다 —
+             교육에 등록된 언어라고 번역이 따라오는 것은 아니다. */
         { id: 'q3', type: 'match', hazard: 'shock',
           prompt: '작업에 맞는 보호구를 연결하세요',
           pairs: [['프레스 작업', '안전장갑'], ['배전반 점검', '절연장갑']],
@@ -144,10 +185,28 @@ var Seed = (function () {
             '도료에 붙은 불에 물을 뿌리면 불이 퍼집니다.',
             '맞습니다. 환기팬을 끄면 유증기가 덕트로 번지지 않습니다. 끄고 바로 대피합니다.',
             '창문을 열면 바람이 들어와 불이 커집니다.'
-          ] },
+          ],
+          i18n: {
+            id: {
+              prompt: 'Terjadi kebakaran saat pengecatan. Apa yang dilakukan lebih dulu?',
+              options: [
+                'Menyiram dengan air',
+                'Matikan kipas ventilasi lalu mengungsi',
+                'Membuka jendela'
+              ],
+              results: [
+                'Menyiram air pada api cat membuat api menyebar.',
+                'Benar. Mematikan kipas mencegah uap cat menyebar ke saluran. Matikan lalu segera keluar.',
+                'Membuka jendela membuat angin masuk dan api membesar.'
+              ]
+            }
+          } },
         { id: 'q2', type: 'hotspot', hazard: 'chemical',
           prompt: '방독마스크를 써야 하는 구역을 누르세요',
-          answer: { x: 38, y: 60, r: 16 } }
+          answer: { x: 38, y: 60, r: 16 },
+          i18n: {
+            id: { prompt: 'Tekan area yang wajib memakai masker gas' }
+          } }
       ] }
   ];
 

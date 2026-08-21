@@ -215,9 +215,16 @@
 
 .quiz-head {
   display: flex;
+  flex-wrap: wrap;               /* 번역 배지가 아래 줄로 내려간다 */
   align-items: center;
   gap: var(--gap);
   margin-bottom: var(--gap);
+}
+
+/* 이 문항이 내 언어로 온전히 안 나올 때의 배지 자리.
+   문구 옆에 끼우면 문항이 좁아지므로 한 줄 아래에 통째로 둔다. */
+.prompt-note {
+  flex: 1 1 100%;
 }
 
 .quiz-kind {

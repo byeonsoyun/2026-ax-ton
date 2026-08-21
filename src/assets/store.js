@@ -206,8 +206,14 @@ var Store = (function () {
   var library = listStore('library');
 
   /* 5. courses — 관리자 기능2 가 만든 교육. 노동자 기능3·4 가 읽는다
-        { id, title, equipmentId, languages: [], phraseIds: [],
-          quiz: [ { id, type, prompt } ], approved, createdAt } */
+        { id, title, equipmentId, languages: [], phraseIds: [], dueAt,
+          quiz: [ { id, type, prompt, i18n } ], approved, createdAt }
+
+        문항의 한국어 문구는 prompt · options · results · pairs · why 에 있고,
+        번역은 i18n[언어코드] 아래에 같은 이름으로 들어간다.
+          i18n: { km: { prompt, options: [], results: [], pairs: [], why } }
+        번역이 없으면 한국어로 내려간다. 읽을 때는 반드시 qtext() 를 쓴다 —
+        아래 qtext 주석에 왜 화면에서 직접 뒤지면 안 되는지 적었다. */
   var courses = listStore('courses');
 
   /* 6. progress — 노동자 기능3·4 가 쓰고 관리자 기능5·6 이 읽는다
@@ -279,11 +285,98 @@ var Store = (function () {
   function hazard(code)   { return findBy(HAZARDS, 'code', code); }
   function role(code)     { return findBy(ROLES, 'code', code); }
 
+  /* -----------------------------------------------------------------
+     문항을 노동자의 언어로 읽는다 — qtext / qhas
+
+     ★ 화면에서 q.i18n[lang] 을 직접 뒤지지 마세요. 이유가 하나 있습니다.
+
+     answer 는 options 의 인덱스입니다. 번역 배열의 길이나 순서가 한국어와
+     다르면 정답이 엉뚱한 선택지를 가리킵니다. 안전교육에서 정답이 어긋나면
+     틀린 작업을 맞다고 가르치게 됩니다.
+
+     그래서 "길이가 다르면 한국어로 되돌린다" 는 검사를 여기 한 곳에만 둡니다.
+     화면마다 흩어 놓으면 언젠가 한 곳이 빠지고, 빠진 것을 눈으로 찾을 수 없습니다.
+
+     되돌리는 규칙 — 어긋나면 그 필드만 한국어로:
+       lang 이 없거나 'ko'                  → 한국어
+       i18n[lang][field] 가 없음            → 한국어
+       문자열이어야 하는데 아니거나 빈 값   → 한국어
+       배열인데 길이가 한국어와 다름        → 한국어 배열 전체
+       pairs 인데 각 줄이 두 칸이 아님      → 한국어 pairs
+     ----------------------------------------------------------------- */
+
+  var Q_ARRAY_FIELDS = { options: true, results: true, pairs: true };
+
+  function qtext(q, lang, field) {
+    var ko = q ? q[field] : undefined;
+    if (!q || !lang || lang === 'ko') return ko;
+
+    var pack = obj(q.i18n)[lang];
+    if (!pack) return ko;
+
+    var val = pack[field];
+    if (val === undefined || val === null) return ko;
+
+    if (!Q_ARRAY_FIELDS[field]) {
+      // 문자열 필드 — prompt · why
+      if (typeof val !== 'string' || !val.trim()) return ko;
+      return val;
+    }
+
+    // 배열 필드 — options · results · pairs
+    if (!Array.isArray(val) || !Array.isArray(ko)) return ko;
+    if (val.length !== ko.length) return ko;          // ★ 정답 인덱스가 어긋난다
+
+    if (field === 'pairs') {
+      // pairs 는 [['작업', '보호구'], ...] 두 칸짜리 줄의 배열이다
+      var shapeOk = val.every(function (row) {
+        return Array.isArray(row) && row.length === 2 &&
+          typeof row[0] === 'string' && typeof row[1] === 'string' &&
+          row[0].trim() && row[1].trim();
+      });
+      return shapeOk ? val : ko;
+    }
+
+    // 한 칸이라도 비어 있으면 그 배열은 못 쓴다 — 빈 선택지가 화면에 나간다
+    var allFilled = val.every(function (s) { return typeof s === 'string' && s.trim(); });
+    return allFilled ? val : ko;
+  }
+
+  /* 이 문항이 그 언어로 "온전히" 나오는가.
+
+     없으면 화면이 "내 언어 번역 준비 중" 을 띄웁니다 —
+     번역이 없는 것을 조용히 숨기지 않습니다 (기능3 의 같은 원칙).
+
+     ★ 문구만 번역되고 선택지가 한국어로 되돌아간 경우도 false 입니다.
+       그 경우 노동자는 문항은 읽히는데 선택지는 못 읽는 화면을 봅니다.
+       배지가 없으면 그 사실이 아무 데도 남지 않습니다.
+
+     보는 것은 "문항을 풀기 위해 읽어야 하는" 세 필드입니다.
+     results 와 why 는 답한 뒤의 설명이라 여기서 보지 않습니다 — 없으면
+     한국어로 내려가고 음성은 UI.speak 이 한국어로 읽어 줍니다. */
+
+  var Q_ASK_FIELDS = ['prompt', 'options', 'pairs'];
+
+  function qhas(q, lang) {
+    if (!q || !lang || lang === 'ko') return true;
+    if (!obj(q.i18n)[lang]) return false;
+
+    for (var i = 0; i < Q_ASK_FIELDS.length; i++) {
+      var f = Q_ASK_FIELDS[i];
+      if (q[f] === undefined || q[f] === null) continue;   // 이 유형에 없는 필드
+      if (qtext(q, lang, f) === q[f]) return false;        // 한국어로 되돌아갔다
+    }
+    return true;
+  }
+
   return {
     // 어휘
     LANGUAGES: LANGUAGES, HAZARDS: HAZARDS, ICONS: ICONS,
     SIZE_BANDS: SIZE_BANDS, ROLES: ROLES, PHRASE_STATUS: PHRASE_STATUS,
     language: language, hazard: hazard, role: role, findBy: findBy,
+
+    // 문항을 노동자의 언어로 읽는 통로 (화면에서 q.i18n 을 직접 뒤지지 않는다)
+    qtext: qtext, qhas: qhas,
 
     // 저장소 8개
     accounts: accounts, session: session, setup: setup, library: library,

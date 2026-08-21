@@ -29,6 +29,15 @@
      이 문장이 빠지면 이 기능은 노동자를 걸러 내는 시험이 된다.
 
    · 문항은 음성으로 읽어 준다. 글자를 한 자도 읽지 않고 끝낼 수 있어야 한다.
+
+   · 문항을 노동자의 언어로 읽는다. courses.quiz[].i18n 에 있고 Store.qtext 로
+     읽는다. 문항이 한국어로만 나오면 이 기능은 기존 필기시험이 된다.
+     번역이 없으면 한국어를 띄우고 "내 언어 번역 준비 중" 배지를 남긴다 —
+     조용히 숨기지 않는다.
+
+   · ★ answer 는 options 의 인덱스다. 번역 배열의 길이가 한국어와 다르면
+     정답이 엉뚱한 선택지를 가리킨다. 이 검사는 store.js 의 qtext 한 곳에만 있다.
+     화면에서 q.i18n 을 직접 뒤지지 마세요.
    =================================================================== */
 
 (function () {
@@ -156,11 +165,28 @@
     box.hidden = !note;
   }
 
+  /* --- 문항을 내 언어로 읽는다 ---
+
+     ★ q.i18n 을 여기서 직접 뒤지지 않는다. Store.qtext 를 거친다.
+       answer 는 options 의 인덱스라서, 번역 배열의 길이가 한국어와 다르면
+       정답이 엉뚱한 선택지를 가리킨다. 그 검사가 store.js 한 곳에 있다.
+
+     번역이 없으면 한국어가 그대로 나오고, 화면에는 "내 언어 번역 준비 중"
+     배지가 붙는다. 조용히 숨기지 않는다 — 안전 지시가 말없이 사라지는 쪽이
+     더 위험하다는 기능3 의 판단과 같다. */
+
+  function qt(q, field) {
+    return Store.qtext(q, me.lang, field);
+  }
+
+  /* 내 언어로 읽어 주고, 기기에 그 언어 음성이 없으면 한국어로 돌린다.
+     되돌린 사실은 UI.voiceNote() 가 화면에 적는다 (renderVoiceNote). */
+  function say(text, koText) {
+    return { text: text, lang: me.lang, ko: koText || text };
+  }
+
   function promptSpeech(q) {
-    // 문항 문구는 courses 에 한국어로만 들어 있다. 다국어 문항은 courses 모양을
-    // 넓혀야 하고 그건 기능2(P3)와 같이 정할 일이라, 지금은 한국어로 읽고
-    // 문해력 비전제는 픽토그램과 그림이 받친다.
-    return { text: q.prompt, lang: 'ko' };
+    return say(qt(q, 'prompt'), q.prompt);
   }
 
   function renderQuestion() {
@@ -181,11 +207,23 @@
     });
 
     $('quiz-kind').textContent = kind.ico;
-    $('quiz-prompt').textContent = q.prompt;
+    $('quiz-prompt').textContent = qt(q, 'prompt');
 
     var audio = $('prompt-audio');
     audio.textContent = '';
     audio.appendChild(UI.audioButton(function () { return promptSpeech(q); }, '문항을 다시 듣기'));
+
+    /* 이 문항이 내 언어로 온전히 나오지 않으면 그 사실을 남긴다.
+       배지가 없으면 노동자는 왜 한국어가 보이는지 알 수 없고,
+       담당자도 어느 문항의 번역이 빠졌는지 알 방법이 없다. */
+    var note = $('prompt-note');
+    note.textContent = '';
+    if (!Store.qhas(q, me.lang)) {
+      note.appendChild(UI.waitBadge('내 언어 번역 준비 중'));
+      note.hidden = false;
+    } else {
+      note.hidden = true;
+    }
 
     $('consequence').hidden = true;
     $('btn-next').hidden = true;
@@ -201,8 +239,12 @@
     UI.speak(promptSpeech(q));
   }
 
-  /* 답이 정해졌다. 결과를 말하고 다음으로 갈 수 있게 한다. */
-  function answered(correct, consequenceText) {
+  /* 답이 정해졌다. 결과를 말하고 다음으로 갈 수 있게 한다.
+
+     consequenceKo 는 그 문장의 한국어 원문이다. 기기에 노동자의 언어 음성이
+     없을 때 UI.speak 이 이것을 읽는다. 안 넘기면 번역문을 한국어 음성으로
+     읽으려 해서 아무 말도 안 들린다. */
+  function answered(correct, consequenceText, consequenceKo) {
     if (run.locked) return;
     run.locked = true;
     run.answers[run.index] = correct ? 1 : 0;
@@ -212,7 +254,7 @@
       $('consequence-ico').textContent = correct ? '✅' : '⚠';
       $('consequence-text').textContent = consequenceText;
       box.hidden = false;
-      UI.speak({ text: consequenceText, lang: 'ko' });
+      UI.speak(say(consequenceText, consequenceKo));
     } else {
       box.hidden = true;
     }
@@ -265,7 +307,10 @@
           else if (!picked.correct && b.correct) b.btn.setAttribute('data-mark', 'ok');
         });
 
-        answered(picked.correct, z.consequence || q.why || '');
+        /* 구역별 결과 문장(z.consequence)은 도해에 붙어 있어 한국어만 있다.
+           그 경우 한국어를 그대로 읽는다 — 없는 번역을 있는 척하지 않는다. */
+        if (z.consequence) answered(picked.correct, z.consequence, z.consequence);
+        else answered(picked.correct, qt(q, 'why') || '', q.why || '');
       });
 
       figure.appendChild(btn);
@@ -290,9 +335,10 @@
       figure.appendChild(mark);
 
       var correct = Diagrams.inAnswer(q.answer, x, y);
-      answered(correct, q.why || (correct
+      var fallback = correct
         ? '맞습니다. 이곳이 이 설비에서 다치기 쉬운 자리입니다.'
-        : '이곳이 아닙니다. 교육을 다시 듣고 위험한 자리를 확인해 주세요.'));
+        : '이곳이 아닙니다. 교육을 다시 듣고 위험한 자리를 확인해 주세요.';
+      answered(correct, qt(q, 'why') || fallback, q.why || fallback);
     });
   }
 
@@ -301,8 +347,13 @@
   function renderChoice(body, q) {
     var list = UI.el('ul', 'choice-list');
 
-    q.options.forEach(function (option, i) {
+    /* 번역이 온전하지 않으면 qtext 가 한국어 배열을 그대로 돌려준다.
+       그래서 아래 i 는 언제나 q.answer 와 같은 자리를 가리킨다. */
+    var options = qt(q, 'options');
+
+    options.forEach(function (option, i) {
       var li = UI.el('li', 'choice-row');
+      var optionKo = q.options[i];
 
       var btn = UI.el('button', 'choice-btn');
       btn.type = 'button';
@@ -320,13 +371,16 @@
         });
 
         // results 는 선택지마다의 결과 설명. 기능2 가 아직 안 만들었으면 없다.
-        var results = Array.isArray(q.results) ? q.results : [];
-        answered(correct, results[i] || q.why || '');
+        var results = Array.isArray(qt(q, 'results')) ? qt(q, 'results') : [];
+        var resultsKo = Array.isArray(q.results) ? q.results : [];
+        answered(correct,
+          results[i] || qt(q, 'why') || '',
+          resultsKo[i] || q.why || '');
       });
 
       li.appendChild(btn);
       li.appendChild(UI.audioButton(function () {
-        return { text: option, lang: 'ko' };
+        return say(option, optionKo);
       }, (i + 1) + '번 선택지 듣기'));
 
       list.appendChild(li);
@@ -350,8 +404,12 @@
   }
 
   function renderMatch(body, q) {
-    var lefts = q.pairs.map(function (p, i) { return { i: i, text: p[0] }; });
-    var rights = shuffled(q.pairs.map(function (p, i) { return { i: i, text: p[1] }; }));
+    /* 번역이 온전하지 않으면 한국어 pairs 가 그대로 온다.
+       어느 쪽이든 i 는 원래 줄 번호라서 정답 판정(links[l.i] === l.i)이 그대로 맞다. */
+    var pairs = qt(q, 'pairs');
+
+    var lefts = pairs.map(function (p, i) { return { i: i, text: p[0] }; });
+    var rights = shuffled(pairs.map(function (p, i) { return { i: i, text: p[1] }; }));
 
     var picked = null;      // 지금 고른 왼쪽 index
     var links = {};         // 왼쪽 index -> 오른쪽 index
@@ -464,9 +522,10 @@
         btn.disabled = true;
       });
 
-      answered(allRight, q.why || (allRight
+      var fallback = allRight
         ? '맞습니다. 작업에 맞는 보호구를 골랐습니다.'
-        : '연결이 맞지 않습니다. 보호구가 맞지 않으면 착용해도 사고를 막지 못합니다.'));
+        : '연결이 맞지 않습니다. 보호구가 맞지 않으면 착용해도 사고를 막지 못합니다.';
+      answered(allRight, qt(q, 'why') || fallback, q.why || fallback);
     });
 
     var wrap = UI.el('div', 'big-actions');
@@ -557,7 +616,7 @@
       ico.setAttribute('aria-hidden', 'true');
       li.appendChild(ico);
       var body = UI.el('div', 'body');
-      body.appendChild(UI.el('strong', null, q.prompt));
+      body.appendChild(UI.el('strong', null, qt(q, 'prompt')));
       body.appendChild(UI.el('p', 'meta', KIND[q.type].label));
       li.appendChild(body);
       li.appendChild(run.answers[i] === 1 ? UI.okBadge('정답') : UI.stopBadge('오답'));
