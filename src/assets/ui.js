@@ -191,6 +191,107 @@ var UI = (function () {
     try { return new Date(iso).toLocaleString('ko-KR'); } catch (e) { return ''; }
   }
 
+  /* -------------------------------------------------------------------
+     음성 — 문해력을 전제하지 않는다 (SCREEN §4 · PRD §9.1)
+
+     브라우저 내장 speechSynthesis 만 쓴다. 외부 요청 0건 규칙 때문에
+     클라우드 TTS 를 부를 수 없고, 부르지 않아도 대부분의 기기에서 소리가 난다.
+
+     ★ 그 언어 음성이 기기에 없을 때 조용히 실패하지 않는다.
+       크메르어 음성이 깔린 안드로이드는 흔하지 않다. 소리가 안 났는데
+       난 줄 알고 넘어가면, 글자를 못 읽는 사람은 아무것도 못 받은 채 통과한다.
+       그래서 한국어로 읽고, 그 사실을 화면에 적는다 (voiceNote).
+     ------------------------------------------------------------------- */
+
+  var VOICE_TAG = {
+    km: 'km-KH', id: 'id-ID', vi: 'vi-VN',
+    ne: 'ne-NP', th: 'th-TH', ko: 'ko-KR'
+  };
+
+  function speechReady() {
+    return typeof window !== 'undefined' && 'speechSynthesis' in window;
+  }
+
+  /* 이 기기에 그 언어 음성이 실제로 있는지.
+     getVoices() 는 첫 호출에서 빈 배열을 주는 브라우저가 있다(목록을 비동기로 읽는다).
+     그때는 false 가 아니라 null — "아직 모른다" 를 돌려준다.
+     모르는 것을 없다고 답하면 있는 음성을 안 쓰고 한국어로 읽어 버린다. */
+  function hasVoice(langCode) {
+    if (!speechReady()) return false;
+    var voices = window.speechSynthesis.getVoices();
+    if (!voices || !voices.length) return null;
+    var head = (VOICE_TAG[langCode] || langCode || '').split('-')[0];
+    for (var i = 0; i < voices.length; i++) {
+      if ((voices[i].lang || '').split('-')[0] === head) return true;
+    }
+    return false;
+  }
+
+  /* 음성 목록이 준비되면 한 번 부른다. 화면이 안내 문구를 다시 그릴 기회다. */
+  function onVoicesReady(fn) {
+    if (!speechReady()) return;
+    if (window.speechSynthesis.getVoices().length) { fn(); return; }
+    if (typeof window.speechSynthesis.addEventListener !== 'function') return;
+    window.speechSynthesis.addEventListener('voiceschanged', function once() {
+      window.speechSynthesis.removeEventListener('voiceschanged', once);
+      fn();
+    });
+  }
+
+  function stopSpeak() {
+    if (speechReady()) window.speechSynthesis.cancel();
+  }
+
+  /* 읽어 준다.
+     speech 는 문자열이거나 { text, lang, ko } — ko 는 그 언어 음성이 없을 때 읽을 한국어.
+     돌려주는 값은 실제로 읽은 언어 코드다. 화면이 "지금 한국어로 읽었다"를 적을 수 있어야 한다. */
+  function speak(speech, langCode) {
+    if (!speechReady()) return '';
+
+    var text = (speech && speech.text != null) ? speech.text : speech;
+    var lang = (speech && speech.lang) || langCode || 'ko';
+    var ko = (speech && speech.ko) || '';
+    if (!text) return '';
+
+    window.speechSynthesis.cancel();
+
+    if (hasVoice(lang) === false) {      // 없다고 확인된 경우에만 한국어로 돌린다
+      lang = 'ko';
+      if (ko) text = ko;
+    }
+
+    var u = new SpeechSynthesisUtterance(String(text));
+    u.lang = VOICE_TAG[lang] || lang;
+    u.rate = 0.9;      // 모국어가 아닌 사람이 듣는다. 기본 속도는 빠르다
+    window.speechSynthesis.speak(u);
+    return lang;
+  }
+
+  /* 60px 원형 음성 버튼. style.css 의 .btn-audio 를 쓴다.
+     getSpeech 를 함수로 받는 이유 — 내용이 바뀌어도 버튼을 다시 만들지 않는다. */
+  function audioButton(getSpeech, label) {
+    var btn = el('button', 'btn-audio');
+    btn.type = 'button';
+    btn.setAttribute('aria-label', label || '소리로 듣기');
+    var ico = el('span', null, '🔊');
+    ico.setAttribute('aria-hidden', 'true');
+    btn.appendChild(ico);
+    btn.addEventListener('click', function () {
+      speak(typeof getSpeech === 'function' ? getSpeech() : getSpeech);
+    });
+    return btn;
+  }
+
+  /* 화면에 적을 한 줄. 문제가 없으면 빈 문자열 — 아무 말도 하지 않는다. */
+  function voiceNote(langCode) {
+    if (!speechReady()) return '이 브라우저는 음성 읽기를 지원하지 않습니다. 글자로만 보입니다.';
+    if (hasVoice(langCode) === false) {
+      var l = Store.language(langCode);
+      return '이 기기에 ' + ((l && l.name) || langCode) + ' 음성이 없어 한국어로 읽어 드립니다.';
+    }
+    return '';
+  }
+
   return {
     $: $, $$: $$, el: el,
     badge: badge, okBadge: okBadge, waitBadge: waitBadge,
@@ -200,6 +301,10 @@ var UI = (function () {
     emptyRow: emptyRow, itemRow: itemRow,
     fillAdminBar: fillAdminBar, fillWorkerBar: fillWorkerBar,
     markCurrentTab: markCurrentTab,
-    warnIfBlocked: warnIfBlocked, formatDate: formatDate
+    warnIfBlocked: warnIfBlocked, formatDate: formatDate,
+
+    // 음성 — 노동자 화면 전부가 쓴다
+    speak: speak, stopSpeak: stopSpeak, audioButton: audioButton,
+    hasVoice: hasVoice, onVoicesReady: onVoicesReady, voiceNote: voiceNote
   };
 })();

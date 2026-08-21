@@ -24,40 +24,81 @@
 
 <main class="page">
 
-  <div class="pagehead">
-    <h1>이해도 검증</h1>
-    <p class="lead">글자를 한 자도 읽지 않고 끝낼 수 있어야 합니다. 이 제품의 심장입니다.</p>
-  </div>
-
   <p class="blocked" id="blocked" hidden>
     이 브라우저에서는 저장소를 쓸 수 없습니다. 입력해도 새로고침하면 사라집니다.
   </p>
 
-  <section class="todo">
-    <h2>아직 만들지 않은 화면입니다</h2>
-    <p class="why">문항 유형 세 가지 — hotspot(사진에서 위험 지점 터치) · choice(올바른 작업 고르기) · match(보호구 연결하기). 문항은 음성으로 읽어 주고, 통과하지 못하면 progress 에 passed:false 로 남아 교육 완료로 기록되지 않습니다. 미통과는 노동자의 실패가 아니라 교육의 실패로 적습니다. 최초 통과율 100%는 문항이 쉬운 것이라 지표 실패로 봅니다(목표 70~85%).</p>
-    <dl>
-      <dt>담당</dt><dd>노동자 A</dd>
-      <dt>기능번호</dt><dd>기능4</dd>
-      <dt>이 파일</dt><dd><code>worker/quiz.html</code> · <code>worker/quiz.js</code></dd>
-      <dt>읽는 키</dt><dd><code>courses</code> · <code>setup</code></dd>
-      <dt>쓰는 키</dt><dd><code>progress</code></dd>
-      <dt>근거 문서</dt><dd>SCREEN 기능4 · PRD §2.2 · 발표 대본 ②-둘째</dd>
-    </dl>
-  </section>
+  <p class="voicenote" id="voicenote" hidden></p>
 
-  <section class="card" aria-labelledby="t-peek">
-    <div class="sec-head">
-      <div>
-        <h2 id="t-peek">지금 읽을 수 있는 데이터</h2>
-        <p class="why">
-          로그인 화면의 <b>예시 데이터 채우기</b>를 눌렀다면 아래에 숫자가 보입니다.
-          상대 팀 화면이 아직 없어도 이 값으로 개발하시면 됩니다.
-        </p>
-      </div>
+  <!-- ================================================================
+       화면 A — 문항 진행
+       ================================================================ -->
+  <div id="view-quiz" class="quiz-stage" hidden>
+
+    <p class="doing-now" id="quiz-course"></p>
+
+    <div class="step-head">
+      <span class="step-count" id="step-count"></span>
+      <span class="step-dots" id="step-dots" aria-hidden="true"></span>
     </div>
-    <dl class="kpi-row" id="peek" style="margin:0"></dl>
-  </section>
+
+    <div class="quiz-head">
+      <span class="quiz-kind" id="quiz-kind" aria-hidden="true"></span>
+      <p class="quiz-prompt" id="quiz-prompt"></p>
+      <span id="prompt-audio"></span>
+      <!-- 이 문항이 내 언어로 온전히 안 나올 때 "번역 준비 중" 배지가 들어오는 자리.
+           번역이 없는 것을 조용히 숨기지 않는다 (기능3 과 같은 원칙). -->
+      <div class="prompt-note" id="prompt-note" hidden></div>
+    </div>
+
+    <div id="quiz-body"></div>
+
+    <!-- 결과 학습 — 맞고 틀림만 알려 주면 다음에 또 같은 선택을 한다.
+         지금 이대로 하면 무슨 일이 생기는지 그 자리에서 말한다. -->
+    <div class="consequence" id="consequence" hidden>
+      <span class="pict" id="consequence-ico" aria-hidden="true">⚠</span>
+      <p id="consequence-text"></p>
+    </div>
+
+    <div class="big-actions">
+      <button class="btn btn-primary" type="button" id="btn-next" hidden>다음 문항 ▶</button>
+    </div>
+
+  </div>
+
+  <!-- ================================================================
+       화면 B — 결과
+       ================================================================ -->
+  <div id="view-result" class="quiz-stage" hidden>
+
+    <div class="result-panel" id="result-panel">
+      <p class="pict" id="result-ico" aria-hidden="true"></p>
+      <h2 id="result-title"></h2>
+      <p class="score" id="result-score"></p>
+      <p class="scorenote" id="result-note"></p>
+    </div>
+
+    <!-- 미통과 화면에서 가장 중요한 한 줄 (SCREEN 기능4) -->
+    <p class="not-your-fault" id="result-fault" hidden></p>
+
+    <ul class="result-review" id="result-review"></ul>
+
+    <div class="big-actions" id="result-actions"></div>
+
+  </div>
+
+  <!-- ================================================================
+       화면 C — 아직 검증할 수 없음 (교육을 먼저 들어야 한다)
+       ================================================================ -->
+  <div id="view-gate" class="quiz-stage" hidden>
+    <section class="card">
+      <p class="pict" id="gate-ico" aria-hidden="true"
+         style="font-size:64px;text-align:center;margin:0">🎧</p>
+      <h2 style="text-align:center" id="gate-title"></h2>
+      <p class="muted" id="gate-why"></p>
+      <div class="big-actions" id="gate-actions"></div>
+    </section>
+  </div>
 
 </main>
 
@@ -72,6 +113,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="../assets/ui.js"></script>
+<script src="../assets/diagrams.js"></script>
 <script src="quiz.js"></script>
 </body>
 </html>

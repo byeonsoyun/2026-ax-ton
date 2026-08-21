@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>교육 콘텐츠 생성 · 승인 — 안전교육 이해도 검증 플랫폼</title>
+<title>교육 콘텐츠 생성 — 안전교육 이해도 검증 플랫폼</title>
 <link rel="stylesheet" href="../assets/style.css">
 <link rel="stylesheet" href="../assets/style-admin.css">
 <link rel="stylesheet" href="../assets/app.css">
@@ -26,38 +26,200 @@
 <main class="page">
 
   <div class="pagehead">
-    <h1>교육 콘텐츠 생성 · 승인</h1>
-    <p class="lead">설비와 언어를 고르면 검수 완료된 문구만 모아 교육이 만들어집니다.</p>
+    <h1>교육 콘텐츠 생성</h1>
+    <p class="lead">검수된 문구에서 골라 설비별 다국어 교육을 만듭니다.</p>
   </div>
 
   <p class="blocked" id="blocked" hidden>
     이 브라우저에서는 저장소를 쓸 수 없습니다. 입력해도 새로고침하면 사라집니다.
   </p>
 
-  <section class="todo">
-    <h2>아직 만들지 않은 화면입니다</h2>
-    <p class="why">설비 선택 → 언어 선택 → 문구 고르기 → 승인 · QR 발급. ★ AI는 문구를 새로 쓰지 않고 사람이 검수한 라이브러리에서 고르기만 합니다. 오역이 그대로 사고가 되기 때문입니다. library 에서 status 가 reviewed 인 문구만 선택지에 올리세요. 만든 결과는 courses 에 저장되고, 노동자의 기능3·4가 그것을 읽습니다.</p>
-    <dl>
-      <dt>담당</dt><dd>관리자 C</dd>
-      <dt>기능번호</dt><dd>기능2</dd>
-      <dt>이 파일</dt><dd><code>admin/content.html</code> · <code>admin/content.js</code></dd>
-      <dt>읽는 키</dt><dd><code>setup</code> · <code>library</code></dd>
-      <dt>쓰는 키</dt><dd><code>courses</code></dd>
-      <dt>근거 문서</dt><dd>SCREEN 기능2 · PRD §9.3</dd>
-    </dl>
-  </section>
+  <!-- AI 경계 — 이 화면에서 AI 가 하지 않는 일을 먼저 적는다 -->
+  <p class="ai-note on">
+    <span class="tag">AI 여기까지</span>
+    <span><b>AI 는 안전 문구를 새로 쓰지 않습니다.</b>
+      사람이 검수를 마친 라이브러리에서 고르기만 합니다.
+      검수를 지나지 않은 문구는 아래 선택지에 아예 나오지 않습니다.</span>
+  </p>
 
-  <section class="card" aria-labelledby="t-peek">
+  <p class="lockmsg" id="setup-lock" hidden>
+    먼저 <a href="setup.html">사업장 · 설비 등록</a>에서 설비와 사용 언어를 등록해 주세요.
+    등록한 언어만 교육에 쓸 수 있습니다.
+  </p>
+
+  <div id="builder">
+
+    <!-- 1단계 — 설비와 언어 -->
+    <section class="card" aria-labelledby="t-step1">
+      <div class="sec-head">
+        <div>
+          <h2 id="t-step1">1. 어느 설비, 어느 언어</h2>
+          <p class="why">언어는 사업장 등록(기능1)에서 등록한 것만 나옵니다.</p>
+        </div>
+        <span class="badge badge-neutral" id="b-step1">미설정</span>
+      </div>
+
+      <div class="field">
+        <label for="draft-equip">설비</label>
+        <select id="draft-equip"></select>
+      </div>
+
+      <div class="field">
+        <label for="draft-title">교육 제목</label>
+        <input type="text" id="draft-title" placeholder="설비를 고르면 자동으로 채워집니다">
+      </div>
+
+      <div class="field">
+        <label id="l-lang">언어</label>
+        <p class="field-hint" style="margin:-2px 0 6px">여러 개 고를 수 있습니다.</p>
+        <div class="picker" id="pick-lang" role="group" aria-labelledby="l-lang"></div>
+      </div>
+    </section>
+
+    <!-- 2단계 — 안전 문구 -->
+    <section class="card" aria-labelledby="t-step2">
+      <div class="sec-head">
+        <div>
+          <h2 id="t-step2">2. 안전 문구 고르기</h2>
+          <p class="why">
+            <b>검수 완료된 문구만 나옵니다.</b>
+            검수 대기나 사용 중지된 문구는 여기에 없습니다 — 오역이 그대로 사고가 됩니다.
+          </p>
+        </div>
+        <span class="badge badge-neutral" id="b-step2">미설정</span>
+      </div>
+
+      <p class="muted" id="phrase-note"></p>
+      <div class="picker" id="pick-phrase" role="group" aria-labelledby="t-step2"></div>
+      <div id="phrase-warn"></div>
+    </section>
+
+    <!-- 3단계 — 이해도 검증 문항 -->
+    <section class="card" aria-labelledby="t-step3">
+      <div class="sec-head">
+        <div>
+          <h2 id="t-step3">3. 이해도 검증 문항 만들기</h2>
+          <p class="why">
+            문항이 없으면 이해했는지 확인할 수 없어 <b>교육 완료로 기록되지 않습니다.</b>
+            글자를 읽지 않고 답할 수 있는 세 가지 방식만 씁니다.
+          </p>
+        </div>
+        <span class="badge badge-neutral" id="b-step3">미설정</span>
+      </div>
+
+      <ul class="item-list" id="quiz-list"></ul>
+
+      <hr class="hr">
+
+      <div class="field">
+        <label id="l-qtype">문항 유형</label>
+        <div class="picker" id="pick-qtype" role="group" aria-labelledby="l-qtype"></div>
+      </div>
+
+      <!-- hotspot — 설비 도해에서 위험 구역 고르기 -->
+      <div id="q-hotspot" hidden>
+        <div class="field">
+          <label for="q-hot-prompt">문항</label>
+          <input type="text" id="q-hot-prompt" placeholder="예) 이 설비에서 손이 끼일 수 있는 곳을 누르세요">
+        </div>
+        <p class="muted">아래 그림에서 <b>정답이 될 위험 구역</b>을 누르세요. 노동자는 같은 그림을 봅니다.</p>
+        <div class="quiz-figure" id="q-hot-figure"></div>
+        <p class="zonehint" id="q-hot-picked">아직 고르지 않았습니다.</p>
+      </div>
+
+      <!-- choice — 올바른 작업 고르기 -->
+      <div id="q-choice" hidden>
+        <div class="field">
+          <label for="q-ch-prompt">문항</label>
+          <input type="text" id="q-ch-prompt" placeholder="예) 프레스가 멈췄습니다. 어떻게 해야 합니까?">
+        </div>
+        <p class="muted">
+          선택지마다 <b>그렇게 하면 무슨 일이 생기는지</b>를 함께 적어 주세요.
+          맞고 틀림만 알려 주면 노동자는 다음에 또 같은 선택을 합니다.
+        </p>
+        <div id="q-ch-options"></div>
+      </div>
+
+      <!-- match — 작업과 보호구 연결 -->
+      <div id="q-match" hidden>
+        <div class="field">
+          <label for="q-ma-prompt">문항</label>
+          <input type="text" id="q-ma-prompt" placeholder="예) 작업에 맞는 보호구를 연결하세요">
+        </div>
+        <div id="q-ma-pairs"></div>
+        <div class="btn-row">
+          <button class="btn-sm" type="button" id="q-ma-add">짝 추가</button>
+        </div>
+      </div>
+
+      <!-- 문항 번역 — 1단계에서 고른 언어마다 한 칸.
+           문항이 한국어로만 나가면 기능4 는 기존 필기시험이 된다.
+           비워 두면 그 언어 노동자는 한국어 문항과 "번역 준비 중" 배지를 본다 —
+           조용히 숨기지 않는다. -->
+      <div id="q-i18n"></div>
+
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn btn-ghost" type="button" id="btn-add-q">이 문항 추가</button>
+      </div>
+    </section>
+
+    <!-- 4단계 — 확인하고 발급 -->
+    <section class="card" aria-labelledby="t-step4">
+      <div class="sec-head">
+        <div>
+          <h2 id="t-step4">4. 확인하고 발급</h2>
+          <p class="why">승인하면 해당 공정 노동자의 수강 화면에 바로 나타납니다.</p>
+        </div>
+      </div>
+
+      <ul class="checklist" id="draft-check"></ul>
+
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn btn-primary" type="button" id="btn-approve">승인하고 발급</button>
+        <button class="btn btn-quiet" type="button" id="btn-reset-draft">초안 비우기</button>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- 만든 교육 목록 -->
+  <section class="card" aria-labelledby="t-made">
     <div class="sec-head">
       <div>
-        <h2 id="t-peek">지금 읽을 수 있는 데이터</h2>
-        <p class="why">
-          로그인 화면의 <b>예시 데이터 채우기</b>를 눌렀다면 아래에 숫자가 보입니다.
-          상대 팀 화면이 아직 없어도 이 값으로 개발하시면 됩니다.
-        </p>
+        <h2 id="t-made">발급한 교육</h2>
+        <p class="why">노동자가 접속할 주소와, 지금 이 교육을 볼 수 있는 사람 수입니다.</p>
       </div>
     </div>
-    <dl class="kpi-row" id="peek" style="margin:0"></dl>
+    <div class="tablewrap">
+      <table class="data">
+        <thead>
+          <tr>
+            <th scope="col">교육</th>
+            <th scope="col">설비</th>
+            <th scope="col">언어</th>
+            <th scope="col">문구 · 문항</th>
+            <th scope="col">대상</th>
+            <th scope="col">상태</th>
+            <th scope="col">조작</th>
+          </tr>
+        </thead>
+        <tbody id="course-rows"></tbody>
+      </table>
+    </div>
+    <p class="storagenote" id="link-note" hidden></p>
+  </section>
+
+  <!-- 여기부터 P3 가 채우면 됩니다 -->
+  <section class="todo">
+    <h2>여기부터 채우시면 됩니다 — P3</h2>
+    <p class="why">아래는 골격에 넣지 않은 것들입니다. 지금 상태로도 데이터는 끝까지 흐릅니다.</p>
+    <dl>
+      <dt>QR 이미지</dt><dd>지금은 접속 주소를 글자로 보여 줍니다. QR 그림은 외부 라이브러리 없이 그려야 합니다 (우선순위 2층)</dd>
+      <dt>문항 다국어</dt><dd>문항 문구가 한국어뿐입니다. <code>courses.quiz</code> 모양을 넓혀야 합니다 — P1 과 상의</dd>
+      <dt>문항 수정·삭제</dt><dd>지금은 초안에서만 지울 수 있고, 발급한 교육의 문항은 못 고칩니다</dd>
+      <dt>교육 기한</dt><dd>다음 교육 기한(D-day)을 넣으면 기능6 대시보드가 그걸 씁니다 (2층)</dd>
+      <dt>내 파일</dt><dd><code>admin/content.html</code> · <code>admin/content.js</code> · <code>admin/admin.css</code></dd>
+    </dl>
   </section>
 
 </main>
@@ -73,6 +235,8 @@
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="../assets/ui.js"></script>
+<script src="../assets/review.js"></script>
+<script src="../assets/diagrams.js"></script>
 <script src="content.js"></script>
 </body>
 </html>

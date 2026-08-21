@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>현장 즉시 소통 — 안전교육 이해도 검증 플랫폼</title>
+<title>물어보기 — 안전교육 이해도 검증 플랫폼</title>
 <link rel="stylesheet" href="../assets/style.css">
 <link rel="stylesheet" href="../assets/style-admin.css">
 <link rel="stylesheet" href="../assets/app.css">
@@ -24,39 +24,97 @@
 
 <main class="page">
 
-  <div class="pagehead">
-    <h1>현장 즉시 소통</h1>
-    <p class="lead">게시판과 댓글. 이름을 밝히거나 익명으로 쓸 수 있습니다.</p>
-  </div>
-
   <p class="blocked" id="blocked" hidden>
     이 브라우저에서는 저장소를 쓸 수 없습니다. 입력해도 새로고침하면 사라집니다.
   </p>
 
-  <section class="todo">
-    <h2>아직 만들지 않은 화면입니다</h2>
-    <p class="why">게시글 목록(제목 · 작성자 · 작성일 · 조회수 · 댓글)과 글쓰기, 댓글이 들어옵니다. 문구 200개가 오프라인으로 동작해야 한다는 조건이 이 화면에도 걸립니다.</p>
-    <dl>
-      <dt>담당</dt><dd>노동자 B</dd>
-      <dt>기능번호</dt><dd>기능7</dd>
-      <dt>이 파일</dt><dd><code>worker/talk.html</code> · <code>worker/talk.js</code></dd>
-      <dt>읽는 키</dt><dd><code>posts</code> · <code>setup</code></dd>
-      <dt>쓰는 키</dt><dd><code>posts</code></dd>
-      <dt>근거 문서</dt><dd>화면.txt 소통 페이지 · SCREEN 기능7</dd>
-    </dl>
-  </section>
+  <p class="voicenote" id="voicenote" hidden></p>
 
-  <section class="card" aria-labelledby="t-peek">
-    <div class="sec-head">
-      <div>
-        <h2 id="t-peek">지금 읽을 수 있는 데이터</h2>
-        <p class="why">
-          로그인 화면의 <b>예시 데이터 채우기</b>를 눌렀다면 아래에 숫자가 보입니다.
-          상대 팀 화면이 아직 없어도 이 값으로 개발하시면 됩니다.
-        </p>
-      </div>
+  <!-- 화면 A — 글 목록 -->
+  <div id="view-list">
+
+    <div class="pagehead">
+      <h1>물어보기</h1>
+      <p class="lead">교육 밖의 궁금한 것을 현장에서 바로 묻습니다. 이름을 감추고 쓸 수도 있습니다.</p>
     </div>
-    <dl class="kpi-row" id="peek" style="margin:0"></dl>
+
+    <div class="big-actions">
+      <button class="btn btn-primary" type="button" id="btn-new">✏ 새로 쓰기</button>
+    </div>
+
+    <ul class="post-list" id="post-list"></ul>
+
+  </div>
+
+  <!-- 화면 B — 글 쓰기 -->
+  <div id="view-write" hidden>
+    <section class="card" aria-labelledby="t-write">
+      <div class="sec-head">
+        <div>
+          <h2 id="t-write">새로 쓰기</h2>
+          <p class="why">
+            이름을 감추면 아이디가 저장되지 않습니다. 감추지 않으면 내 식별번호가 함께 보입니다.
+          </p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="w-title">제목</label>
+        <input type="text" id="w-title" placeholder="예) 프레스 교대 시간 바뀐 것 맞나요?">
+      </div>
+
+      <div class="field">
+        <label for="w-body">내용 (안 써도 됩니다)</label>
+        <input type="text" id="w-body" placeholder="예) 오늘부터 30분 당겨진다고 들었습니다">
+      </div>
+
+      <div class="picker" id="pick-anon" role="group" aria-labelledby="t-write"></div>
+
+      <div class="pair-actions">
+        <button class="btn btn-quiet" type="button" id="btn-write-cancel">그만두기</button>
+        <button class="btn btn-primary" type="button" id="btn-write-save">올리기</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- 화면 C — 글 하나 -->
+  <div id="view-post" hidden>
+    <section class="card">
+      <div class="post-head">
+        <h2 id="p-title"></h2>
+        <p class="meta" id="p-meta"></p>
+      </div>
+      <p class="post-body" id="p-body"></p>
+      <div class="listen" id="p-listen"></div>
+
+      <hr class="hr">
+
+      <h3 class="card-title">댓글 <span id="p-count"></span></h3>
+      <ul class="comment-list" id="p-comments"></ul>
+
+      <div class="field" style="margin-top:12px">
+        <label for="c-body">댓글 쓰기</label>
+        <input type="text" id="c-body" placeholder="한 줄 남겨 주세요">
+      </div>
+      <div class="picker" id="pick-canon" role="group" aria-label="댓글 이름 감추기"></div>
+
+      <div class="pair-actions">
+        <button class="btn btn-quiet" type="button" id="btn-post-back">목록으로</button>
+        <button class="btn btn-primary" type="button" id="btn-comment">댓글 올리기</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- 여기부터 P2 가 채우면 됩니다 -->
+  <section class="todo">
+    <h2>여기부터 채우시면 됩니다 — P2</h2>
+    <p class="why">아래는 골격에 넣지 않은 것들입니다. 지금 상태로도 글과 댓글이 저장됩니다.</p>
+    <dl>
+      <dt>글 수정·삭제</dt><dd>내가 쓴 글을 고치거나 지우는 기능. 익명 글은 누가 썼는지 저장하지 않으니 감춘 글은 손댈 수 없습니다</dd>
+      <dt>번역</dt><dd>다른 언어로 쓴 글을 내 언어로 보여 주는 기능. 검수 없는 자동 번역을 안전 지시로 쓰지 않도록 주의해야 합니다</dd>
+      <dt>관리자 답글 표시</dt><dd>관리자가 단 댓글을 눈에 띄게 구분하기</dd>
+      <dt>내 파일</dt><dd><code>worker/talk.html</code> · <code>worker/talk.js</code> · <code>worker/worker.css</code></dd>
+    </dl>
   </section>
 
 </main>

@@ -12,3 +12,487 @@
      · 문해력 비전제 규칙은 적용하지 않습니다 — 노동자 화면 전용 규칙입니다
      · 색상만으로 구분 금지, "면책" 표현 금지는 여기서도 지킵니다
    =================================================================== */
+
+
+/* ===================================================================
+   [P4] 기능9 안전 문구 라이브러리 · 기능5 교육 증빙
+   =================================================================== */
+
+/* 판정 한 덩어리 — 문구 하나에 언어별 역번역 대조가 여러 줄 붙는다 */
+.review-block {
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fbfcfd;
+}
+
+.review-block + .review-block { margin-top: 10px; }
+
+.review-block .queue-top { margin-bottom: 8px; }
+
+.review-block .meta {
+  margin: 10px 0 6px;
+  font-size: .78em;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+
+/* 좁은 화면에서는 원문과 역번역을 위아래로 놓는다.
+   나란히 두려고 글자를 줄이면 정작 뒤집힌 곳이 안 보인다 */
+@media (max-width: 560px) {
+  .diff { grid-template-columns: 1fr; }
+}
+
+/* 목록 걸러 보기 버튼 — 지금 어느 것을 보고 있는지 표시 */
+.btn-sm[aria-pressed="true"] {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--brand-ink);
+}
+
+/* 표 안에서도 문구가 길면 줄바꿈한다. 가로 스크롤만으로는 읽기 어렵다 */
+table.data td { overflow-wrap: anywhere; }
+table.data td .chips { margin: 0; }
+
+/* 부정이 뒤집힌 경우 — 이것만 크게 경고한다.
+   낱말이 다른 것과 같은 세기로 표시하면 운영자가 표시를 무시하게 되고,
+   그러면 정작 뜻이 뒤집힌 문구가 그냥 지나간다. */
+.flip-warn {
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border: 1px solid #edbdb8;
+  border-left: 5px solid var(--stop);
+  border-radius: 10px;
+  background: var(--stop-soft);
+  color: var(--stop);
+  font-size: .84em;
+  line-height: 1.6;
+}
+
+.flip-warn strong { font-weight: 800; }
+
+.diff.danger .diff-cell { border-color: #edbdb8; }
+
+.diff-note {
+  margin: 6px 0 0;
+  font-size: .76em;
+  color: var(--ink-3);
+  line-height: 1.6;
+}
+
+/* ===================================================================
+   [P3] 기능2 교육 콘텐츠 생성 · 기능6 담당자 대시보드
+   =================================================================== */
+
+/* 고른 언어에 번역이 없는 조합 — 막지는 않고 무엇이 빠졌는지만 남긴다 */
+.warnbox {
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  border: 1px solid #e6d3a6;
+  border-left: 5px solid var(--warn);
+  border-radius: 12px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: .84em;
+  line-height: 1.6;
+}
+
+.warnbox strong { display: block; font-weight: 800; margin-bottom: 6px; }
+.warnbox ul { margin: 0 0 6px; padding-left: 18px; }
+.warnbox li { margin: 2px 0; }
+.warnbox p { margin: 0; }
+
+/* 선택지 입력 한 덩어리 — 선택지와 "그러면 무슨 일이 생기는지" 를 같이 받는다 */
+.opt-row {
+  display: grid;
+  gap: 6px;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fbfcfd;
+}
+
+.opt-row + .opt-row { margin-top: 8px; }
+
+.opt-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .82em;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.opt-head input { width: 18px; height: 18px; }
+.opt-head label { margin: 0; cursor: pointer; }
+
+/* 작업 → 보호구 짝 입력 */
+/* 문항 번역 한 덩어리 — 언어마다 하나.
+   문항이 한국어로만 나가면 기능4 는 기존 필기시험이 된다. */
+.i18n-box {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--brand);
+  border-radius: 12px;
+  background: #fbfcfd;
+}
+
+.i18n-box h4 {
+  margin: 0 0 8px;
+  font-size: .86em;
+  font-weight: 800;
+  color: var(--ink-2);
+}
+
+.i18n-box input { margin-bottom: 6px; }
+.i18n-box .field { margin-bottom: 6px; }
+.i18n-box p.muted { margin: 4px 0 0; font-size: .8em; }
+
+/* 역번역 대조 결과 자리. 뒤집힘은 .warnbox 로 크게, 낱말 차이는 한 줄로. */
+.i18n-warn:empty { display: none; }
+
+.pair-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.pair-row input { flex: 1 1 0; min-width: 0; }
+.pair-arrow { flex: 0 0 auto; color: var(--ink-3); font-weight: 800; }
+
+@media (max-width: 520px) {
+  .pair-row { flex-wrap: wrap; }
+  .pair-row input { flex: 1 1 100%; }
+  .pair-arrow { display: none; }
+}
+
+/* 관리자 화면에서도 도해를 쓴다 — 담당자가 정답 구역을 고를 때.
+   노동자 화면(worker.css)의 .quiz-figure 와 같은 좌표계를 쓴다. */
+.quiz-figure {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  margin: 10px auto 0;
+  aspect-ratio: 1 / 1;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--ink-2);
+  touch-action: manipulation;
+}
+
+@supports not (aspect-ratio: 1 / 1) {
+  .quiz-figure { height: 0; padding-top: 100%; }
+  .quiz-figure > svg { position: absolute; top: 0; left: 0; }
+}
+
+.quiz-figure > svg { display: block; width: 100%; height: 100%; }
+
+/* 담당자는 마우스로 고른다 — 노동자 화면과 달리 40px 로 둔다 */
+.zone {
+  position: absolute;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: 2px dashed #c9d2db;
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+}
+
+.zone:hover, .zone:focus-visible {
+  border-color: #b98a00;
+  background: rgba(217, 164, 6, .14);
+}
+
+.zone[data-mark="ok"] {
+  border-style: solid;
+  border-color: var(--ok);
+  background: rgba(28, 107, 58, .16);
+}
+
+.zonehint {
+  margin: 8px 0 0;
+  font-size: .8em;
+  font-weight: 700;
+  color: var(--ink-2);
+  text-align: center;
+}
+
+/* ===================================================================
+   [P4] 기능5 교육 증빙 — 교육일지 서식과 인쇄
+   =================================================================== */
+
+.proof {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 24px;
+  margin-top: var(--gap);
+  font-size: .92em;
+  line-height: 1.6;
+}
+
+.proof[hidden] { display: none; }
+
+.proof-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.proof-kicker {
+  margin: 0;
+  font-size: .78em;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--ink-3);
+}
+
+.proof-head h2 { margin: 4px 0 0; font-size: 1.5em; letter-spacing: -.01em; }
+
+.proof-issued {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+  font-size: .78em;
+  color: var(--ink-3);
+}
+
+.proof h3 {
+  margin: 22px 0 8px;
+  font-size: .95em;
+  font-weight: 800;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* 교육 정보 표 */
+.proof-meta {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 14px;
+}
+
+.proof-meta th,
+.proof-meta td {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+  font-size: .92em;
+}
+
+.proof-meta th {
+  width: 28%;
+  background: #f6f8fa;
+  font-weight: 700;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.proof-meta td { overflow-wrap: anywhere; }
+
+.proof-phrases,
+.proof-quiz {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.proof-phrases li,
+.proof-quiz li { margin: 4px 0; overflow-wrap: anywhere; }
+
+/* 교육 이후 중지된 문구 — 증빙에 그 사실이 남아야 한다 */
+.proof-flag { color: var(--stop); font-weight: 700; font-size: .88em; }
+.proof-qtype { color: var(--ink-3); font-size: .88em; }
+
+/* 그 문항이 어느 언어로 제공됐는지. 인쇄에서도 옅게 만들지 않는다 —
+   한국어로만 제공된 문항을 숨기는 통로가 되면 증빙이 아니다. */
+.proof-qlang {
+  display: block;
+  font-size: .84em;
+  color: var(--ink-2);
+}
+
+.proof-note {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border-left: 4px solid var(--brand);
+  background: var(--brand-soft);
+  font-size: .84em;
+  line-height: 1.6;
+  color: #1c4a7c;
+}
+
+/* 미통과·미수강 줄을 옅게 만들지 않는다.
+   흐리게 두는 것도 숨기는 것의 한 형태다. */
+.proof-table tbody tr[data-state="fail"] td { background: #fff8f7; }
+.proof-table tbody tr[data-state="none"] td,
+.proof-table tbody tr[data-state="noquiz"] td { background: #fafbfc; }
+
+.proof-sign {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 26px;
+}
+
+.sign-box { display: grid; gap: 6px; }
+
+.sign-label { font-size: .78em; font-weight: 700; color: var(--ink-3); }
+
+.sign-line {
+  min-height: 42px;
+  border-bottom: 1px solid var(--ink-2);
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 4px;
+  font-weight: 700;
+}
+
+.proof-foot {
+  margin: 20px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: .78em;
+  line-height: 1.7;
+  color: var(--ink-3);
+}
+
+@media (max-width: 560px) {
+  .proof { padding: 16px; }
+  .proof-sign { grid-template-columns: 1fr; }
+  .proof-meta th { width: 34%; }
+}
+
+/* -------------------------------------------------------------------
+   인쇄 — PDF 는 이것만으로 만든다.
+   외부 라이브러리를 넣으면 외부 요청 0건 규칙이 깨진다.
+   ------------------------------------------------------------------- */
+
+@media print {
+  /* 화면 조작에 쓰는 것은 종이에 나오지 않는다 */
+  .noprint,
+  .todo,
+  .tabbar,
+  .adminbar,
+  .pagehead,
+  .ai-note,
+  .blocked,
+  .toast { display: none !important; }
+
+  html, body {
+    background: #fff;
+    color: #000;
+  }
+
+  .page { padding: 0; display: block; }
+
+  /* 제공 언어 줄도 종이에서 검게 나온다. 옅게 만들면 한국어로만 제공된
+     문항이 눈에 안 띄고, 그것이 숨기는 통로가 된다. */
+  .proof-qlang { color: #000; }
+
+  .proof {
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+    font-size: 10.5pt;
+  }
+
+  /* 표가 페이지 사이에서 잘리지 않게 한다 */
+  .tablewrap { overflow: visible; border: 0; border-radius: 0; }
+
+  table.data,
+  .proof-meta { page-break-inside: auto; }
+
+  table.data tr,
+  .proof-meta tr { page-break-inside: avoid; }
+
+  table.data thead { display: table-header-group; }
+
+  table.data th,
+  table.data td {
+    border: 1px solid #999;
+    padding: 5px 7px;
+  }
+
+  .proof h3 { page-break-after: avoid; }
+
+  .proof-sign { page-break-inside: avoid; }
+
+  /* 배지는 색이 빠져도 뜻이 남아야 한다 — 아이콘과 글자가 이미 들어 있다 */
+  .badge {
+    border-color: #666 !important;
+    background: none !important;
+    color: #000 !important;
+  }
+
+  .proof-table tbody tr td { background: none !important; }
+
+  .proof-note {
+    background: none;
+    border-left: 3px solid #666;
+    color: #000;
+  }
+
+  a[href]::after { content: ""; }
+}
+
+/* -------------------------------------------------------------------
+   기능6 — 정보 위계.
+   이수율 타일은 작게, 취약 항목은 크게. 위계가 뒤바뀌면 담당자는
+   이수율만 보고 교육을 안 고친다.
+   ------------------------------------------------------------------- */
+
+.kpi-row.small { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+.kpi-row.small .kpi { padding: 10px 11px; }
+.kpi-row.small .kpi dt { font-size: .72em; margin-bottom: 3px; }
+.kpi-row.small .kpi dd { font-size: 1.15em; }
+.kpi-row.small .kpi .hint { font-size: .68em; margin-top: 4px; }
+
+/* 이 화면에서 가장 큰 블록 */
+.card.feature {
+  border-color: #c3d8ef;
+  border-width: 2px;
+  padding: 18px;
+}
+
+.card.feature .sec-head h2 { font-size: 1.2em; }
+.card.feature .bar-list { margin-top: 4px; }
+.card.feature .bar-head { font-size: .92em; }
+.card.feature .bar-track { height: 18px; }
+
+/* 화면에 반드시 남아야 하는 문장들.
+   기획에서 온 것이라 옮겨 오면서 빼지 않는다 (SCREEN 기능6). */
+.policy-note {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border-left: 4px solid var(--brand);
+  background: var(--brand-soft);
+  font-size: .82em;
+  line-height: 1.65;
+  color: #1c4a7c;
+}
+
+.policy-note.quiet {
+  margin: 12px 0 0;
+  border-left-color: var(--line);
+  background: #f4f6f8;
+  color: var(--ink-2);
+}
+
+.policy-note b { font-weight: 800; }
+
+/* 막힌 항목 배지가 표 안에서 줄바꿈되게 */
+table.data .chips { gap: 4px; }
+table.data .chips .badge { font-size: .68em; }

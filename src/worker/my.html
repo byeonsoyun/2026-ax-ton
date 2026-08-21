@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>마이페이지 — 안전교육 이해도 검증 플랫폼</title>
+<title>내 기록 — 안전교육 이해도 검증 플랫폼</title>
 <link rel="stylesheet" href="../assets/style.css">
 <link rel="stylesheet" href="../assets/style-admin.css">
 <link rel="stylesheet" href="../assets/app.css">
@@ -14,7 +14,7 @@
 </head>
 <body class="has-tabbar">
 
-<header class="workerbar apphead">
+<header class="workerbar apphead noprint">
   <div class="who">
     <strong id="head-site"></strong>
     <span id="head-sub"></span>
@@ -24,44 +24,128 @@
 
 <main class="page">
 
-  <div class="pagehead">
-    <h1>마이페이지</h1>
-    <p class="lead">회원정보, 수강 이력, 수강 증빙 출력, 신고 이력.</p>
-  </div>
-
-  <p class="blocked" id="blocked" hidden>
+  <p class="blocked noprint" id="blocked" hidden>
     이 브라우저에서는 저장소를 쓸 수 없습니다. 입력해도 새로고침하면 사라집니다.
   </p>
 
-  <section class="todo">
-    <h2>아직 만들지 않은 화면입니다</h2>
-    <p class="why">수강 여부와 검증 결과를 보여 주고, 본인 몫의 수강 증빙을 뽑을 수 있게 합니다. 증빙은 생성 후 수정할 수 없고, 미이수 항목을 숨기는 경로를 만들지 않습니다.</p>
-    <dl>
-      <dt>담당</dt><dd>노동자 B</dd>
-      <dt>기능번호</dt><dd>—</dd>
-      <dt>이 파일</dt><dd><code>worker/my.html</code> · <code>worker/my.js</code></dd>
-      <dt>읽는 키</dt><dd><code>progress</code> · <code>courses</code> · <code>setup</code> · <code>reports</code></dd>
-      <dt>쓰는 키</dt><dd>없음</dd>
-      <dt>근거 문서</dt><dd>화면.txt 마이페이지 · SCREEN 기능5</dd>
-    </dl>
-  </section>
+  <p class="voicenote noprint" id="voicenote" hidden></p>
 
-  <section class="card" aria-labelledby="t-peek">
+  <div class="pagehead noprint">
+    <h1>내 기록</h1>
+    <p class="lead">내가 받은 교육과 확인 결과입니다.</p>
+  </div>
+
+  <!-- 1. 회원정보 -->
+  <section class="card noprint" aria-labelledby="t-me">
     <div class="sec-head">
       <div>
-        <h2 id="t-peek">지금 읽을 수 있는 데이터</h2>
+        <h2 id="t-me">내 정보</h2>
         <p class="why">
-          로그인 화면의 <b>예시 데이터 채우기</b>를 눌렀다면 아래에 숫자가 보입니다.
-          상대 팀 화면이 아직 없어도 이 값으로 개발하시면 됩니다.
+          외국인등록번호와 여권번호는 받지 않습니다. 사업장 안에서 쓰는 식별번호만 씁니다.
         </p>
       </div>
     </div>
-    <dl class="kpi-row" id="peek" style="margin:0"></dl>
+    <ul class="checklist" id="me-list"></ul>
+  </section>
+
+  <!-- 2. 수강 이력 -->
+  <section class="card noprint" aria-labelledby="t-history">
+    <div class="sec-head">
+      <div>
+        <h2 id="t-history">받은 교육</h2>
+        <p class="why">통과하지 못한 것도 그대로 보입니다. 다시 하면 됩니다.</p>
+      </div>
+    </div>
+    <ul class="course-list" id="history-list"></ul>
+  </section>
+
+  <!-- 3. 증빙 출력 -->
+  <section class="card noprint" aria-labelledby="t-proof">
+    <div class="sec-head">
+      <div>
+        <h2 id="t-proof">내 수강 증빙</h2>
+        <p class="why">
+          내 교육 기록을 종이나 PDF 로 뽑습니다.
+          <b>못 들은 교육을 빼고 뽑는 기능은 없습니다.</b> 있는 그대로 나옵니다.
+        </p>
+      </div>
+    </div>
+    <div class="big-actions">
+      <button class="btn btn-primary" type="button" id="btn-print">🖨 증빙 출력하기</button>
+    </div>
+  </section>
+
+  <!-- 4. 현장 신고 -->
+  <section class="card noprint" aria-labelledby="t-reports">
+    <div class="sec-head">
+      <div>
+        <h2 id="t-reports">위험 신고</h2>
+        <p class="why" id="reports-why"></p>
+      </div>
+    </div>
+    <ul class="report-list" id="reports-list"></ul>
+  </section>
+
+  <!-- ================================================================
+       인쇄되는 부분 — 내 수강 증빙
+       ================================================================ -->
+  <article class="proof" id="proof">
+
+    <header class="proof-head">
+      <div>
+        <p class="proof-kicker">안전보건교육 수강 확인</p>
+        <h2>수강 증빙</h2>
+      </div>
+      <div class="proof-issued">
+        <span id="proof-issued-at"></span>
+      </div>
+    </header>
+
+    <table class="proof-meta">
+      <tbody id="proof-meta-rows"></tbody>
+    </table>
+
+    <h3>받은 교육</h3>
+    <div class="tablewrap">
+      <table class="data proof-table">
+        <thead>
+          <tr>
+            <th scope="col">교육</th>
+            <th scope="col">언어</th>
+            <th scope="col">수강 일시</th>
+            <th scope="col">확인 일시</th>
+            <th scope="col">점수</th>
+            <th scope="col">결과</th>
+          </tr>
+        </thead>
+        <tbody id="proof-rows"></tbody>
+      </table>
+    </div>
+
+    <p class="proof-foot" id="proof-foot">
+      이 문서는 브라우저에 저장된 내 교육 기록을 그대로 옮긴 것입니다.
+      받지 않은 교육이나 통과하지 못한 교육을 빼고 뽑을 수 없습니다.
+      이 기록은 교육을 받은 사실을 보여 주며, 법적 책임을 대신하지 않습니다.
+    </p>
+
+  </article>
+
+  <!-- 여기부터 P2 가 채우면 됩니다 -->
+  <section class="todo noprint">
+    <h2>여기부터 채우시면 됩니다 — P2</h2>
+    <p class="why">아래는 골격에 넣지 않은 것들입니다. 지금 상태로도 인쇄까지 됩니다.</p>
+    <dl>
+      <dt>언어 바꾸기</dt><dd>내 언어를 직접 고치는 기능. <code>Store.accounts</code> 를 고쳐야 하니 P1 과 상의해 주세요</dd>
+      <dt>글자 크기</dt><dd><code>--font-base</code> 를 바꾸는 토글 (PRD §9.4)</dd>
+      <dt>문항별 복기</dt><dd>어느 문항에서 막혔는지 다시 보는 화면</dd>
+      <dt>지키실 것</dt><dd><b>못 들은 교육·미통과를 숨기는 경로를 만들지 마세요.</b> 숨길 수 있는 증빙은 증빙이 아닙니다</dd>
+      <dt>내 파일</dt><dd><code>worker/my.html</code> · <code>worker/my.js</code> · <code>worker/worker.css</code></dd>
+    </dl>
   </section>
 
 </main>
 
-<nav class="tabbar fixed" aria-label="메뉴">
+<nav class="tabbar fixed noprint" aria-label="메뉴">
   <a href="home.html"><span class="ico" aria-hidden="true">🏠</span>홈</a>
   <a href="learn.html"><span class="ico" aria-hidden="true">🎧</span>교육</a>
   <a href="report.html"><span class="ico" aria-hidden="true">📷</span>신고</a>
@@ -69,7 +153,7 @@
   <a href="my.html"><span class="ico" aria-hidden="true">🙋</span>마이</a>
 </nav>
 
-<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<div class="toast noprint" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="../assets/ui.js"></script>
 <script src="my.js"></script>

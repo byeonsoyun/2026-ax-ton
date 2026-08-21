@@ -24,40 +24,75 @@
 
 <main class="page">
 
-  <div class="pagehead">
-    <h1>안전교육 수강</h1>
-    <p class="lead">내 공정의 설비에 맞는 교육을, 내 언어의 음성과 그림으로 듣습니다.</p>
-  </div>
-
   <p class="blocked" id="blocked" hidden>
     이 브라우저에서는 저장소를 쓸 수 없습니다. 입력해도 새로고침하면 사라집니다.
   </p>
 
-  <section class="todo">
-    <h2>아직 만들지 않은 화면입니다</h2>
-    <p class="why">수강할 교육 목록과 수강 여부를 보여 주고, 고르면 언어별 음성·그림으로 진행합니다. courses 의 phraseIds 가 가리키는 문구 중 검수 완료(reviewed)인 것만 안전 지시로 띄웁니다. 다 들으면 progress 에 learnedAt 을 남기고 이해도 검증(quiz.html)으로 넘깁니다.</p>
-    <dl>
-      <dt>담당</dt><dd>노동자 A</dd>
-      <dt>기능번호</dt><dd>기능3</dd>
-      <dt>이 파일</dt><dd><code>worker/learn.html</code> · <code>worker/learn.js</code></dd>
-      <dt>읽는 키</dt><dd><code>courses</code> · <code>library</code> · <code>setup</code></dd>
-      <dt>쓰는 키</dt><dd><code>progress</code></dd>
-      <dt>근거 문서</dt><dd>SCREEN 기능3 · PRD §4.2</dd>
-    </dl>
-  </section>
+  <p class="voicenote" id="voicenote" hidden></p>
 
-  <section class="card" aria-labelledby="t-peek">
-    <div class="sec-head">
-      <div>
-        <h2 id="t-peek">지금 읽을 수 있는 데이터</h2>
-        <p class="why">
-          로그인 화면의 <b>예시 데이터 채우기</b>를 눌렀다면 아래에 숫자가 보입니다.
-          상대 팀 화면이 아직 없어도 이 값으로 개발하시면 됩니다.
-        </p>
-      </div>
+  <!-- ================================================================
+       화면 A — 내 교육 목록
+       ================================================================ -->
+  <div id="view-list">
+
+    <div class="pagehead">
+      <h1>안전교육 수강</h1>
+      <p class="lead">내 공정의 설비 교육을, 내 언어의 음성과 그림으로 듣습니다.</p>
     </div>
-    <dl class="kpi-row" id="peek" style="margin:0"></dl>
-  </section>
+
+    <section class="card" aria-labelledby="t-courses">
+      <div class="sec-head">
+        <div>
+          <h2 id="t-courses">내 교육</h2>
+          <p class="why" id="courses-why"></p>
+        </div>
+      </div>
+      <ul class="course-list" id="course-list"></ul>
+    </section>
+
+  </div>
+
+  <!-- ================================================================
+       화면 B — 수강 진행. 안전 문구를 한 장씩 듣는다.
+       ================================================================ -->
+  <div id="view-step" class="learn-stage" hidden>
+
+    <p class="doing-now" id="step-title"></p>
+
+    <div class="step-head">
+      <span class="step-count" id="step-count"></span>
+      <span class="step-dots" id="step-dots" aria-hidden="true"></span>
+    </div>
+
+    <div class="phrase-card" id="phrase-card"></div>
+
+    <div class="step-nav">
+      <button class="btn btn-quiet" type="button" id="btn-prev">◀ 이전</button>
+      <button class="btn btn-primary wide" type="button" id="btn-next">다음 ▶</button>
+    </div>
+
+    <div class="big-actions">
+      <button class="btn btn-quiet" type="button" id="btn-quit">교육 목록으로 돌아가기</button>
+    </div>
+
+  </div>
+
+  <!-- ================================================================
+       화면 C — 검수 완료된 문구가 없어서 진행할 수 없는 경우.
+
+       검수 완료가 아닌 문구를 안전 지시로 쓰지 않는다는 규칙이
+       여기서 화면으로 나타난다. 오역이 그대로 사고가 된다.
+       ================================================================ -->
+  <div id="view-nophrase" class="learn-stage" hidden>
+    <section class="card">
+      <p class="pict" style="font-size:64px;text-align:center;margin:0" aria-hidden="true">🚧</p>
+      <h2 style="text-align:center">아직 들을 수 없습니다</h2>
+      <p class="muted" id="nophrase-why"></p>
+      <div class="big-actions">
+        <button class="btn btn-primary" type="button" id="btn-nophrase-back">교육 목록으로 돌아가기</button>
+      </div>
+    </section>
+  </div>
 
 </main>
 
