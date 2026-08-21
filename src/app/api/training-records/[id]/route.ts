@@ -17,6 +17,7 @@ function toRecord(row: Record<string, unknown>) {
     signedAt: row.signed_at,
     integrityHash: row.integrity_hash,
     createdAt: row.created_at,
+    shareToken: row.share_token,
   };
 }
 

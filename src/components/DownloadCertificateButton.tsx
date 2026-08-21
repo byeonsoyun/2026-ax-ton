@@ -9,7 +9,7 @@ export function DownloadCertificateButton({
   record,
   equipmentName,
 }: {
-  record: TrainingRecord;
+  record: Omit<TrainingRecord, "workerAnonId">;
   equipmentName: string;
 }) {
   const [loading, setLoading] = useState(false);

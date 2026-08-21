@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   }
 
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, createSessionCookieValue(id), {
+  cookieStore.set(SESSION_COOKIE_NAME, createSessionCookieValue(id, worker.role), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -30,5 +30,10 @@ export async function POST(req: Request) {
     maxAge: 60 * 60 * 24 * 30,
   });
 
-  return NextResponse.json({ id: worker.id, displayName: worker.display_name, language: worker.language });
+  return NextResponse.json({
+    id: worker.id,
+    displayName: worker.display_name,
+    language: worker.language,
+    role: worker.role,
+  });
 }

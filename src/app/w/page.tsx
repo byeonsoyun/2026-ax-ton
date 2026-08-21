@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { LogoutButton } from "@/components/LogoutButton";
 
 const SAFETY_BANNER = [
   "안전은 서명이 아니라 이해에서 시작됩니다.",
@@ -11,7 +11,6 @@ const SAFETY_BANNER = [
 ];
 
 export default function WorkerHome() {
-  const router = useRouter();
   const [me, setMe] = useState<{ id: string; displayName: string | null } | null>(null);
   const [bannerIndex, setBannerIndex] = useState(0);
 
@@ -26,21 +25,13 @@ export default function WorkerHome() {
     return () => clearInterval(t);
   }, []);
 
-  async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
-    router.refresh();
-  }
-
   return (
     <div className="flex flex-1 flex-col gap-8 p-6">
       <div className="flex items-center justify-between">
         <p className="text-lg font-semibold">
           안녕하세요{me?.displayName ? `, ${me.displayName}님` : ""}
         </p>
-        <button onClick={handleLogout} className="text-sm text-zinc-500 underline">
-          로그아웃
-        </button>
+        <LogoutButton />
       </div>
 
       <div className="rounded-lg bg-amber-50 p-4 text-center text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">

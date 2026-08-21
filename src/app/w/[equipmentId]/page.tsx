@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { PressMachineDiagram } from "@/components/diagrams/PressMachineDiagram";
 import { HotspotOverlay } from "@/components/HotspotOverlay";
 import { useSpeech } from "@/lib/useSpeech";
+import { isLocalTtsSupported } from "@/lib/tts-languages";
 import { createTrainingRecord, getEquipment, getTrainingContent } from "@/lib/api";
 import { LANGUAGES, LangCode } from "@/lib/seed/press-machine";
+import { ProgressSteps } from "@/components/ProgressSteps";
 import type { Equipment, TrainingContent } from "@/lib/types";
 
 const LANG_STORAGE_KEY = "safelang_lang";
@@ -18,7 +20,7 @@ export default function TrainingPage({
 }) {
   const { equipmentId } = use(params);
   const router = useRouter();
-  const { speak } = useSpeech();
+  const { speak, isFallback } = useSpeech();
 
   const [lang, setLang] = useState<LangCode | null>(null);
   const [slideIndex, setSlideIndex] = useState(0);
@@ -104,6 +106,8 @@ export default function TrainingPage({
 
   return (
     <div className="flex flex-1 flex-col items-center gap-6 p-6">
+      <ProgressSteps current="learn" />
+
       <div className="flex w-full max-w-md items-center justify-between text-sm text-zinc-500">
         <span>
           {viewMode === "slide" ? `${slideIndex + 1} / ${content.slides.length}` : "영상"}
@@ -163,6 +167,11 @@ export default function TrainingPage({
             >
               🔊 듣기
             </button>
+            {(!isLocalTtsSupported(lang!) || isFallback) && (
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                합성 음성 품질 안내: 이 언어는 고품질 음성이 아직 없어 기기 기본 음성으로 재생됩니다
+              </p>
+            )}
           </div>
 
           <div className="flex w-full max-w-md gap-3">

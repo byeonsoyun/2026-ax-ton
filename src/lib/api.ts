@@ -9,6 +9,7 @@ import type {
   ManualUpload,
   QuizItem,
   QuizResult,
+  SafetyPhrase,
   ScriptDraft,
   TrainingContent,
   TrainingRecord,
@@ -78,10 +79,32 @@ export function getMyTrainingRecords(): Promise<TrainingRecord[]> {
   return fetch("/api/training-records?mine=1").then((res) => json(res));
 }
 
+export type SharedCertificate = {
+  record: Omit<TrainingRecord, "workerAnonId">;
+  equipmentName: string;
+};
+
+export function getSharedCertificate(token: string): Promise<SharedCertificate> {
+  return fetch(`/api/certify/${token}`).then((res) => json(res));
+}
+
 export type Me = { id: string; displayName: string | null; language: string };
 
 export function getMe(): Promise<Me> {
   return fetch("/api/auth/me").then((res) => json(res));
+}
+
+// F-08: 안전 문구 라이브러리
+export function getSafetyPhrases(): Promise<SafetyPhrase[]> {
+  return fetch("/api/safety-phrases").then((res) => json(res));
+}
+
+export function updateSafetyPhraseStatus(id: string, status: "approved" | "pending" | "retracted") {
+  return fetch(`/api/safety-phrases/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  }).then((res) => json(res));
 }
 
 // F-05: 위험요소 신고

@@ -53,3 +53,4 @@ next-env.d.ts
 !/tools/README.md
 /public/rendered-videos/
 /supabase/.temp/
+/.tts-cache/

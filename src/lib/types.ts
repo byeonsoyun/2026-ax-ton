@@ -174,4 +174,5 @@ export type TrainingRecord = {
   signedAt: string | null;
   integrityHash: string | null;
   createdAt: string;
+  shareToken: string;
 };

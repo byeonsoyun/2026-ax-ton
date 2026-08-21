@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoutButton } from "@/components/LogoutButton";
 
 export default function ManagerLayout({ children }: LayoutProps<"/manager">) {
   return (
@@ -7,11 +8,13 @@ export default function ManagerLayout({ children }: LayoutProps<"/manager">) {
         <Link href="/manager" className="font-semibold">
           Safelang <span className="text-zinc-400">/ 담당자</span>
         </Link>
-        <nav className="flex gap-4 text-sm">
+        <nav className="flex items-center gap-4 text-sm">
           <Link href="/manager/equipment">설비 관리</Link>
           <Link href="/manager/equipment/new">설비 등록</Link>
+          <Link href="/manager/library">문구 라이브러리</Link>
           <Link href="/manager/reports">신고 게시판</Link>
           <Link href="/manager/dashboard">대시보드</Link>
+          <LogoutButton />
         </nav>
       </header>
       <main className="flex flex-1 flex-col p-6">{children}</main>

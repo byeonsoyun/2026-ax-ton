@@ -30,7 +30,7 @@ export function TrainingCertificate({
   record,
   equipmentName,
 }: {
-  record: TrainingRecord;
+  record: Omit<TrainingRecord, "workerAnonId">;
   equipmentName: string;
 }) {
   return (

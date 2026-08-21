@@ -4,6 +4,7 @@ import { use, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { completeTrainingRecord, getEquipment, getTrainingRecord } from "@/lib/api";
 import { DownloadCertificateButton } from "@/components/DownloadCertificateButton";
+import { ProgressSteps } from "@/components/ProgressSteps";
 import type { QuizResult, TrainingRecord } from "@/lib/types";
 
 const ITEM_LABEL: Record<string, string> = {
@@ -33,6 +34,7 @@ export default function CompletePage({
   const [equipmentName, setEquipmentName] = useState("설비");
   const [submitting, setSubmitting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
 
   useEffect(() => {
     getEquipment(equipmentId)
@@ -44,6 +46,14 @@ export default function CompletePage({
       })
       .catch((err) => setLoadError(err.message));
   }, [equipmentId, recordId]);
+
+  async function handleShare() {
+    if (!saved) return;
+    const url = `${window.location.origin}/certify/${saved.shareToken}`;
+    await navigator.clipboard.writeText(url);
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2000);
+  }
 
   async function handleSign() {
     if (!signature.trim()) return;
@@ -67,12 +77,19 @@ export default function CompletePage({
   if (saved?.signedAt) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center">
+        <ProgressSteps current="done" />
         <p className="text-2xl font-semibold text-emerald-600 dark:text-emerald-400">교육 완료</p>
         <p className="text-zinc-600 dark:text-zinc-400">
           {saved.signatureName}님, 이해도 검증을 모두 통과했습니다. 교육 기록이 저장되었습니다.
         </p>
         <div className="flex flex-col gap-3">
           <DownloadCertificateButton record={saved} equipmentName={equipmentName} />
+          <button
+            onClick={handleShare}
+            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700"
+          >
+            {shareCopied ? "링크가 복사되었습니다 ✓" : "공유 링크 복사"}
+          </button>
           <a
             href={`/manager/dashboard`}
             className="rounded-lg border border-zinc-300 px-4 py-2 text-center text-sm dark:border-zinc-700"
@@ -86,6 +103,7 @@ export default function CompletePage({
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6">
+      <ProgressSteps current="done" />
       <p className="text-2xl font-semibold">이해도 검증 통과</p>
 
       <div className="w-full max-w-md rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">

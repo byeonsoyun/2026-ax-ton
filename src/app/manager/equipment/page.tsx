@@ -3,12 +3,16 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getEquipmentList } from "@/lib/api";
+import { QRCodeImage } from "@/components/QRCodeImage";
 
 export default function ManagerEquipmentListPage() {
   const [rows, setRows] = useState<{ id: string; name: string }[]>([]);
+  const [qrOpenId, setQrOpenId] = useState<string | null>(null);
+  const [origin, setOrigin] = useState("");
 
   useEffect(() => {
     getEquipmentList().then(setRows);
+    setOrigin(window.location.origin);
   }, []);
 
   return (
@@ -24,13 +28,25 @@ export default function ManagerEquipmentListPage() {
       </div>
       <div className="flex flex-col gap-3">
         {rows.map((r) => (
-          <Link
-            key={r.id}
-            href={`/manager/equipment/${r.id}`}
-            className="rounded-lg border border-zinc-300 p-4 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
-          >
-            {r.name}
-          </Link>
+          <div key={r.id} className="rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
+            <div className="flex items-center justify-between">
+              <Link href={`/manager/equipment/${r.id}`} className="hover:underline">
+                {r.name}
+              </Link>
+              <button
+                onClick={() => setQrOpenId(qrOpenId === r.id ? null : r.id)}
+                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs dark:border-zinc-700"
+              >
+                {qrOpenId === r.id ? "QR 닫기" : "QR 발급"}
+              </button>
+            </div>
+            {qrOpenId === r.id && origin && (
+              <div className="mt-3 flex flex-col items-center gap-2">
+                <QRCodeImage url={`${origin}/w/${r.id}`} />
+                <p className="text-xs text-zinc-500">{`${origin}/w/${r.id}`}</p>
+              </div>
+            )}
+          </div>
         ))}
       </div>
     </div>

@@ -7,6 +7,7 @@ import { HotspotQuiz } from "@/components/quiz/HotspotQuiz";
 import { BranchQuiz } from "@/components/quiz/BranchQuiz";
 import { getQuizItems } from "@/lib/api";
 import { LangCode } from "@/lib/seed/press-machine";
+import { ProgressSteps } from "@/components/ProgressSteps";
 import type {
   BranchQuizData,
   HotspotQuizData,
@@ -74,6 +75,7 @@ export default function QuizPage({
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-8 p-6">
+      <ProgressSteps current="quiz" />
       <p className="text-sm text-zinc-500">
         이해도 검증 {itemIndex + 1} / {items.length}
       </p>

@@ -6,12 +6,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/w";
+  const explicitNext = searchParams.get("next");
+  const defaultManager = searchParams.get("role") === "manager";
 
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [asManager, setAsManager] = useState(defaultManager);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -23,11 +25,20 @@ function LoginForm() {
       const res = await fetch(`/api/auth/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(mode === "signup" ? { id, password, displayName } : { id, password }),
+        body: JSON.stringify(
+          mode === "signup"
+            ? { id, password, displayName, role: asManager ? "manager" : "worker" }
+            : { id, password }
+        ),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "실패했습니다");
-      router.push(next);
+      // next는 "로그인 전에 가려던 곳"일 뿐 계정의 role과 안 맞을 수 있다
+      // (예: /w에서 튕겨나와 next=/w로 왔는데 담당자 계정으로 로그인한 경우) —
+      // role 영역과 어긋나는 next는 무시하고 역할별 홈으로 보낸다.
+      const roleHome = data.role === "manager" ? "/manager" : "/w";
+      const nextMatchesRole = explicitNext?.startsWith(roleHome);
+      router.push(nextMatchesRole ? explicitNext! : roleHome);
       router.refresh();
     } catch (err) {
       setError((err as Error).message);
@@ -73,12 +84,18 @@ function LoginForm() {
           className="min-h-[60px] rounded-lg border border-zinc-300 px-4 text-lg dark:border-zinc-700 dark:bg-zinc-900"
         />
         {mode === "signup" && (
-          <input
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="이름 (선택)"
-            className="min-h-[60px] rounded-lg border border-zinc-300 px-4 text-lg dark:border-zinc-700 dark:bg-zinc-900"
-          />
+          <>
+            <input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="이름 (선택)"
+              className="min-h-[60px] rounded-lg border border-zinc-300 px-4 text-lg dark:border-zinc-700 dark:bg-zinc-900"
+            />
+            <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+              <input type="checkbox" checked={asManager} onChange={(e) => setAsManager(e.target.checked)} />
+              담당자로 가입 (안전교육 담당자·운영자)
+            </label>
+          </>
         )}
 
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}

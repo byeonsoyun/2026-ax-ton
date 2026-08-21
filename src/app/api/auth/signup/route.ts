@@ -5,10 +5,11 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createSessionCookieValue, SESSION_COOKIE_NAME } from "@/lib/session";
 
 export async function POST(req: Request) {
-  const { id, password, displayName, language } = await req.json();
+  const { id, password, displayName, language, role } = await req.json();
   if (!id || !password) {
     return NextResponse.json({ error: "ID와 비밀번호를 입력하세요" }, { status: 400 });
   }
+  const finalRole = role === "manager" ? "manager" : "worker";
 
   const supabase = createServerSupabaseClient();
   const { data: existing } = await supabase.from("workers").select("id").eq("id", id).maybeSingle();
@@ -22,11 +23,12 @@ export async function POST(req: Request) {
     password_hash: passwordHash,
     display_name: displayName || null,
     language: language || "ko",
+    role: finalRole,
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, createSessionCookieValue(id), {
+  cookieStore.set(SESSION_COOKIE_NAME, createSessionCookieValue(id, finalRole), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -34,5 +36,5 @@ export async function POST(req: Request) {
     maxAge: 60 * 60 * 24 * 30,
   });
 
-  return NextResponse.json({ id });
+  return NextResponse.json({ id, role: finalRole });
 }
