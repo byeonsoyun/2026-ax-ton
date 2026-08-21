@@ -87,7 +87,10 @@
      ----------------------------------------------------------------- */
 
   function pickTodayPhrase() {
-    var library = Store.library.load().filter(function (p) { return p.status === 'reviewed'; });
+    // 판정은 내 언어 기준이다 — 다른 언어의 오역으로 내 문구가 사라지지 않는다
+    var library = Store.library.load().filter(function (p) {
+      return Store.phraseOk(p, me.lang);
+    });
     if (!library.length) return null;
 
     var mine = {};

@@ -58,9 +58,18 @@
 
   function setup() { return Store.setup.load(); }
 
-  /* ★ 검수를 지난 문구만. 여기가 규칙이 코드가 되는 지점이다. */
+  /* ★ 검수를 지난 문구만. 여기가 규칙이 코드가 되는 지점이다.
+
+     판정은 언어별이다 (Store.phraseOk). 사업장에 등록한 언어 중 하나라도
+     쓸 수 있으면 고를 수 있게 둔다 — 인도네시아어 번역만 중지된 문구를
+     선택지에서 아예 빼면 크메르어 노동자도 그 안전 지시를 못 받는다.
+     어느 언어에서 빠지는지는 renderPhraseWarn 이 화면에 적는다. */
   function usablePhrases() {
-    return Store.library.load().filter(function (p) { return p.status === 'reviewed'; });
+    var langs = setup().languages;
+    return Store.library.load().filter(function (p) {
+      if (!langs.length) return Store.phraseOk(p, 'ko');
+      return langs.some(function (code) { return Store.phraseOk(p, code); });
+    });
   }
 
   function equipmentOf(id) { return Store.findBy(setup().equipments, 'id', id); }
@@ -142,28 +151,46 @@
     box.textContent = '';
     if (!draft.languages.length || !draft.phraseIds.length) return;
 
+
     var missing = [];
+    var blocked = [];      // 그 언어에서 검수를 지나지 못한 조합 — 아예 안 나간다
+
     draft.phraseIds.forEach(function (id) {
       var p = phraseOf(id);
       if (!p) return;
       draft.languages.forEach(function (code) {
         var t = p.translations && p.translations[code];
-        if (!t || !t.text) missing.push(langName(code) + ' — ' + p.ko);
+        if (!t || !t.text) { missing.push(langName(code) + ' — ' + p.ko); return; }
+        // 번역은 있는데 그 언어의 판정이 검수 완료가 아니면 그 언어에서는 빠진다
+        if (!Store.phraseOk(p, code)) blocked.push(langName(code) + ' — ' + p.ko);
       });
     });
 
-    if (!missing.length) return;
+    function warnBox(title, lines, tail) {
+      var warn = UI.el('div', 'warnbox');
+      warn.appendChild(UI.el('strong', null, title));
+      var list = UI.el('ul');
+      lines.slice(0, 6).forEach(function (line) { list.appendChild(UI.el('li', null, line)); });
+      if (lines.length > 6) list.appendChild(UI.el('li', null, '그 밖에 ' + (lines.length - 6) + '건'));
+      warn.appendChild(list);
+      warn.appendChild(UI.el('p', null, tail));
+      box.appendChild(warn);
+    }
 
-    var warn = UI.el('div', 'warnbox');
-    warn.appendChild(UI.el('strong', null, '번역이 없는 조합 ' + missing.length + '건'));
-    var list = UI.el('ul');
-    missing.slice(0, 6).forEach(function (line) { list.appendChild(UI.el('li', null, line)); });
-    if (missing.length > 6) list.appendChild(UI.el('li', null, '그 밖에 ' + (missing.length - 6) + '건'));
-    warn.appendChild(list);
-    warn.appendChild(UI.el('p', null,
-      '이대로 발급하면 그 언어 노동자는 이 문구를 한국어로 보게 됩니다. ' +
-      '운영자에게 번역 요청을 해 두세요.'));
-    box.appendChild(warn);
+    /* ★ 번역이 없는 것과 그 언어에서 중지된 것은 다른 일이다.
+         번역이 없으면 한국어로라도 보이고, 중지됐으면 아예 안 나간다.
+         같은 상자에 넣으면 담당자가 둘을 구분하지 못한다. */
+    if (blocked.length) {
+      warnBox('그 언어에서 나가지 않는 조합 ' + blocked.length + '건', blocked,
+        '그 언어의 번역이 검수를 지나지 못했습니다. 그 언어 노동자에게는 이 문구가 ' +
+        '아예 보이지 않습니다. 다른 언어 노동자는 그대로 받습니다.');
+    }
+
+    if (missing.length) {
+      warnBox('번역이 없는 조합 ' + missing.length + '건', missing,
+        '이대로 발급하면 그 언어 노동자는 이 문구를 한국어로 보게 됩니다. ' +
+        '운영자에게 번역 요청을 해 두세요.');
+    }
   }
 
   /* -----------------------------------------------------------------
@@ -698,12 +725,24 @@
       langCell.appendChild(chips);
       tr.appendChild(langCell);
 
-      // 검수 상태가 바뀌어 지금 쓸 수 있는 문구가 줄었을 수 있다. 그것도 보여 준다.
+      /* 검수 상태가 바뀌어 지금 쓸 수 있는 문구가 줄었을 수 있다. 그것도 보여 준다.
+
+         판정이 언어별이라 세 갈래다 —
+           전체 언어에서 나간다 · 일부 언어에서만 빠졌다 · 어느 언어에도 안 나간다.
+         가운데를 "중지됨" 으로 뭉치면 담당자는 교육 전체가 멈춘 줄 안다. */
       var ids = c.phraseIds || [];
-      var live = ids.filter(function (id) {
+      var courseLangs = (c.languages || []).length ? c.languages : ['ko'];
+
+      var live = 0;      // 모든 언어에서 나가는 문구
+      var partial = 0;   // 일부 언어에서만 빠진 문구
+      ids.forEach(function (id) {
         var p = phraseOf(id);
-        return p && p.status === 'reviewed';
-      }).length;
+        var okCount = courseLangs.filter(function (code) {
+          return Store.phraseOk(p, code);
+        }).length;
+        if (okCount === courseLangs.length) live++;
+        else if (okCount > 0) partial++;
+      });
       var countCell = UI.el('td');
       countCell.appendChild(document.createTextNode('문구 ' + live + ' / ' + ids.length));
       countCell.appendChild(UI.el('span', 'sub', '문항 ' + ((c.quiz || []).length) + '개'));
@@ -713,7 +752,11 @@
 
       var statusCell = UI.el('td');
       if (!(c.quiz || []).length) statusCell.appendChild(UI.stopBadge('문항 없음'));
-      else if (live < ids.length) statusCell.appendChild(UI.waitBadge('문구 ' + (ids.length - live) + '개 중지됨'));
+      else if (live + partial < ids.length) {
+        statusCell.appendChild(UI.waitBadge('문구 ' + (ids.length - live - partial) + '개 중지됨'));
+      } else if (partial) {
+        statusCell.appendChild(UI.waitBadge('문구 ' + partial + '개 일부 언어 중지'));
+      }
       else if (c.approved) statusCell.appendChild(UI.okBadge('발급됨'));
       else statusCell.appendChild(UI.neutralBadge('미승인'));
       tr.appendChild(statusCell);

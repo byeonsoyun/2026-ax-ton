@@ -4,6 +4,16 @@ const { boot, ok, eq, has, report } = require('./harness');
 const text = (n) => (n ? n.textContent.trim().replace(/\s+/g, ' ') : '');
 const click = (win, node) => node.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
 
+/* 신고 접수 — 이제 어느 언어인지 반드시 골라야 한다.
+   lang 을 'ALL' 로 주면 문구 전체, 언어 코드로 주면 그 언어만 내려간다. */
+function fileFlag(t, phraseId, lang, note) {
+  t.$('flag-phrase').value = phraseId;
+  t.$('flag-phrase').dispatchEvent(new t.win.Event('change', { bubbles: true }));
+  t.$('flag-lang').value = lang;
+  t.$('flag-note').value = note;
+  t.$('form-flag').dispatchEvent(new t.win.Event('submit', { bubbles: true, cancelable: true }));
+}
+
 function open(opts = {}) {
   return boot('admin/library.html',
     Object.assign({ login: 'oper@safety.kr', role: 'operator', page: 'admin/library.js' }, opts));
@@ -20,15 +30,24 @@ function open(opts = {}) {
   has('AI 경계를 화면에 적는다', text(doc.querySelector('.ai-note')), 'AI 여기까지');
   has('승인은 사람이 한다고 적는다', text(doc.querySelector('.ai-note')), '승인은 사람이 합니다');
 
-  // 예시 데이터: reviewed 4 (ph-1,2,4,6) · waiting 1 (ph-5) · stopped 1 (ph-3)
+  /* 예시 데이터 — 문구 6개.
+       ph-1,2,4,6 검수 완료 · ph-5 검수 대기
+       ph-3 은 한국어·크메르어는 검수 완료인데 인도네시아어만 중지 (오역 신고 1건)
+     타일은 "한 언어라도" 기준으로 센다. ph-3 은 완료에도 중지에도 들어간다 —
+     크메르어로는 나가고 인도네시아어로는 안 나가는 것이 사실이다. */
   const tiles = [...t.$('stats').querySelectorAll('.kpi')].map(
     (k) => text(k.querySelector('dt')) + '=' + text(k.querySelector('dd')));
-  has('검수 완료 4개', tiles.join(' '), '검수 완료=4개');
+  has('검수 완료 5개', tiles.join(' '), '검수 완료=5개');
   has('검수 대기 1개', tiles.join(' '), '검수 대기=1개');
   has('사용 중지 1개', tiles.join(' '), '사용 중지=1개');
   has('전체 6개', tiles.join(' '), '전체=6개');
 
-  eq('처리할 신고가 아직 없다', text(t.$('flag-queue')).includes('처리할 오역 신고가 없습니다'), true);
+  /* ★ 예시 데이터의 신고는 인도네시아어 한 언어에 대한 것이다 */
+  const seedItems = t.$('flag-queue').querySelectorAll('.queue-item');
+  eq('예시 신고 1건이 큐에 있다', seedItems.length, 1);
+  has('어느 언어의 신고인지 적는다', text(seedItems[0]), '인도네시아어 번역');
+  has('그 언어만 중지됐다고 알린다', text(seedItems[0]), '인도네시아어 중지');
+  has('문구 전체는 검수 완료로 남아 있다', text(seedItems[0]), '검수 완료');
 
   /* --- 판정이 필요한 문구 = reviewed 가 아닌 것 (ph-3, ph-5) --- */
   const blocks = t.$('review-list').querySelectorAll('.review-block');
@@ -71,10 +90,8 @@ function open(opts = {}) {
   const before = t.win.Store.library.load().find((p) => p.id === 'ph-1');
   eq('접수 전에는 검수 완료', before.status, 'reviewed');
 
-  // ph-1 을 골라 신고 접수
-  t.$('flag-phrase').value = 'ph-1';
-  t.$('flag-note').value = '크메르어에서 "프레스가 멈춰도" 가 빠졌습니다';
-  t.$('form-flag').dispatchEvent(new t.win.Event('submit', { bubbles: true, cancelable: true }));
+  // ph-1 을 골라 문구 전체 신고 접수
+  fileFlag(t, 'ph-1', 'ALL', '크메르어에서 "프레스가 멈춰도" 가 빠졌습니다');
 
   const after = t.win.Store.library.load().find((p) => p.id === 'ph-1');
   eq('★ 접수하는 순간 사용 중지', after.status, 'stopped');
@@ -82,17 +99,19 @@ function open(opts = {}) {
   has('무엇이 잘못됐는지', after.flags[0].note, '빠졌습니다');
   eq('아직 처리되지 않은 상태', after.flags[0].resolvedAt, null);
 
-  // 큐에 뜨는지
-  const items = t.$('flag-queue').querySelectorAll('.queue-item');
-  eq('신고 큐에 1건', items.length, 1);
-  eq('오역 신고는 긴급으로 표시', items[0].getAttribute('data-urgent'), 'yes');
-  has('신고 내용을 보여 준다', text(items[0]), '빠졌습니다');
+  // 큐에 뜨는지 (예시 데이터의 ph-3 신고와 함께 2건)
+  const items = [...t.$('flag-queue').querySelectorAll('.queue-item')];
+  eq('신고 큐에 2건', items.length, 2);
+  const ph1Item = items.find((i) => text(i).includes('빠졌습니다'));
+  ok('ph-1 신고가 큐에 있다', !!ph1Item);
+  eq('오역 신고는 긴급으로 표시', ph1Item.getAttribute('data-urgent'), 'yes');
+  has('문구 전체 신고라고 적는다', text(ph1Item), '문구 전체');
 
   // 상태 타일도 따라간다
   const tiles = [...t.$('stats').querySelectorAll('.kpi')].map(
     (k) => text(k.querySelector('dt')) + '=' + text(k.querySelector('dd')));
-  has('검수 완료가 3개로 줄었다', tiles.join(' '), '검수 완료=3개');
-  has('오역 신고 1건', tiles.join(' '), '오역 신고=1건');
+  has('검수 완료가 4개로 줄었다', tiles.join(' '), '검수 완료=4개');
+  has('오역 신고 2건', tiles.join(' '), '오역 신고=2건');
   has('사용 중지가 2개로 늘었다', tiles.join(' '), '사용 중지=2개');
 
   const alertTile = [...t.$('stats').querySelectorAll('.kpi')]
@@ -100,14 +119,16 @@ function open(opts = {}) {
   ok('신고가 있으면 타일이 경고 모양이 된다', alertTile.className.includes('alert'));
 
   /* --- 신고만 닫으면 중지가 유지된다 --- */
-  const keepBtn = [...items[0].querySelectorAll('.btn-sm')]
+  const keepBtn = [...ph1Item.querySelectorAll('.btn-sm')]
     .find((b) => text(b).includes('신고만 닫기'));
   click(t.win, keepBtn);
 
   const kept = t.win.Store.library.load().find((p) => p.id === 'ph-1');
   eq('신고는 닫혔다', kept.flags[0].resolvedAt !== null, true);
   eq('문구는 계속 중지', kept.status, 'stopped');
-  has('큐가 비었다', text(t.$('flag-queue')), '처리할 오역 신고가 없습니다');
+  ok('ph-1 이 큐에서 빠진다',
+    !text(t.$('flag-queue')).includes('빠졌습니다'), text(t.$('flag-queue')));
+  has('다른 언어 신고는 그대로 남는다', text(t.$('flag-queue')), '인도네시아어 번역');
 }
 
 /* =================================================================
@@ -115,13 +136,14 @@ function open(opts = {}) {
    ================================================================= */
 {
   const t = open();
-  t.$('flag-phrase').value = 'ph-2';
-  t.$('flag-note').value = '오타';
-  t.$('form-flag').dispatchEvent(new t.win.Event('submit', { bubbles: true, cancelable: true }));
+  fileFlag(t, 'ph-2', 'ALL', '오타');
 
   t.win.confirm = () => true;   // 신고가 열린 채 되살릴지 묻는 확인창
-  const fixBtn = [...t.$('flag-queue').querySelectorAll('.btn-sm')]
+  const ph2Item = [...t.$('flag-queue').querySelectorAll('.queue-item')]
+    .find((i) => text(i).includes('오타'));
+  const fixBtn = [...ph2Item.querySelectorAll('.btn-sm')]
     .find((b) => text(b).includes('고쳐졌습니다'));
+  has('문구 전체를 되살리는 버튼이다', text(fixBtn), '문구 전체 다시 사용');
   click(t.win, fixBtn);
 
   const p = t.win.Store.library.load().find((x) => x.id === 'ph-2');
@@ -162,11 +184,12 @@ function open(opts = {}) {
 
   click(t.win, t.$('filter-stopped'));
   eq('사용 중지만 1줄', t.$('phrase-rows').querySelectorAll('tr').length, 1);
-  has('ph-3 이다', text(t.$('phrase-rows')), '프레스가 멈춰도');
+  has('★ 인도네시아어만 중지된 ph-3 도 잡힌다', text(t.$('phrase-rows')), '프레스가 멈춰도');
+  has('어느 언어가 멈췄는지 적는다', text(t.$('phrase-rows')), '인도네시아어 중지');
   eq('지금 보고 있는 것을 표시', t.$('filter-stopped').getAttribute('aria-pressed'), 'true');
 
   click(t.win, t.$('filter-reviewed'));
-  eq('검수 완료 4줄', t.$('phrase-rows').querySelectorAll('tr').length, 4);
+  eq('검수 완료 5줄', t.$('phrase-rows').querySelectorAll('tr').length, 5);
 
   click(t.win, t.$('filter-all'));
   eq('다시 6줄', t.$('phrase-rows').querySelectorAll('tr').length, 6);
@@ -184,9 +207,7 @@ function open(opts = {}) {
 {
   // 먼저 라이브러리에서 ph-1 을 중지시킨다
   const lib = open();
-  lib.$('flag-phrase').value = 'ph-1';
-  lib.$('flag-note').value = '뜻이 반대입니다';
-  lib.$('form-flag').dispatchEvent(new lib.win.Event('submit', { bubbles: true, cancelable: true }));
+  fileFlag(lib, 'ph-1', 'ALL', '뜻이 반대입니다');
   const saved = lib.win.Store.library.load();
   eq('ph-1 중지 확인', saved.find((p) => p.id === 'ph-1').status, 'stopped');
 
@@ -197,12 +218,14 @@ function open(opts = {}) {
     before(win) { win.Store.library.save(saved); },
   });
 
+  /* c-press 는 문구 4개(ph-1,2,3,6). 크메르어 노동자에게는 넷 다 쓸 수 있는데,
+     ph-1 을 문구 전체 중지했으므로 3개로 줄어야 한다. */
   const card = learn.win.document.querySelector('#course-list .course-card');
-  has('쓸 수 있는 문구가 3개에서 2개로 줄었다', text(card.querySelector('.meta')), '안전 문구 2개');
+  has('쓸 수 있는 문구가 4개에서 3개로 줄었다', text(card.querySelector('.meta')), '안전 문구 3개');
   has('몇 개가 빠졌는지 밝힌다', text(card.querySelector('.tags')), '검수 대기 1개 제외');
 
   card.querySelector('.course-open').dispatchEvent(new learn.win.MouseEvent('click', { bubbles: true }));
-  has('수강 화면도 2장으로 줄었다', text(learn.$('step-count')), '1 / 2');
+  has('수강 화면도 3장으로 줄었다', text(learn.$('step-count')), '1 / 3');
   ok('중지된 문구는 나오지 않는다',
     !text(learn.$('phrase-card')).includes('កុំដាក់ដៃចូល'),
     text(learn.$('phrase-card')));
@@ -223,6 +246,133 @@ function open(opts = {}) {
   ok('localStorage 직접 호출 안 함', !/localStorage/.test(js.replace(/\/\*[\s\S]*?\*\//g, '')));
   ok('"면책" 표현 없음', !/면책/.test(html + js));
   ok('껍데기 안내가 남아 있지 않다', !/아직 만들지 않은 화면/.test(html));
+}
+
+/* =================================================================
+   N. ★ 언어별 검수 판정 — 한 언어의 오역으로 다른 언어를 잃지 않는다
+
+   ph-3 은 인도네시아어 번역만 뜻이 뒤집혔다 ("넣지 마십시오" → "넣어도 됩니다").
+   문구 전체를 내리면 크메르어 노동자도 이 안전 지시를 못 듣는다.
+   그것은 오역보다 나은 상태가 아니다.
+   ================================================================= */
+{
+  const t = open();
+  const p3 = t.win.Store.library.load().find((p) => p.id === 'ph-3');
+
+  eq('문구 전체는 검수 완료', p3.status, 'reviewed');
+  eq('한국어 원문은 쓸 수 있다', t.win.Store.phraseOk(p3, 'ko'), true);
+  eq('★ 크메르어는 쓸 수 있다', t.win.Store.phraseOk(p3, 'km'), true);
+  eq('★ 인도네시아어는 못 쓴다', t.win.Store.phraseOk(p3, 'id'), false);
+  eq('번역이 없는 언어는 문구 전체를 따른다', t.win.Store.phraseOk(p3, 'ne'), true);
+
+  // 판정 화면에 언어마다 판정 버튼이 있다
+  const block = [...t.$('review-list').querySelectorAll('.review-block')]
+    .find((b) => text(b).includes('프레스가 멈춰도'));
+  ok('판정 대상에 있다', !!block);
+  const labels = [...block.querySelectorAll('.btn-sm')].map((b) => text(b));
+  ok('인도네시아어만 되살리는 버튼이 있다',
+    labels.some((l) => l.includes('인도네시아어만 검수 완료')), labels.join(' | '));
+  ok('크메르어만 내리는 버튼이 있다',
+    labels.some((l) => l.includes('크메르어만 중지')), labels.join(' | '));
+  ok('문구 전체 버튼도 따로 있다',
+    labels.some((l) => l.includes('문구 전체')), labels.join(' | '));
+}
+
+/* --- ★ 같은 교육, 다른 언어 — 한쪽에는 남고 한쪽에서는 빠진다 --- */
+{
+  /* c-press 는 문구 4개(ph-1,2,3,6)이고 언어는 km·id·vi 다.
+     크메르어 노동자에게는 4개가 다 나가고,
+     인도네시아어 번역이 중지된 ph-3 은 인도네시아어 노동자에게만 빠진다. */
+  const km = boot('worker/learn.html', { login: 'W-4821-07', page: 'worker/learn.js' });
+  const kmCard = km.win.document.querySelector('#course-list .course-card');
+  has('★ 크메르어 노동자는 문구 4개를 다 받는다', text(kmCard.querySelector('.meta')), '안전 문구 4개');
+
+  kmCard.querySelector('.course-open')
+    .dispatchEvent(new km.win.MouseEvent('click', { bubbles: true }));
+  const kmTexts = [];
+  for (let i = 0; i < 4; i++) {
+    kmTexts.push(text(km.$('phrase-card')));
+    const next = km.$('btn-next');
+    if (next && !next.hidden) next.dispatchEvent(new km.win.MouseEvent('click', { bubbles: true }));
+  }
+  ok('★ 크메르어 화면에는 그 문구가 그대로 나온다',
+    kmTexts.join(' ').includes('프레스가 멈춰도') ||
+    kmTexts.join(' ').includes('ទោះម៉ាស៊ីនឈប់'),
+    kmTexts.join(' | ').slice(0, 200));
+
+  /* 인도네시아어 노동자 — 도장 교육에도 ph-3 이 들어 있다 (ph-3,4,6).
+     인도네시아어 번역이 중지됐으니 2개만 남는다. */
+  const id = boot('worker/learn.html', { login: 'W-4821-11', page: 'worker/learn.js' });
+  const idCard = id.win.document.querySelector('#course-list .course-card');
+  has('★ 인도네시아어 노동자에게는 그 문구가 빠진다',
+    text(idCard.querySelector('.meta')), '안전 문구 2개');
+
+  idCard.querySelector('.course-open')
+    .dispatchEvent(new id.win.MouseEvent('click', { bubbles: true }));
+  const idTexts = [];
+  for (let i = 0; i < 2; i++) {
+    idTexts.push(text(id.$('phrase-card')));
+    const next = id.$('btn-next');
+    if (next && !next.hidden) next.dispatchEvent(new id.win.MouseEvent('click', { bubbles: true }));
+  }
+  ok('★ 뜻이 뒤집힌 번역은 어디에도 나오지 않는다',
+    !idTexts.join(' ').includes('boleh masukkan tangan'), idTexts.join(' | ').slice(0, 200));
+}
+
+/* --- 신고할 때 언어를 반드시 고르게 한다 --- */
+{
+  const t = open();
+
+  /* 기본값을 두지 않는 이유 — 특정 언어가 기본이면 손대지 않고 접수한 순간
+     엉뚱한 언어가 내려가고 정작 오역인 번역은 계속 나간다.
+     "문구 전체" 가 기본이면 언어별 판정을 만든 이유가 사라진다. */
+  t.$('flag-phrase').value = 'ph-1';
+  t.$('flag-phrase').dispatchEvent(new t.win.Event('change', { bubbles: true }));
+  eq('언어 칸의 기본값은 비어 있다', t.$('flag-lang').value, '');
+
+  const options = [...t.$('flag-lang').querySelectorAll('option')].map((o) => text(o));
+  has('고르라고 적혀 있다', options.join(' | '), '고르세요');
+  ok('그 문구가 가진 언어가 올라온다',
+    options.some((o) => o.includes('크메르어')), options.join(' | '));
+  ok('문구 전체도 고를 수 있다',
+    options.some((o) => o.includes('문구 전체')), options.join(' | '));
+
+  // 고르지 않고 접수하면 막힌다
+  t.$('flag-note').value = '뭔가 잘못됐습니다';
+  t.$('form-flag').dispatchEvent(new t.win.Event('submit', { bubbles: true, cancelable: true }));
+  eq('★ 언어를 고르지 않으면 접수되지 않는다',
+    t.win.Store.library.load().find((p) => p.id === 'ph-1').status, 'reviewed');
+  has('무엇을 해야 하는지 말해 준다', text(t.$('toast')), '어느 언어의 번역인지');
+}
+
+/* --- 한 언어만 신고하면 그 언어만 내려간다 --- */
+{
+  const t = open();
+  fileFlag(t, 'ph-1', 'km', '크메르어에서 부정이 빠졌습니다');
+
+  const p = t.win.Store.library.load().find((x) => x.id === 'ph-1');
+  eq('★ 문구 전체는 살아 있다', p.status, 'reviewed');
+  eq('★ 크메르어만 중지', p.translations.km.status, 'stopped');
+  eq('인도네시아어는 그대로', p.translations.id.status, undefined);
+  eq('어느 언어의 신고인지 남는다', p.flags[p.flags.length - 1].lang, 'km');
+
+  eq('크메르어로는 못 쓴다', t.win.Store.phraseOk(p, 'km'), false);
+  eq('★ 인도네시아어로는 계속 쓴다', t.win.Store.phraseOk(p, 'id'), true);
+
+  // 그 언어만 되살린다
+  t.win.confirm = () => true;
+  const item = [...t.$('flag-queue').querySelectorAll('.queue-item')]
+    .find((i) => text(i).includes('부정이 빠졌습니다'));
+  const fix = [...item.querySelectorAll('.btn-sm')]
+    .find((b) => text(b).includes('크메르어 번역이 고쳐졌습니다'));
+  ok('그 언어만 되살리는 버튼이다', !!fix,
+    [...item.querySelectorAll('.btn-sm')].map((b) => text(b)).join(' | '));
+  click(t.win, fix);
+
+  const fixed = t.win.Store.library.load().find((x) => x.id === 'ph-1');
+  eq('크메르어가 다시 검수 완료', fixed.translations.km.status, 'reviewed');
+  eq('그 언어의 신고만 닫힌다',
+    fixed.flags.filter((f) => f.lang === 'km' && !f.resolvedAt).length, 0);
 }
 
 report('기능9 안전 문구 라이브러리');

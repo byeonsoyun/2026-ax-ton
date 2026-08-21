@@ -13,7 +13,8 @@
 
    이 파일이 코드로 지키는 규칙 세 가지 —
 
-   · 검수 완료(status === 'reviewed')가 아닌 문구는 안전 지시로 쓰지 않는다.
+   · 검수 완료가 아닌 문구는 안전 지시로 쓰지 않는다. 판정은 내 언어 기준이다
+     (Store.phraseOk) — 다른 언어의 오역으로 내 안전 지시가 사라지지 않는다.
      걸러 낸 결과가 0개면 진행 자체를 막는다. 오역이 그대로 사고가 된다.
 
    · 내 언어 번역이 없는 문구를 조용히 숨기지 않는다.
@@ -75,7 +76,11 @@
   }
 
   /* 이 교육에서 실제로 들려줄 문구.
-     ★ 검수 완료인 것만 남는다. 여기가 규칙이 코드가 되는 지점이다. */
+     ★ 검수 완료인 것만 남는다. 여기가 규칙이 코드가 되는 지점이다.
+
+     ★ 판정은 내 언어 기준이다 (Store.phraseOk). 크메르어 번역 하나가 오역이어도
+       인도네시아어 노동자는 그 안전 지시를 계속 들어야 한다.
+       p.status 를 직접 보면 언어별 판정이 무시된다. */
   function phrasesOf(course) {
     var library = Store.library.load();
     var ids = Array.isArray(course.phraseIds) ? course.phraseIds : [];
@@ -83,7 +88,7 @@
     return ids.map(function (id) {
       return Store.findBy(library, 'id', id);
     }).filter(function (p) {
-      return !!p && p.status === 'reviewed';
+      return Store.phraseOk(p, me.lang);
     });
   }
 

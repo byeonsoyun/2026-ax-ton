@@ -129,6 +129,15 @@ table.data td .chips { margin: 0; }
 /* 작업 → 보호구 짝 입력 */
 /* 문항 번역 한 덩어리 — 언어마다 하나.
    문항이 한국어로만 나가면 기능4 는 기존 필기시험이 된다. */
+/* 언어 하나만의 판정 버튼 줄. 문구 전체 판정과 눈으로 구분되게 들여쓴다 —
+   "크메르어만 중지" 와 "문구 전체 중지" 를 헷갈리면 다른 언어 노동자가
+   안전 지시를 잃는다. */
+.lang-verdict {
+  margin: 4px 0 12px 12px;
+  padding-left: 10px;
+  border-left: 3px solid var(--line);
+}
+
 .i18n-box {
   margin-top: 10px;
   padding: 12px;

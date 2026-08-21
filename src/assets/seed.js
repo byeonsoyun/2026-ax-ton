@@ -74,12 +74,23 @@ var Seed = (function () {
         id: { text: 'Matikan daya sebelum bekerja', back: '작업 전 전원을 끄십시오' },
         vi: { text: 'Tắt nguồn trước khi làm việc', back: '작업 전 전원을 끄십시오' }
       } },
-    { id: 'ph-3', category: '프레스', status: 'stopped',
+    /* ★ ph-3 은 인도네시아어 번역만 뜻이 뒤집혔다 ("넣지 마십시오" → "넣어도 됩니다").
+         그래서 인도네시아어만 중지하고 한국어 원문과 크메르어는 계속 쓴다.
+         문구 전체를 내리면 크메르어 노동자도 이 안전 지시를 못 듣는다 —
+         그것은 오역보다 나은 상태가 아니다.
+         flags[].lang 이 어느 언어의 신고인지를 남긴다. */
+    { id: 'ph-3', category: '프레스', status: 'reviewed',
       ko: '프레스가 멈춰도 손을 넣지 마십시오',
       translations: {
+        km: { text: 'ទោះម៉ាស៊ីនឈប់ ក៏កុំដាក់ដៃចូល',
+              back: '프레스가 멈춰도 손을 넣지 마십시오', status: 'reviewed' },
         id: { text: 'Jika mesin mati, boleh masukkan tangan',
-              back: '프레스가 꺼지면 손을 넣어도 됩니다' }
-      } },
+              back: '프레스가 꺼지면 손을 넣어도 됩니다', status: 'stopped' }
+      },
+      flags: [
+        { note: '인도네시아어 번역이 정반대입니다. 손을 넣어도 된다고 읽힙니다.',
+          lang: 'id', at: '2026-08-12T02:10:00.000Z', resolvedAt: null }
+      ] },
     { id: 'ph-4', category: '도장', status: 'reviewed',
       ko: '도장 작업 시 방독마스크를 착용하십시오',
       translations: {
@@ -116,7 +127,7 @@ var Seed = (function () {
        answer 가 options 의 인덱스라서 번역 배열의 길이가 다르면 정답이 어긋난다. */
   var COURSES = [
     { id: 'c-press', title: '프레스 3호기 안전교육', equipmentId: 'e-press3',
-      languages: ['km', 'id', 'vi'], phraseIds: ['ph-1', 'ph-2', 'ph-6'],
+      languages: ['km', 'id', 'vi'], phraseIds: ['ph-1', 'ph-2', 'ph-3', 'ph-6'],
       approved: true, createdAt: '2026-08-01T02:00:00.000Z',
       quiz: [
         { id: 'q1', type: 'hotspot', hazard: 'pinch',
@@ -174,7 +185,7 @@ var Seed = (function () {
           why: '작업마다 맞는 보호구가 다릅니다. 배전반 점검에 일반 안전장갑을 끼면 감전을 막지 못합니다.' }
       ] },
     { id: 'c-paint', title: '도장 부스 1 안전교육', equipmentId: 'e-booth1',
-      languages: ['id'], phraseIds: ['ph-4', 'ph-6'],
+      languages: ['id'], phraseIds: ['ph-3', 'ph-4', 'ph-6'],
       approved: true, createdAt: '2026-08-03T01:00:00.000Z',
       quiz: [
         { id: 'q1', type: 'choice', hazard: 'fire',

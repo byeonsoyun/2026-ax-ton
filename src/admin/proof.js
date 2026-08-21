@@ -218,6 +218,17 @@
             p.status === 'stopped'
               ? ' — 교육 이후 사용 중지된 문구입니다'
               : ' — 현재 검수 대기 상태입니다'));
+        } else {
+          /* 문구 전체는 살아 있어도 어느 한 언어에서만 내려갔을 수 있다.
+             그 언어 노동자는 이 문구를 받지 못했다는 뜻이므로 증빙에 적는다.
+             ★ 숨기지 않는다. 무엇이 전달되지 않았는지가 이 문서의 내용이다. */
+          var out = (course.languages || []).filter(function (code) {
+            return !Store.phraseOk(p, code);
+          });
+          if (out.length) {
+            li.appendChild(UI.el('span', 'proof-flag',
+              ' — ' + out.map(langName).join(' · ') + ' 노동자에게는 전달되지 않았습니다'));
+          }
         }
       }
       box.appendChild(li);
