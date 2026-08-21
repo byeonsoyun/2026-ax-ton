@@ -409,3 +409,53 @@ table.data td .chips { margin: 0; }
 
   a[href]::after { content: ""; }
 }
+
+/* -------------------------------------------------------------------
+   기능6 — 정보 위계.
+   이수율 타일은 작게, 취약 항목은 크게. 위계가 뒤바뀌면 담당자는
+   이수율만 보고 교육을 안 고친다.
+   ------------------------------------------------------------------- */
+
+.kpi-row.small { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+.kpi-row.small .kpi { padding: 10px 11px; }
+.kpi-row.small .kpi dt { font-size: .72em; margin-bottom: 3px; }
+.kpi-row.small .kpi dd { font-size: 1.15em; }
+.kpi-row.small .kpi .hint { font-size: .68em; margin-top: 4px; }
+
+/* 이 화면에서 가장 큰 블록 */
+.card.feature {
+  border-color: #c3d8ef;
+  border-width: 2px;
+  padding: 18px;
+}
+
+.card.feature .sec-head h2 { font-size: 1.2em; }
+.card.feature .bar-list { margin-top: 4px; }
+.card.feature .bar-head { font-size: .92em; }
+.card.feature .bar-track { height: 18px; }
+
+/* 화면에 반드시 남아야 하는 문장들.
+   기획에서 온 것이라 옮겨 오면서 빼지 않는다 (SCREEN 기능6). */
+.policy-note {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border-left: 4px solid var(--brand);
+  background: var(--brand-soft);
+  font-size: .82em;
+  line-height: 1.65;
+  color: #1c4a7c;
+}
+
+.policy-note.quiet {
+  margin: 12px 0 0;
+  border-left-color: var(--line);
+  background: #f4f6f8;
+  color: var(--ink-2);
+}
+
+.policy-note b { font-weight: 800; }
+
+/* 막힌 항목 배지가 표 안에서 줄바꿈되게 */
+table.data .chips { gap: 4px; }
+table.data .chips .badge { font-size: .68em; }

@@ -1,57 +1,451 @@
 /* ===================================================================
-   dashboard.js — 담당자 대시보드
+   dashboard.js — 기능6 담당자 대시보드
 
-   담당: 관리자 C
+   담당: P3
    기능번호: 기능6
-   읽는 키: progress, reports, setup, courses
-   쓰는 키: reports
-   근거: SCREEN 기능6 (F-06) · PRD §2.2 §9.2 · 목업 12-admin-dashboard.html
+   읽는 키: progress, reports, setup, courses, library
+   쓰는 키: reports (조치 상태만)
+   근거: SCREEN 기능6 · PRD §5
 
-   이수 현황(작은 타일)
-   이해도 취약 항목(가장 크게)
-   조치 대상
-   익명 신고 처리 큐
-   다음 교육 기한. "인도네시아어 화재 대응 40%" 같은 값은 노동자 평가가 아니라 콘텐츠 개선 신호라고 화면 안에 적습니다. 개인별 점수의 인사·평가 목적 내보내기를 제공하지 않습니다. 이 화면은 AI가 개입하지 않습니다 — 기록을 그대로 센 값만 보여 줍니다. projects/campus-ax-ton/code/12-admin-dashboard.html 에 정적 목업이 있으니 그대로 옮겨 오면 됩니다.
+   ★ 이 화면의 주인공은 이수율이 아니다.
+
+     "어느 언어에서 무엇을 못 알아들었는지" 가 핵심이고,
+     그래서 이수 현황 타일은 작게, 언어×항목 정답률 막대는 가장 크게 둔다.
+     정보 위계가 뒤바뀌면 담당자는 이수율만 보고 교육을 안 고친다.
+
+   ★ 화면에 반드시 있어야 하는 문장 세 개 (SCREEN 기능6)
+     · 이 목록은 노동자 평가가 아니라 콘텐츠 개선 신호입니다
+     · 미통과는 노동자의 실패가 아니라 교육의 실패로 기록됩니다
+     · 개인별 점수의 인사·평가 목적 내보내기는 제공하지 않습니다
+     감시 도구가 되는 순간 제품의 전제가 무너진다. 문장을 지우지 말 것.
+
+   ★ 위험요소 신고는 익명이다.
+     reports 에는 신고자를 식별할 값이 없고, 이 화면도 만들지 않는다.
 
    -------------------------------------------------------------------
-   여기부터 만드시면 됩니다.
-
-   · 데이터는 반드시 Store 를 거칩니다. localStorage 를 직접 부르지 마세요.
-     나중에 서버가 생기면 store.js 하나만 바꾸면 되기 때문입니다.
-   · 배지 · 칩 · 목록 · 토스트 같은 공용 조각은 ../assets/ui.js 에 있습니다.
-     각자 다시 만들면 네 화면의 디자인이 흩어집니다.
-   · 공용 파일(assets/)을 고쳐야 하면 팀에 먼저 말하세요. 네 명이 함께 씁니다.
-   · 예시 데이터는 로그인 화면의 "예시 데이터 채우기" 버튼으로 채웁니다.
+   골격입니다. 남은 것은 화면 아래 "여기부터 채우시면 됩니다" 에 적혀 있습니다.
    =================================================================== */
 
 (function () {
   'use strict';
 
+  var $ = UI.$;
   var user = Auth.current();
 
   UI.fillAdminBar(user);
   UI.markCurrentTab();
   UI.warnIfBlocked();
 
-  /* ---------------------------------------------------------------
-     아래는 껍데기 확인용입니다. 실제 화면을 만들 때 지우세요.
-     --------------------------------------------------------------- */
+  /* 신고 조치 상태 — reports 의 status 로 쓴다 */
+  var REPORT_STATUS = {
+    urgent:   { label: '긴급', badge: 'stop' },
+    received: { label: '접수', badge: 'wait' },
+    resolved: { label: '조치 완료', badge: 'ok' }
+  };
 
-  var peek = [
-    { label: 'progress (수강·검증 이력)', count: Store.progress.load().length },
-    { label: 'reports (신고)', count: Store.reports.load().length },
-    { label: 'setup (사업장·설비)', count: Store.setup.load().length },
-    { label: 'courses (교육)', count: Store.courses.load().length }
-  ];
+  var QLABEL = { hotspot: '위험 지점 짚기', choice: '올바른 작업 고르기', match: '보호구 연결하기' };
 
-  var box = UI.$('peek');
-  peek.forEach(function (row) {
-    var cell = UI.el('div', 'kpi' + (row.count ? '' : ' alert'));
-    cell.appendChild(UI.el('dt', null, row.label));
-    var dd = UI.el('dd', null, String(row.count));
-    dd.appendChild(UI.el('small', null, '건'));
-    cell.appendChild(dd);
-    cell.appendChild(UI.el('p', 'hint', row.count ? '읽을 수 있습니다' : '비어 있습니다'));
-    box.appendChild(cell);
+  /* -----------------------------------------------------------------
+     읽기
+     ----------------------------------------------------------------- */
+
+  function setup() { return Store.setup.load(); }
+
+  function langName(code) {
+    var l = Store.language(code);
+    return l ? l.name : (code || '-');
+  }
+
+  function hazardOf(code) { return Store.hazard(code); }
+
+  function courseOf(id) { return Store.findBy(Store.courses.load(), 'id', id); }
+
+  function equipmentOf(id) { return Store.findBy(setup().equipments, 'id', id); }
+
+  /* 교육 하나의 대상자 — 설비가 속한 공정의 노동자 전원.
+     여기서 누구도 빼지 않는다. 미수강자를 빼면 이수율이 저절로 100% 가 된다. */
+  function audienceOf(course) {
+    var state = setup();
+    var eq = Store.findBy(state.equipments, 'id', course.equipmentId);
+    if (!eq) return [];
+    return state.workers.filter(function (w) { return w.processId === eq.processId; });
+  }
+
+  function progressOf(workerId, courseId) {
+    return Store.progress.load().filter(function (r) {
+      return r.workerId === workerId && r.courseId === courseId;
+    })[0] || null;
+  }
+
+  /* 한 사람 · 한 교육의 상태 */
+  function stateOf(worker, course) {
+    var row = progressOf(worker.id, course.id);
+    if (!row || !row.learnedAt) return { key: 'none', label: '미수강', row: row };
+    if (!row.quiz) return { key: 'noquiz', label: '검증 미실시', row: row };
+    return { key: row.quiz.passed ? 'pass' : 'fail', label: row.quiz.passed ? '이수' : '미통과', row: row };
+  }
+
+  /* 모든 (노동자 × 교육) 조합. 이 화면의 거의 모든 숫자가 여기서 나온다. */
+  function allPairs() {
+    var out = [];
+    Store.courses.load().forEach(function (course) {
+      audienceOf(course).forEach(function (worker) {
+        out.push({ worker: worker, course: course, state: stateOf(worker, course) });
+      });
+    });
+    return out;
+  }
+
+  /* -----------------------------------------------------------------
+     1. 이수 현황 — 작게
+     ----------------------------------------------------------------- */
+
+  function renderStatus(pairs) {
+    var box = $('status-tiles');
+    box.textContent = '';
+
+    var count = function (key) {
+      return pairs.filter(function (p) { return p.state.key === key; }).length;
+    };
+
+    // 최초 통과율 — 다시 풀어 통과한 것은 세지 않는다.
+    // 100% 면 문항이 쉬운 것이라 지표 실패로 본다 (목표 70~85%).
+    var tried = pairs.filter(function (p) {
+      return p.state.key === 'pass' || p.state.key === 'fail';
+    });
+    var firstPass = tried.filter(function (p) {
+      var q = p.state.row.quiz;
+      return q.firstPassed !== undefined ? q.firstPassed : q.passed;
+    }).length;
+    var rate = tried.length ? Math.round((firstPass / tried.length) * 100) : null;
+
+    var tiles = [
+      { label: '이수', value: count('pass'), unit: '건' },
+      { label: '미통과', value: count('fail'), unit: '건', alert: count('fail') > 0 },
+      { label: '미수강', value: count('none') + count('noquiz'), unit: '건',
+        alert: (count('none') + count('noquiz')) > 0 },
+      { label: '최초 통과율', value: rate === null ? '-' : rate, unit: rate === null ? '' : '%',
+        hint: rate === null ? '검증 기록 없음'
+          : (rate === 100 ? '100% 는 문항이 쉬운 것입니다'
+            : (rate < 70 ? '목표 70~85% 보다 낮습니다' : '목표 범위 70~85%')),
+        alert: rate === 100 }
+    ];
+
+    tiles.forEach(function (t) {
+      var cell = UI.el('div', 'kpi' + (t.alert ? ' alert' : ''));
+      cell.appendChild(UI.el('dt', null, t.label));
+      var dd = UI.el('dd', null, String(t.value));
+      if (t.unit) dd.appendChild(UI.el('small', null, t.unit));
+      cell.appendChild(dd);
+      if (t.hint) cell.appendChild(UI.el('p', 'hint', t.hint));
+      box.appendChild(cell);
+    });
+  }
+
+  /* -----------------------------------------------------------------
+     2. ★ 이해도 취약 항목 — 언어 × 위험유형 정답률
+
+     progress.quiz.answers 는 문항별 0/1 이다. 같은 자리의 문항이
+     courses.quiz 에 있으므로, 문항의 hazard 로 묶으면
+     "어느 언어가 어떤 위험을 못 알아들었는지" 가 나온다.
+     ----------------------------------------------------------------- */
+
+  function weakItems() {
+    var buckets = {};   // "lang|hazard" -> { right, total }
+
+    Store.progress.load().forEach(function (row) {
+      if (!row.quiz || !Array.isArray(row.quiz.answers)) return;
+      var course = courseOf(row.courseId);
+      if (!course || !Array.isArray(course.quiz)) return;
+
+      row.quiz.answers.forEach(function (correct, i) {
+        var q = course.quiz[i];
+        if (!q) return;
+        // hazard 가 없는 문항은 유형으로 묶는다. 묶을 이름이 없으면 셀 수 없다.
+        var topic = q.hazard || ('type:' + q.type);
+        var key = (row.lang || '-') + '|' + topic;
+        if (!buckets[key]) buckets[key] = { right: 0, total: 0, lang: row.lang, topic: topic };
+        buckets[key].total += 1;
+        if (correct === 1) buckets[key].right += 1;
+      });
+    });
+
+    return Object.keys(buckets).map(function (key) {
+      var b = buckets[key];
+      var haz = hazardOf(b.topic);
+      return {
+        lang: b.lang,
+        label: haz ? haz.label : (QLABEL[b.topic.replace('type:', '')] || b.topic),
+        icon: haz ? haz.icon : '📋',
+        rate: Math.round((b.right / b.total) * 100),
+        right: b.right,
+        total: b.total
+      };
+    }).sort(function (a, b) {
+      return a.rate - b.rate;        // 낮은 것이 위로
+    });
+  }
+
+  /* 색만으로 구분하지 않는다 — 등급 글자를 함께 준다 */
+  function grade(rate) {
+    if (rate < 60) return { level: 'low', word: '낮음' };
+    if (rate < 80) return { level: 'mid', word: '보통' };
+    return { level: 'ok', word: '양호' };
+  }
+
+  function renderWeak() {
+    var box = $('weak-bars');
+    box.textContent = '';
+
+    var items = weakItems();
+
+    if (!items.length) {
+      box.appendChild(UI.el('p', 'empty',
+        '아직 이해도 검증 기록이 없습니다. 노동자가 검증을 마치면 언어별 취약 항목이 여기 나옵니다.'));
+      $('weak-hint').textContent = '';
+      return;
+    }
+
+    items.forEach(function (item) {
+      var g = grade(item.rate);
+
+      var wrap = UI.el('div', 'bar-item');
+      wrap.setAttribute('data-level', g.level);
+
+      var head = UI.el('div', 'bar-head');
+
+      var what = UI.el('span', 'what');
+      var ico = UI.el('span', null, item.icon + ' ');
+      ico.setAttribute('aria-hidden', 'true');
+      what.appendChild(ico);
+      what.appendChild(document.createTextNode(langName(item.lang) + ' · ' + item.label));
+      what.appendChild(UI.el('em', null, item.right + '/' + item.total + '문항'));
+      head.appendChild(what);
+
+      // 숫자 + 등급 글자. 색을 지워도 뜻이 남아야 한다.
+      head.appendChild(UI.el('span', 'num', item.rate + '% ' + g.word));
+      wrap.appendChild(head);
+
+      var track = UI.el('div', 'bar-track');
+      var fill = UI.el('div', 'bar-fill');
+      fill.style.width = item.rate + '%';
+      track.appendChild(fill);
+      wrap.appendChild(track);
+
+      box.appendChild(wrap);
+    });
+
+    var worst = items[0];
+    $('weak-hint').textContent = worst.rate < 80
+      ? '가장 낮은 항목은 ' + langName(worst.lang) + ' ' + worst.label + ' ' + worst.rate + '% 입니다. ' +
+        '그 언어의 설명을 다시 만드는 것부터 하시면 됩니다.'
+      : '지금은 모든 항목이 양호합니다. 다만 전원이 쉽게 통과하면 문항이 쉬운 것일 수 있습니다.';
+  }
+
+  /* -----------------------------------------------------------------
+     3. 조치가 필요한 사람
+     ----------------------------------------------------------------- */
+
+  /* 이 사람이 어느 항목에서 막혔는지 — 이름을 대야 무엇을 고칠지 알 수 있다 */
+  function stuckTopics(pair) {
+    var row = pair.state.row;
+    if (!row || !row.quiz || !Array.isArray(row.quiz.answers)) return [];
+
+    var course = pair.course;
+    var out = [];
+    row.quiz.answers.forEach(function (correct, i) {
+      if (correct === 1) return;
+      var q = (course.quiz || [])[i];
+      if (!q) return;
+      var haz = hazardOf(q.hazard);
+      out.push(haz ? haz.icon + ' ' + haz.label : (QLABEL[q.type] || q.type));
+    });
+    return out;
+  }
+
+  function renderActions(pairs) {
+    var body = $('action-rows');
+    body.textContent = '';
+
+    var need = pairs.filter(function (p) { return p.state.key !== 'pass'; });
+
+    if (!need.length) {
+      var tr = UI.el('tr');
+      var cell = UI.el('td');
+      cell.colSpan = 5;
+      cell.appendChild(UI.el('p', 'empty', '조치가 필요한 사람이 없습니다.'));
+      tr.appendChild(cell);
+      body.appendChild(tr);
+      return;
+    }
+
+    need.forEach(function (p) {
+      var tr = UI.el('tr');
+      tr.appendChild(UI.el('td', null, p.worker.id));
+      tr.appendChild(UI.el('td', null, langName(p.worker.lang)));
+      tr.appendChild(UI.el('td', null, p.course.title));
+
+      var stateCell = UI.el('td');
+      if (p.state.key === 'fail') stateCell.appendChild(UI.stopBadge('미통과'));
+      else stateCell.appendChild(UI.neutralBadge(p.state.label));
+      tr.appendChild(stateCell);
+
+      var topicCell = UI.el('td');
+      var topics = stuckTopics(p);
+      if (!topics.length) {
+        topicCell.appendChild(UI.el('span', 'sub', p.state.key === 'fail' ? '-' : '아직 풀지 않았습니다'));
+      } else {
+        var chips = UI.el('div', 'chips');
+        topics.forEach(function (name) {
+          chips.appendChild(UI.el('span', 'badge badge-stop', name));
+        });
+        topicCell.appendChild(chips);
+      }
+      tr.appendChild(topicCell);
+
+      body.appendChild(tr);
+    });
+  }
+
+  /* -----------------------------------------------------------------
+     4. 위험요소 신고 큐 — 익명
+     ----------------------------------------------------------------- */
+
+  function renderReports() {
+    var box = $('report-queue');
+    box.textContent = '';
+
+    var state = setup();
+    var list = Store.reports.load().slice().sort(function (a, b) {
+      // 긴급이 위로, 그다음 최신순
+      if ((a.status === 'urgent') !== (b.status === 'urgent')) return a.status === 'urgent' ? -1 : 1;
+      return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
+    });
+
+    if (!list.length) {
+      box.appendChild(UI.el('p', 'empty', '접수된 위험요소 신고가 없습니다.'));
+      return;
+    }
+
+    list.forEach(function (r) {
+      var eq = Store.findBy(state.equipments, 'id', r.equipmentId);
+      var proc = Store.findBy(state.processes, 'id', r.processId);
+      var haz = hazardOf(r.hazard);
+      var status = REPORT_STATUS[r.status] || REPORT_STATUS.received;
+
+      var item = UI.el('div', 'queue-item');
+      item.setAttribute('data-urgent', r.status === 'urgent' ? 'yes' : 'no');
+
+      var top = UI.el('div', 'queue-top');
+      var title = UI.el('strong');
+      var ico = UI.el('span', null, (haz ? haz.icon : '⚠') + ' ');
+      ico.setAttribute('aria-hidden', 'true');
+      title.appendChild(ico);
+      title.appendChild(document.createTextNode(
+        (haz ? haz.label : '위험') + ' — ' + (eq ? eq.name : '설비 미지정')));
+      top.appendChild(title);
+
+      if (status.badge === 'ok') top.appendChild(UI.okBadge(status.label));
+      else if (status.badge === 'stop') top.appendChild(UI.stopBadge(status.label));
+      else top.appendChild(UI.waitBadge(status.label));
+
+      item.appendChild(top);
+
+      if (r.memo) item.appendChild(UI.el('p', 'body', r.memo));
+
+      // ★ 신고자를 적지 않는다. reports 에 그런 값이 아예 없다.
+      item.appendChild(UI.el('p', 'meta',
+        [proc ? proc.name + ' 공정' : null, UI.formatDate(r.createdAt), '익명 신고']
+          .filter(Boolean).join(' · ')));
+
+      var row = UI.el('div', 'btn-row');
+      [['urgent', '긴급으로'], ['received', '접수로'], ['resolved', '조치 완료']].forEach(function (pair) {
+        if (r.status === pair[0]) return;
+        var btn = UI.el('button', 'btn-sm' + (pair[0] === 'resolved' ? ' go' : ''), pair[1]);
+        btn.type = 'button';
+        btn.addEventListener('click', function () { setReportStatus(r.id, pair[0]); });
+        row.appendChild(btn);
+      });
+      item.appendChild(row);
+
+      box.appendChild(item);
+    });
+  }
+
+  function setReportStatus(id, status) {
+    var result = Store.reports.update(function (list) {
+      var r = Store.findBy(list, 'id', id);
+      // ★ 조치 상태만 바꾼다. 신고자를 식별할 값을 새로 넣지 않는다.
+      if (r) r.status = status;
+    });
+    render();
+    if (!result.ok) UI.toast('저장하지 못했습니다. 이 브라우저의 저장소가 막혀 있습니다.');
+    else UI.toast('신고 상태를 바꿨습니다.');
+  }
+
+  /* -----------------------------------------------------------------
+     5. 교육별 실시 상황
+     ----------------------------------------------------------------- */
+
+  function renderDue(pairs) {
+    var list = $('due-list');
+    list.textContent = '';
+
+    var courses = Store.courses.load();
+    if (!courses.length) {
+      list.appendChild(UI.emptyRow('발급된 교육이 없습니다. 교육 콘텐츠 생성에서 먼저 만들어 주세요.'));
+      return;
+    }
+
+    courses.forEach(function (course) {
+      var mine = pairs.filter(function (p) { return p.course.id === course.id; });
+      var done = mine.filter(function (p) { return p.state.key === 'pass'; }).length;
+      var eq = equipmentOf(course.equipmentId);
+
+      var dates = mine.map(function (p) {
+        var row = p.state.row;
+        return row && (row.quiz && row.quiz.at || row.learnedAt);
+      }).filter(Boolean).sort();
+
+      var li = UI.itemRow((eq && eq.icon) || '⚙', course.title,
+        [(eq ? eq.name : '삭제된 설비'),
+          '이수 ' + done + ' / ' + mine.length + '명',
+          dates.length ? '마지막 실시 ' + UI.formatDate(dates[dates.length - 1]) : '실시 기록 없음'
+        ].join(' · '));
+
+      var tags = UI.el('div', 'tags');
+      if (course.dueAt) {
+        // courses 에 dueAt 이 들어오면 바로 D-day 를 쓴다 (기능2 에서 받는다)
+        var days = Math.ceil((new Date(course.dueAt) - new Date()) / 86400000);
+        tags.appendChild(days < 0 ? UI.stopBadge('기한 ' + (-days) + '일 지남')
+          : days <= 7 ? UI.waitBadge('D-' + days) : UI.neutralBadge('D-' + days));
+      } else {
+        tags.appendChild(UI.neutralBadge('기한 미정'));
+      }
+      if (done < mine.length) tags.appendChild(UI.waitBadge('남은 대상 ' + (mine.length - done) + '명'));
+      li.querySelector('.body').appendChild(tags);
+
+      list.appendChild(li);
+    });
+  }
+
+  /* -----------------------------------------------------------------
+     그리기
+     ----------------------------------------------------------------- */
+
+  function render() {
+    var pairs = allPairs();
+    renderStatus(pairs);
+    renderWeak();
+    renderActions(pairs);
+    renderReports();
+    renderDue(pairs);
+  }
+
+  window.addEventListener('storage', function (e) {
+    if (e.key === Store.progress.KEY || e.key === Store.reports.KEY ||
+        e.key === Store.courses.KEY || e.key === Store.setup.KEY) render();
   });
+
+  render();
 })();

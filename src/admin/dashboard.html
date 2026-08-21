@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="admin.css">
 <script src="../assets/store.js"></script>
 <script src="../assets/auth.js"></script>
-<script>Auth.require(['admin', 'operator']);</script>
+<script>Auth.require('admin');</script>
 </head>
 <body class="has-tabbar">
 
@@ -27,37 +27,137 @@
 
   <div class="pagehead">
     <h1>담당자 대시보드</h1>
-    <p class="lead">이수율이 아니라 언어별·항목별 취약점이 이 화면의 핵심입니다.</p>
+    <p class="lead">이수율이 아니라 <b>어느 언어에서 무엇을 못 알아들었는지</b>를 봅니다.</p>
   </div>
 
   <p class="blocked" id="blocked" hidden>
     이 브라우저에서는 저장소를 쓸 수 없습니다. 입력해도 새로고침하면 사라집니다.
   </p>
 
-  <section class="todo">
-    <h2>아직 만들지 않은 화면입니다</h2>
-    <p class="why">이수 현황(작은 타일) · 이해도 취약 항목(가장 크게) · 조치 대상 · 익명 신고 처리 큐 · 다음 교육 기한. "인도네시아어 화재 대응 40%" 같은 값은 노동자 평가가 아니라 콘텐츠 개선 신호라고 화면 안에 적습니다. 개인별 점수의 인사·평가 목적 내보내기를 제공하지 않습니다. 이 화면은 AI가 개입하지 않습니다 — 기록을 그대로 센 값만 보여 줍니다. projects/campus-ax-ton/code/12-admin-dashboard.html 에 정적 목업이 있으니 그대로 옮겨 오면 됩니다.</p>
-    <dl>
-      <dt>담당</dt><dd>관리자 C</dd>
-      <dt>기능번호</dt><dd>기능6</dd>
-      <dt>이 파일</dt><dd><code>admin/dashboard.html</code> · <code>admin/dashboard.js</code></dd>
-      <dt>읽는 키</dt><dd><code>progress</code> · <code>reports</code> · <code>setup</code> · <code>courses</code></dd>
-      <dt>쓰는 키</dt><dd><code>reports</code></dd>
-      <dt>근거 문서</dt><dd>SCREEN 기능6 (F-06) · PRD §2.2 §9.2 · 목업 12-admin-dashboard.html</dd>
-    </dl>
-  </section>
+  <!-- 0. AI 경계 — 이 화면의 숫자에는 AI 가 손대지 않는다 -->
+  <p class="ai-note off">
+    <span class="tag">AI 개입 없음</span>
+    <span>이 화면의 숫자는 노동자가 실제로 답한 기록을 그대로 센 것입니다.
+      추정하거나 보정하지 않습니다.</span>
+  </p>
 
-  <section class="card" aria-labelledby="t-peek">
+  <!-- 1. 이수 현황 — 작게. 이 화면의 주인공이 아니다. -->
+  <section class="card" aria-labelledby="t-status">
     <div class="sec-head">
       <div>
-        <h2 id="t-peek">지금 읽을 수 있는 데이터</h2>
+        <h2 id="t-status">이수 현황</h2>
+        <p class="why">전체 그림입니다. 무엇을 고쳐야 하는지는 아래 취약 항목에서 나옵니다.</p>
+      </div>
+    </div>
+    <dl class="kpi-row small" id="status-tiles"></dl>
+  </section>
+
+  <!-- 2. ★ 이해도 취약 항목 — 이 화면에서 가장 큰 블록 -->
+  <section class="card feature" aria-labelledby="t-weak">
+    <div class="sec-head">
+      <div>
+        <h2 id="t-weak">이해도 취약 항목</h2>
         <p class="why">
-          로그인 화면의 <b>예시 데이터 채우기</b>를 눌렀다면 아래에 숫자가 보입니다.
-          상대 팀 화면이 아직 없어도 이 값으로 개발하시면 됩니다.
+          언어별로 어떤 위험을 못 알아들었는지입니다. 정답률이 낮은 것이 위에 옵니다.
         </p>
       </div>
     </div>
-    <dl class="kpi-row" id="peek" style="margin:0"></dl>
+
+    <!-- 화면에 반드시 있어야 하는 문장 (SCREEN 기능6) -->
+    <p class="policy-note">
+      이 목록은 노동자 평가가 아니라 <b>콘텐츠 개선 신호</b>입니다.
+      정답률이 낮은 항목은 그 언어의 설명을 다시 만들라는 뜻입니다.
+    </p>
+
+    <div class="bar-list" id="weak-bars"></div>
+
+    <p class="policy-note quiet" id="weak-hint"></p>
+  </section>
+
+  <!-- 3. 조치 대상 -->
+  <section class="card" aria-labelledby="t-action">
+    <div class="sec-head">
+      <div>
+        <h2 id="t-action">조치가 필요한 사람</h2>
+        <p class="why">아직 이수하지 못한 사람입니다. 누가 잘못한 것이 아니라 다시 해야 할 일입니다.</p>
+      </div>
+    </div>
+
+    <p class="policy-note">
+      <b>미통과는 노동자의 실패가 아니라 교육의 실패로 기록됩니다.</b>
+      같은 항목에서 여러 사람이 막히면 사람이 아니라 그 설명을 고쳐야 합니다.
+    </p>
+
+    <div class="tablewrap">
+      <table class="data">
+        <thead>
+          <tr>
+            <th scope="col">식별번호</th>
+            <th scope="col">언어</th>
+            <th scope="col">교육</th>
+            <th scope="col">상태</th>
+            <th scope="col">막힌 항목</th>
+          </tr>
+        </thead>
+        <tbody id="action-rows"></tbody>
+      </table>
+    </div>
+
+    <p class="policy-note quiet">
+      개인별 점수의 인사·평가 목적 내보내기는 제공하지 않습니다.
+    </p>
+  </section>
+
+  <!-- 4. 위험요소 신고 큐 — 익명 -->
+  <section class="card" aria-labelledby="t-reports">
+    <div class="sec-head">
+      <div>
+        <h2 id="t-reports">위험요소 신고</h2>
+        <p class="why">
+          <b>신고는 익명입니다.</b> 누가 신고했는지는 저장하지 않습니다 —
+          익명성이 깨지면 신고가 멈추고, 재해를 미리 아는 방법도 함께 사라집니다.
+        </p>
+      </div>
+    </div>
+    <div class="queue" id="report-queue"></div>
+  </section>
+
+  <!-- 5. 다음 교육 -->
+  <section class="card" aria-labelledby="t-due">
+    <div class="sec-head">
+      <div>
+        <h2 id="t-due">교육별 실시 상황</h2>
+        <p class="why">마지막으로 실시된 날과 남은 대상자입니다.</p>
+      </div>
+    </div>
+    <ul class="item-list" id="due-list"></ul>
+  </section>
+
+  <!-- 6. 증빙 생성 진입 -->
+  <section class="card" aria-labelledby="t-go">
+    <div class="sec-head">
+      <div>
+        <h2 id="t-go">교육 증빙</h2>
+        <p class="why">지금까지의 기록을 법정 교육일지 서식으로 뽑습니다.</p>
+      </div>
+    </div>
+    <div class="btn-row">
+      <a class="btn btn-primary" href="proof.html">교육 증빙 만들기</a>
+      <a class="btn btn-quiet" href="content.html">교육 콘텐츠 만들기</a>
+    </div>
+  </section>
+
+  <!-- 여기부터 P3 가 채우면 됩니다 -->
+  <section class="todo">
+    <h2>여기부터 채우시면 됩니다 — P3</h2>
+    <p class="why">아래는 골격에 넣지 않은 것들입니다. 지금 상태로도 숫자는 실제 기록에서 나옵니다.</p>
+    <dl>
+      <dt>재교육 지시</dt><dd>조치 대상에게 다시 교육을 보내는 기능. 저장할 자리(<code>Store</code> 키)가 없어서 P1 과 상의가 필요합니다 (우선순위 2층)</dd>
+      <dt>QR 재발송</dt><dd>기능2 의 QR 이 먼저 있어야 합니다 (2층)</dd>
+      <dt>교육 기한 D-day</dt><dd><code>courses</code> 에 <code>dueAt</code> 을 넣으면 이 화면이 바로 씁니다. 기능2 에서 받으세요</dd>
+      <dt>기간 걸러 보기</dt><dd>이번 분기 / 올해 등으로 범위를 좁히는 조작</dd>
+      <dt>내 파일</dt><dd><code>admin/dashboard.html</code> · <code>admin/dashboard.js</code> · <code>admin/admin.css</code></dd>
+    </dl>
   </section>
 
 </main>
