@@ -37,14 +37,18 @@
 
 1. `git branch --show-current` — `feature/byeonsoyun` 인지 확인.
    `main` 이나 `develop` 이면 작업하지 말고 옮기세요
-2. `docs/07-next-tasks.md` 를 읽습니다 — **하나의 우선순위 목록**입니다
-3. `docs/devlog/byeonsoyun.md` 를 읽어 어디까지 했는지 봅니다
+2. `docs/07-next-tasks.md` 를 읽습니다 — **하나의 우선순위 목록**입니다.
+   맨 위 **"★ 지난 세션이 끝난 자리"** 에 지금 상태와 다음 한 걸음이 적혀 있습니다.
+   **그것만으로 이어갈 수 있습니다**
+3. 더 자세한 배경이 필요하면 `docs/devlog/byeonsoyun.md` 맨 위 항목을 봅니다
+   (특히 "막혔던 것 / 어떻게 풀었는지")
 4. **지금 상태를 한 문단으로 말하고, `- [ ]` 중 맨 위 것 하나를 제안합니다.**
    여러 개를 동시에 벌이지 않습니다
-5. 한 항목이 끝나면 `docs/07-next-tasks.md` 의 `- [ ]` 를 `- [x]` 로 바꾸고
-   개발일지와 함께 커밋합니다
+5. 한 항목이 끝나면 `docs/07-next-tasks.md` 의 `- [ ]` 를 `- [x]` 로 바꾸고,
+   **"★ 지난 세션이 끝난 자리" 표를 갱신하고**, 개발일지와 함께 커밋합니다
 
-> **"나 뭐 하면 되는지 알려줘"** 라고만 오면 되묻지 말고 위 1~4 를 그대로 하세요.
+> **"나 뭐 하면 되는지 알려줘"** 나 **"docs 보고 바로 진행해줘"** 라고만 오면
+> 되묻지 말고 위 1~4 를 그대로 하세요.
 
 ### 아래 문서는 팀 시절 기록입니다
 
@@ -95,7 +99,8 @@
 |---|---|
 | 노동자 | `src/worker/home.* learn.* quiz.* report.* talk.* my.*` + `worker.css` |
 | 관리자·운영자 | `src/admin/setup.* dashboard.* content.* proof.* library.*` + `admin.css` |
-| 공용 | `src/assets/store.js auth.js ui.js seed.js diagrams.js` + `app.css style*.css` |
+| 공용 | `src/assets/store.js auth.js ui.js seed.js diagrams.js review.js` + `app.css style*.css` |
+| 검사 | `tests/harness.js run-all.js test-*.js` — 저장소 안, 의존성은 저장소 밖 |
 
 `worker.css` 와 `admin.css` 안에는 `[P1]` `[P2]` 같은 구역 주석이 남아 있습니다.
 팀 시절에 둘이 나눠 쓰던 표시입니다. 지우지 않아도 되고, 새 스타일은 아무 구역에 써도 됩니다.
@@ -296,6 +301,25 @@ commit 하기 직전에 `docs/devlog/byeonsoyun.md` 를 열고,
 
 4. 자기 화면으로 이동해 동작을 확인합니다
 5. 개발자도구(F12) **Console** 에 빨간 오류가 없는지, **Network** 에 외부 요청이 없는지 봅니다
+
+### 회귀 검사 — 브라우저 없이 돌리는 것
+
+`tests/` 에 jsdom 검사가 있습니다. **실제 배포될 화면 스크립트를 그대로 돌립니다.**
+동작만 보지 않고 **제품 원칙이 코드에 남아 있는지도** 봅니다 —
+신고에 식별값이 없는지 · 미이수자를 숨기는 경로가 없는지 · 증빙에 "면책" 이 없는지.
+
+`src/` 는 의존성 0 을 유지합니다. `jsdom` 은 **저장소 밖**에 깔고 `NODE_PATH` 로 가리킵니다.
+**저장소 안에서 `npm install` 을 하지 마세요.**
+
+```bash
+mkdir -p ~/jsdom-box && cd ~/jsdom-box && npm i jsdom     # 한 번만
+cd <저장소> && NODE_PATH=~/jsdom-box/node_modules node tests/run-all.js
+```
+
+- **`src/assets/` 의 공용 파일을 고쳤으면 반드시 돌립니다.** 11개 화면이 다 읽습니다
+- 검사가 깨지면 먼저 **"내가 바꾼 것이 맞는 변화인가"** 를 봅니다.
+  예시 데이터를 바꾸면 개수 기대값이 함께 깨집니다 — 그건 검사를 고치는 것이 맞습니다
+- 자세한 것은 `tests/README.md`
 
 화면을 고쳤으면 **사용자에게 무엇을 확인하면 되는지 구체적으로 알려 주세요.**
 "확인해 보세요" 가 아니라 "신고 화면에서 프레스를 고르고 접수를 누르면 아래 목록에 뜹니다" 처럼.
