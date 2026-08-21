@@ -19,7 +19,11 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
   has('3단계가 07-next-tasks.md 를 가리킨다', c, 'docs/07-next-tasks.md');
   has('"나 뭐 하면 되는지" 를 직접 다룬다', c, '나 뭐 하면 되는지 알려줘');
   has('되묻지 말라고 지시한다', c, '되묻지 말고');
-  has('devlog 로 어디까지 했는지 확인한다', c, '어디까지 했는지');
+  // 이어서 하려면 어디를 봐야 하는지가 적혀 있어야 한다
+  has('이어갈 자리를 가리킨다', c, '지난 세션이 끝난 자리');
+  has('devlog 를 배경으로 쓴다', c, 'docs/devlog/byeonsoyun.md');
+  has('"docs 보고 바로 진행" 도 같은 절차다', c, 'docs 보고 바로 진행해줘');
+  has('회귀 검사 돌리는 법이 있다', c, 'tests/run-all.js');
   has('맨 위 하나만 제안한다', c, '맨 위 것 하나');
   has('끝나면 체크박스를 바꾼다', c, '`- [x]` 로 바꾸고');
   has('골격이 무슨 뜻인지 설명한다', c, '골격');
@@ -74,6 +78,13 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
   has('막히면 어디를 보는지', t, '05-troubleshooting.md');
   has('다 끝나면 어디로 가는지', t, '06-feature-priority.md');
   has('절대 지우지 말 것 절이 있다', t, '# ★ 절대 지우지 말 것');
+
+  /* ★ 다음 세션이 이 한 절만 읽고 이어갈 수 있어야 한다 */
+  has('지난 세션이 끝난 자리가 있다', t, '★ 지난 세션이 끝난 자리');
+  has('다음 한 걸음을 지목한다', t, '### 다음 한 걸음');
+  has('브랜치를 적는다', t, 'feature/byeonsoyun');
+  has('검사 돌리는 법을 적는다', t, 'tests/run-all.js');
+  has('되묻지 말라고 한다', t, '되묻지 말고');
 }
 
 /* =================================================================
