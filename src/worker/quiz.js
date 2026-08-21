@@ -1,54 +1,716 @@
 /* ===================================================================
-   quiz.js — 이해도 검증
+   quiz.js — 기능4 이해도 검증
 
-   담당: 노동자 A
+   담당: P1
    기능번호: 기능4
-   읽는 키: courses, setup
+   읽는 키: courses, library, setup, progress
    쓰는 키: progress
-   근거: SCREEN 기능4 · PRD §2.2 · 발표 대본 ②-둘째
+   근거: SCREEN 기능4 · PRD §4.2
 
-   문항 유형 세 가지 — hotspot(사진에서 위험 지점 터치)
-   choice(올바른 작업 고르기)
-   match(보호구 연결하기). 문항은 음성으로 읽어 주고, 통과하지 못하면 progress 에 passed:false 로 남아 교육 완료로 기록되지 않습니다. 미통과는 노동자의 실패가 아니라 교육의 실패로 적습니다. 최초 통과율 100%는 문항이 쉬운 것이라 지표 실패로 봅니다(목표 70~85%).
+   ★ 이 화면이 제품의 심장이다.
+     교육 완료의 기준을 출석부 서명에서 "이해했는가"로 옮기는 곳이다.
+     통과하지 못하면 progress 에 passed:false 로 남고 교육 완료로 기록되지 않는다.
 
-   -------------------------------------------------------------------
-   여기부터 만드시면 됩니다.
+   문항 세 유형 —
+     hotspot  설비 도해에서 위험 지점을 짚는다   answer { x, y, r } 퍼센트 좌표
+     choice   올바른 작업을 고른다               options [] · answer 인덱스
+     match    작업과 보호구를 연결한다           pairs [[작업, 보호구], ...]
 
-   · 데이터는 반드시 Store 를 거칩니다. localStorage 를 직접 부르지 마세요.
-     나중에 서버가 생기면 store.js 하나만 바꾸면 되기 때문입니다.
-   · 배지 · 칩 · 목록 · 토스트 같은 공용 조각은 ../assets/ui.js 에 있습니다.
-     각자 다시 만들면 네 화면의 디자인이 흩어집니다.
-   · 공용 파일(assets/)을 고쳐야 하면 팀에 먼저 말하세요. 네 명이 함께 씁니다.
-   · 예시 데이터는 로그인 화면의 "예시 데이터 채우기" 버튼으로 채웁니다.
+   이 파일이 코드로 지키는 것 —
+
+   · 한 문항에 한 번만 답한다. 그 자리에서 다시 풀 수 있으면 점수가 늘 100 이 되고
+     담당자 대시보드의 "최초 통과율"이 뜻을 잃는다. 다시 풀기는 처음부터 한다.
+
+   · 답한 직후 "지금 이대로 하면 무슨 일이 생기는지"를 말한다.
+     맞고 틀림만 알려 주면 다음에 또 같은 선택을 한다.
+
+   · 미통과 화면에 "노동자의 실패가 아니라 교육의 실패" 를 적는다.
+     이 문장이 빠지면 이 기능은 노동자를 걸러 내는 시험이 된다.
+
+   · 문항은 음성으로 읽어 준다. 글자를 한 자도 읽지 않고 끝낼 수 있어야 한다.
    =================================================================== */
 
 (function () {
   'use strict';
 
+  var $ = UI.$;
   var user = Auth.current();
 
   UI.fillWorkerBar(user);
   UI.markCurrentTab();
   UI.warnIfBlocked();
 
-  /* ---------------------------------------------------------------
-     아래는 껍데기 확인용입니다. 실제 화면을 만들 때 지우세요.
-     --------------------------------------------------------------- */
+  /* 통과 기준. 안전 지시는 하나라도 놓치면 안 되므로 전 문항 정답이다.
+     기준을 낮추면 "절반은 몰라도 교육 완료" 가 기록으로 남는다. */
+  var PASS_SCORE = 100;
 
-  var peek = [
-    { label: 'courses (교육)', count: Store.courses.load().length },
-    { label: 'setup (사업장·설비)', count: Store.setup.load().length },
-    { label: 'progress (수강·검증 이력)', count: Store.progress.load().length }
-  ];
+  var KIND = {
+    hotspot: { ico: '👆', label: '위험 지점 짚기' },
+    choice:  { ico: '☑',  label: '올바른 작업 고르기' },
+    match:   { ico: '🔗', label: '보호구 연결하기' }
+  };
 
-  var box = UI.$('peek');
-  peek.forEach(function (row) {
-    var cell = UI.el('div', 'kpi' + (row.count ? '' : ' alert'));
-    cell.appendChild(UI.el('dt', null, row.label));
-    var dd = UI.el('dd', null, String(row.count));
-    dd.appendChild(UI.el('small', null, '건'));
-    cell.appendChild(dd);
-    cell.appendChild(UI.el('p', 'hint', row.count ? '읽을 수 있습니다' : '비어 있습니다'));
-    box.appendChild(cell);
+  /* -----------------------------------------------------------------
+     설비 도해와 그 위의 이름 붙은 구역
+
+     ★ 구역은 그림에 딸린 것이라 여기 둔다. courses 데이터가 아니다.
+       기능2(P3)는 문서대로 answer { x, y, r } 만 만들면 되고,
+       "그 원 안에 중심이 들어오는 구역"이 정답이 된다.
+
+     ★ 실제 설비 사진이 필요해지는 시점이 서버가 필요해지는 시점이다.
+       지금은 그림이므로 도해가 없는 설비는 구역도 주지 않는다(아래 generic).
+     ----------------------------------------------------------------- */
+  var DIAGRAMS = {
+    press: [
+      { x: 20, y: 18, w: 18, h: 18, label: '전원 스위치',
+        consequence: '전원 스위치는 작업 전에 차단하는 곳입니다. 손이 끼이는 자리는 아닙니다.' },
+      { x: 78, y: 18, w: 20, h: 20, label: '잔류 압력 게이지',
+        consequence: '게이지는 압력이 남아 있는지 확인하는 곳입니다. 손이 끼이는 자리는 아닙니다.' },
+      { x: 50, y: 51, w: 40, h: 24, label: '램과 금형 사이 작업 지점',
+        consequence: '램이 내려오는 자리입니다. 전원이 꺼져 있어도 남아 있는 압력으로 램이 떨어져 손이 끼입니다.' },
+      { x: 77, y: 79, w: 18, h: 16, label: '안전핀 삽입구',
+        consequence: '안전핀은 램이 떨어지지 않게 고정하는 곳입니다. 손이 끼이는 자리는 아닙니다.' }
+    ],
+    booth: [
+      { x: 78, y: 22, w: 22, h: 22, label: '환기팬',
+        consequence: '환기팬은 유증기를 빼내는 곳입니다. 팬이 멈추면 위험해지지만, 팬 자체를 만지는 작업은 아닙니다.' },
+      { x: 40, y: 62, w: 30, h: 26, label: '도장 작업 구역',
+        consequence: '분사한 도료의 유증기가 이곳에 모입니다. 방독마스크 없이 들어가면 질식하거나 중독됩니다.' },
+      { x: 16, y: 82, w: 20, h: 18, label: '출입구',
+        consequence: '출입구는 대피 통로입니다. 막아 두면 안 되지만, 마스크가 필요한 자리는 아닙니다.' },
+      { x: 80, y: 79, w: 20, h: 22, label: '도료 저장통',
+        consequence: '도료 저장통은 화기를 멀리해야 하는 곳입니다. 도장 작업을 하는 자리는 아닙니다.' }
+    ],
+    panel: [
+      { x: 50, y: 26, w: 52, h: 24, label: '노출된 단자대',
+        consequence: '전기가 흐르는 단자가 드러난 곳입니다. 차단하지 않고 만지면 감전됩니다.' },
+      { x: 40, y: 53, w: 24, h: 18, label: '주 차단기',
+        consequence: '주 차단기는 전원을 내리는 곳입니다. 여기를 먼저 내려야 나머지가 안전해집니다.' },
+      { x: 62, y: 60, w: 18, h: 18, label: '접지 단자',
+        consequence: '접지 단자는 새어 나온 전기를 땅으로 보내는 곳입니다.' },
+      { x: 78, y: 40, w: 14, h: 14, label: '문 손잡이',
+        consequence: '문 손잡이입니다. 전기가 흐르는 자리는 아닙니다.' },
+      { x: 50, y: 80, w: 40, h: 14, label: '케이블 인입구',
+        consequence: '케이블이 들어오는 곳입니다. 피복이 벗겨져 있으면 감전 위험이 있습니다.' }
+    ],
+    generic: []
+  };
+
+  function diagramNameFor(equipment) {
+    var h = (equipment && equipment.hazards) || [];
+    if (h.indexOf('pinch') !== -1) return 'press';
+    if (h.indexOf('fire') !== -1 || h.indexOf('chemical') !== -1 || h.indexOf('choke') !== -1) return 'booth';
+    if (h.indexOf('shock') !== -1) return 'panel';
+    return 'generic';
+  }
+
+  /* -----------------------------------------------------------------
+     내가 누구인지 · 무엇을 검증하는지
+     ----------------------------------------------------------------- */
+
+  function whoAmI() {
+    var setup = Store.setup.load();
+    var row = Store.findBy(setup.workers, 'id', user.userId) || {};
+    return {
+      id: user.userId,
+      lang: user.lang || row.lang || 'ko',
+      processId: user.processId || row.processId || ''
+    };
+  }
+
+  var me = whoAmI();
+
+  function param(name) {
+    var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search || '');
+    return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
+  }
+
+  function myCourses() {
+    var setup = Store.setup.load();
+    return Store.courses.load().filter(function (c) {
+      if (!c || !c.approved) return false;
+      if (!me.processId) return true;
+      var eq = Store.findBy(setup.equipments, 'id', c.equipmentId);
+      return !!eq && eq.processId === me.processId;
+    });
+  }
+
+  function progressOf(courseId) {
+    return Store.findBy(
+      Store.progress.load().filter(function (r) { return r.workerId === me.id; }),
+      'courseId', courseId
+    );
+  }
+
+  /* 실제로 낼 수 있는 문항만 남긴다. 모르는 유형은 조용히 통과시키지 않고 뺀다 —
+     채점할 수 없는 문항을 정답으로 세면 이해하지 못한 사람이 통과한다. */
+  function questionsOf(course) {
+    return (Array.isArray(course.quiz) ? course.quiz : []).filter(function (q) {
+      if (!q || !KIND[q.type]) return false;
+      if (q.type === 'hotspot') return !!(q.answer && typeof q.answer.x === 'number');
+      if (q.type === 'choice') return Array.isArray(q.options) && q.options.length > 1
+        && typeof q.answer === 'number';
+      if (q.type === 'match') return Array.isArray(q.pairs) && q.pairs.length > 0;
+      return false;
+    });
+  }
+
+  /* -----------------------------------------------------------------
+     화면 넘기기
+     ----------------------------------------------------------------- */
+
+  function show(which) {
+    $('view-quiz').hidden = which !== 'quiz';
+    $('view-result').hidden = which !== 'result';
+    $('view-gate').hidden = which !== 'gate';
+    window.scrollTo(0, 0);
+  }
+
+  function linkButton(label, href, primary) {
+    var a = UI.el('a', 'btn ' + (primary ? 'btn-primary' : 'btn-quiet'), label);
+    a.href = href;
+    return a;
+  }
+
+  function gate(ico, title, why, actions) {
+    $('gate-ico').textContent = ico;
+    $('gate-title').textContent = title;
+    $('gate-why').textContent = why;
+    var box = $('gate-actions');
+    box.textContent = '';
+    actions.forEach(function (node) { box.appendChild(node); });
+    show('gate');
+  }
+
+  /* -----------------------------------------------------------------
+     문항 진행
+     ----------------------------------------------------------------- */
+
+  var run = null;   // { course, equipment, questions, index, answers, locked }
+
+  function start(course) {
+    var setup = Store.setup.load();
+    run = {
+      course: course,
+      equipment: Store.findBy(setup.equipments, 'id', course.equipmentId),
+      questions: questionsOf(course),
+      index: 0,
+      answers: [],
+      locked: false
+    };
+    show('quiz');
+    renderQuestion();
+  }
+
+  function renderVoiceNote() {
+    var note = UI.voiceNote(me.lang);
+    var box = $('voicenote');
+    box.textContent = note;
+    box.hidden = !note;
+  }
+
+  function promptSpeech(q) {
+    // 문항 문구는 courses 에 한국어로만 들어 있다. 다국어 문항은 courses 모양을
+    // 넓혀야 하고 그건 기능2(P3)와 같이 정할 일이라, 지금은 한국어로 읽고
+    // 문해력 비전제는 픽토그램과 그림이 받친다.
+    return { text: q.prompt, lang: 'ko' };
+  }
+
+  function renderQuestion() {
+    var q = run.questions[run.index];
+    var kind = KIND[q.type];
+    run.locked = false;
+
+    $('quiz-course').textContent = run.course.title;
+    $('step-count').textContent =
+      '문항 ' + (run.index + 1) + ' / ' + run.questions.length + ' · ' + kind.label;
+
+    var dots = $('step-dots');
+    dots.textContent = '';
+    run.questions.forEach(function (_, i) {
+      var dot = UI.el('span');
+      dot.setAttribute('data-state', i < run.index ? 'done' : (i === run.index ? 'now' : 'todo'));
+      dots.appendChild(dot);
+    });
+
+    $('quiz-kind').textContent = kind.ico;
+    $('quiz-prompt').textContent = q.prompt;
+
+    var audio = $('prompt-audio');
+    audio.textContent = '';
+    audio.appendChild(UI.audioButton(function () { return promptSpeech(q); }, '문항을 다시 듣기'));
+
+    $('consequence').hidden = true;
+    $('btn-next').hidden = true;
+    $('btn-next').textContent =
+      run.index === run.questions.length - 1 ? '결과 보기 ▶' : '다음 문항 ▶';
+
+    var body = $('quiz-body');
+    body.textContent = '';
+    if (q.type === 'hotspot') renderHotspot(body, q);
+    else if (q.type === 'choice') renderChoice(body, q);
+    else renderMatch(body, q);
+
+    UI.speak(promptSpeech(q));
+  }
+
+  /* 답이 정해졌다. 결과를 말하고 다음으로 갈 수 있게 한다. */
+  function answered(correct, consequenceText) {
+    if (run.locked) return;
+    run.locked = true;
+    run.answers[run.index] = correct ? 1 : 0;
+
+    var box = $('consequence');
+    if (consequenceText) {
+      $('consequence-ico').textContent = correct ? '✅' : '⚠';
+      $('consequence-text').textContent = consequenceText;
+      box.hidden = false;
+      UI.speak({ text: consequenceText, lang: 'ko' });
+    } else {
+      box.hidden = true;
+    }
+
+    $('btn-next').hidden = false;
+  }
+
+  /* --- hotspot — 설비 도해에서 위험 지점 짚기 --- */
+
+  function inAnswer(answer, x, y) {
+    var dx = x - answer.x;
+    var dy = y - answer.y;
+    return Math.sqrt(dx * dx + dy * dy) <= (answer.r || 12);
+  }
+
+  function renderHotspot(body, q) {
+    var name = diagramNameFor(run.equipment);
+    var source = document.querySelector('#diagrams [data-diagram="' + name + '"]');
+
+    var figure = UI.el('div', 'quiz-figure');
+    if (source) figure.appendChild(source.cloneNode(true));
+
+    /* 이 도해의 구역 중 정답 원 안에 들어오는 것이 있는지.
+       없으면 구역을 쓰지 않는다 — 아무 구역도 정답이 아니면 통과할 길이 없다. */
+    var zones = DIAGRAMS[name] || [];
+    var hasCorrect = zones.some(function (z) { return inAnswer(q.answer, z.x, z.y); });
+
+    if (zones.length && hasCorrect) renderZones(figure, q, zones);
+    else renderFreeTap(figure, q);
+
+    body.appendChild(figure);
+    // 힌트는 도해 밖에 둔다. figure 안에 넣으면 퍼센트 좌표계 위에 겹친다.
+    body.appendChild(UI.el('p', 'zonehint', '그림에서 위험한 곳을 한 번 누르세요.'));
+  }
+
+  function renderZones(figure, q, zones) {
+    var buttons = [];
+
+    zones.forEach(function (z) {
+      var btn = UI.el('button', 'zone');
+      btn.type = 'button';
+      btn.setAttribute('aria-label', z.label);
+      btn.style.left = z.x + '%';
+      btn.style.top = z.y + '%';
+      btn.style.width = z.w + '%';
+      btn.style.height = z.h + '%';
+      buttons.push({ btn: btn, zone: z, correct: inAnswer(q.answer, z.x, z.y) });
+
+      btn.addEventListener('click', function () {
+        if (run.locked) return;
+        var picked = Store.findBy(buttons, 'btn', btn);
+
+        // 고른 곳과 정답을 함께 표시한다. 어디가 정답인지 모르면 배울 것이 없다.
+        buttons.forEach(function (b) {
+          b.btn.disabled = true;
+          if (b === picked) b.btn.setAttribute('data-mark', picked.correct ? 'ok' : 'no');
+          else if (!picked.correct && b.correct) b.btn.setAttribute('data-mark', 'ok');
+        });
+
+        answered(picked.correct, z.consequence || q.why || '');
+      });
+
+      figure.appendChild(btn);
+    });
+  }
+
+  /* 도해가 없는 설비 — 그림 아무 곳이나 눌러 짚는다.
+     구역 이름을 못 주므로 결과 설명도 일반적인 문장이 된다. */
+  function renderFreeTap(figure, q) {
+    figure.addEventListener('click', function (e) {
+      if (run.locked) return;
+
+      var box = figure.getBoundingClientRect();
+      if (!box.width || !box.height) return;   // 아직 그려지지 않았다
+
+      var x = ((e.clientX - box.left) / box.width) * 100;
+      var y = ((e.clientY - box.top) / box.height) * 100;
+
+      var mark = UI.el('div', 'tapmark');
+      mark.style.left = x + '%';
+      mark.style.top = y + '%';
+      figure.appendChild(mark);
+
+      var correct = inAnswer(q.answer, x, y);
+      answered(correct, q.why || (correct
+        ? '맞습니다. 이곳이 이 설비에서 다치기 쉬운 자리입니다.'
+        : '이곳이 아닙니다. 교육을 다시 듣고 위험한 자리를 확인해 주세요.'));
+    });
+  }
+
+  /* --- choice — 올바른 작업 고르기 --- */
+
+  function renderChoice(body, q) {
+    var list = UI.el('ul', 'choice-list');
+
+    q.options.forEach(function (option, i) {
+      var li = UI.el('li', 'choice-row');
+
+      var btn = UI.el('button', 'choice-btn');
+      btn.type = 'button';
+      btn.appendChild(UI.el('span', 'no', String(i + 1)));
+      btn.appendChild(UI.el('span', 'text', option));
+
+      btn.addEventListener('click', function () {
+        if (run.locked) return;
+        var correct = i === q.answer;
+
+        UI.$$('.choice-btn', list).forEach(function (other, k) {
+          other.disabled = true;
+          if (k === i) other.setAttribute('data-mark', correct ? 'ok' : 'no');
+          else if (!correct && k === q.answer) other.setAttribute('data-mark', 'ok');
+        });
+
+        // results 는 선택지마다의 결과 설명. 기능2 가 아직 안 만들었으면 없다.
+        var results = Array.isArray(q.results) ? q.results : [];
+        answered(correct, results[i] || q.why || '');
+      });
+
+      li.appendChild(btn);
+      li.appendChild(UI.audioButton(function () {
+        return { text: option, lang: 'ko' };
+      }, (i + 1) + '번 선택지 듣기'));
+
+      list.appendChild(li);
+    });
+
+    body.appendChild(list);
+  }
+
+  /* --- match — 작업과 보호구 연결하기
+
+     드래그를 쓰지 않는다. 장갑 낀 손으로는 왼쪽 하나 누르고
+     오른쪽 하나 누르는 편이 정확하다. --- */
+
+  function shuffled(list) {
+    var out = list.slice();
+    for (var i = out.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = out[i]; out[i] = out[j]; out[j] = t;
+    }
+    return out;
+  }
+
+  function renderMatch(body, q) {
+    var lefts = q.pairs.map(function (p, i) { return { i: i, text: p[0] }; });
+    var rights = shuffled(q.pairs.map(function (p, i) { return { i: i, text: p[1] }; }));
+
+    var picked = null;      // 지금 고른 왼쪽 index
+    var links = {};         // 왼쪽 index -> 오른쪽 index
+
+    var board = UI.el('div', 'match-board');
+
+    var head = UI.el('div', 'match-col-head');
+    head.appendChild(UI.el('span', null, '작업'));
+    head.appendChild(UI.el('span', null, '보호구'));
+    board.appendChild(head);
+
+    var leftBtns = [];
+    var rightBtns = [];
+
+    function pairNumberOf(leftIndex) {
+      // 이어진 순서대로 1, 2, 3… 짝 번호를 준다. 색만으로는 무엇이 무엇과
+      // 이어졌는지 알 수 없어서 글자로도 남긴다.
+      var order = Object.keys(links).sort(function (a, b) { return links[a] - links[b]; });
+      return order.indexOf(String(leftIndex)) + 1;
+    }
+
+    function repaint() {
+      lefts.forEach(function (l, row) {
+        var btn = leftBtns[row];
+        btn.setAttribute('aria-pressed', picked === l.i ? 'true' : 'false');
+        if (links[l.i] !== undefined) {
+          btn.setAttribute('data-pair', String(pairNumberOf(l.i)));
+          btn.querySelector('.pairno').textContent = String(pairNumberOf(l.i));
+        } else {
+          btn.removeAttribute('data-pair');
+          btn.querySelector('.pairno').textContent = '';
+        }
+      });
+
+      rights.forEach(function (r, row) {
+        var btn = rightBtns[row];
+        var ownerLeft = null;
+        Object.keys(links).forEach(function (k) { if (links[k] === r.i) ownerLeft = Number(k); });
+        if (ownerLeft !== null) {
+          btn.setAttribute('data-pair', String(pairNumberOf(ownerLeft)));
+          btn.querySelector('.pairno').textContent = String(pairNumberOf(ownerLeft));
+        } else {
+          btn.removeAttribute('data-pair');
+          btn.querySelector('.pairno').textContent = '';
+        }
+      });
+
+      confirmBtn.hidden = Object.keys(links).length !== q.pairs.length;
+    }
+
+    function makeBtn(item, side) {
+      var btn = UI.el('button', 'match-btn');
+      btn.type = 'button';
+      btn.appendChild(UI.el('span', 'pairno'));
+      btn.appendChild(UI.el('span', 'text', item.text));
+      btn.setAttribute('aria-pressed', 'false');
+
+      btn.addEventListener('click', function () {
+        if (run.locked) return;
+
+        if (side === 'left') {
+          // 이미 이어진 것을 다시 누르면 연결을 푼다. 잘못 누르는 일이 잦다.
+          if (links[item.i] !== undefined) { delete links[item.i]; picked = null; }
+          else picked = (picked === item.i) ? null : item.i;
+        } else {
+          if (picked === null) { UI.toast('왼쪽에서 작업을 먼저 골라 주세요.'); return; }
+          // 이 보호구가 다른 작업에 이미 붙어 있으면 떼어 온다
+          Object.keys(links).forEach(function (k) { if (links[k] === item.i) delete links[k]; });
+          links[picked] = item.i;
+          picked = null;
+        }
+        repaint();
+      });
+
+      return btn;
+    }
+
+    lefts.forEach(function (l, row) {
+      var line = UI.el('div', 'match-row');
+      var lb = makeBtn(l, 'left');
+      var rb = makeBtn(rights[row], 'right');
+      leftBtns.push(lb);
+      rightBtns.push(rb);
+      line.appendChild(lb);
+      var mid = UI.el('span', 'match-linked', '—');
+      mid.setAttribute('aria-hidden', 'true');
+      line.appendChild(mid);
+      line.appendChild(rb);
+      board.appendChild(line);
+    });
+
+    var confirmBtn = UI.el('button', 'btn btn-primary', '이대로 확인하기 ✓');
+    confirmBtn.type = 'button';
+    confirmBtn.hidden = true;
+    confirmBtn.addEventListener('click', function () {
+      if (run.locked) return;
+
+      var allRight = lefts.every(function (l) { return links[l.i] === l.i; });
+
+      leftBtns.forEach(function (btn, row) {
+        var l = lefts[row];
+        btn.setAttribute('data-mark', links[l.i] === l.i ? 'ok' : 'no');
+        btn.disabled = true;
+      });
+      rightBtns.forEach(function (btn, row) {
+        var r = rights[row];
+        var owner = null;
+        Object.keys(links).forEach(function (k) { if (links[k] === r.i) owner = Number(k); });
+        btn.setAttribute('data-mark', owner === r.i ? 'ok' : 'no');
+        btn.disabled = true;
+      });
+
+      answered(allRight, q.why || (allRight
+        ? '맞습니다. 작업에 맞는 보호구를 골랐습니다.'
+        : '연결이 맞지 않습니다. 보호구가 맞지 않으면 착용해도 사고를 막지 못합니다.'));
+    });
+
+    var wrap = UI.el('div', 'big-actions');
+    wrap.appendChild(confirmBtn);
+
+    body.appendChild(board);
+    body.appendChild(wrap);
+    repaint();
+  }
+
+  /* -----------------------------------------------------------------
+     채점과 저장
+
+     ★ progress.quiz 의 기존 네 필드(score · passed · answers · at)는 그대로 둔다.
+       기능5·6(P3·P4)이 읽는 모양이다.
+
+     ★ attempt 와 firstPassed 를 더한다.
+       다시 풀면 최신 결과가 앞 결과를 덮으므로, 그것만 남기면 담당자 대시보드의
+       "최초 통과율"(목표 70~85%)을 계산할 근거가 사라진다.
+       없으면 무시하면 되는 필드라 다른 화면은 깨지지 않는다.
+     ----------------------------------------------------------------- */
+
+  function grade() {
+    var total = run.questions.length;
+    var right = run.answers.filter(function (a) { return a === 1; }).length;
+    var score = total ? Math.round((right / total) * 100) : 0;
+    var passed = score >= PASS_SCORE;
+    var courseId = run.course.id;
+
+    var result = Store.progress.update(function (list) {
+      var row = null;
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].workerId === me.id && list[i].courseId === courseId) { row = list[i]; break; }
+      }
+      if (!row) {
+        row = { workerId: me.id, courseId: courseId, lang: me.lang, learnedAt: null, quiz: null };
+        list.push(row);
+      }
+
+      var prev = row.quiz;
+      var attempt = prev ? (prev.attempt || 1) + 1 : 1;
+      var firstPassed = prev
+        ? (prev.firstPassed !== undefined ? prev.firstPassed : !!prev.passed)
+        : passed;
+
+      row.lang = me.lang;
+      row.quiz = {
+        score: score,
+        passed: passed,
+        answers: run.answers.slice(),
+        at: new Date().toISOString(),
+        attempt: attempt,
+        firstPassed: firstPassed
+      };
+    });
+
+    if (!result.ok) UI.toast('결과를 저장하지 못했습니다. 이 브라우저의 저장소가 막혀 있습니다.');
+
+    return { score: score, right: right, total: total, passed: passed };
+  }
+
+  function renderResult(r) {
+    var panel = $('result-panel');
+    panel.className = 'result-panel ' + (r.passed ? 'pass' : 'fail');
+
+    $('result-ico').textContent = r.passed ? '✅' : '🔁';
+    $('result-title').textContent = r.passed ? '이해도 검증을 통과했습니다' : '아직 통과하지 못했습니다';
+    $('result-score').textContent = r.score + '점';
+    $('result-note').textContent = r.total
+      ? r.total + '문항 중 ' + r.right + '문항 정답 · 통과 기준 ' + PASS_SCORE + '점'
+      : '';
+
+    var fault = $('result-fault');
+    if (r.passed) {
+      fault.hidden = true;
+    } else {
+      // SCREEN 기능4 — 이 문장이 빠지면 이 기능은 노동자를 걸러 내는 시험이 된다
+      fault.textContent = '미통과는 노동자의 실패가 아니라 교육의 실패로 기록됩니다. ' +
+        '틀린 문항은 그 문구를 다시 만들라는 신호로 담당자에게 전달됩니다.';
+      fault.hidden = false;
+    }
+
+    var review = $('result-review');
+    review.textContent = '';
+    run.questions.forEach(function (q, i) {
+      var li = UI.el('li');
+      var ico = UI.el('span', 'ico', KIND[q.type].ico);
+      ico.setAttribute('aria-hidden', 'true');
+      li.appendChild(ico);
+      var body = UI.el('div', 'body');
+      body.appendChild(UI.el('strong', null, q.prompt));
+      body.appendChild(UI.el('p', 'meta', KIND[q.type].label));
+      li.appendChild(body);
+      li.appendChild(run.answers[i] === 1 ? UI.okBadge('정답') : UI.stopBadge('오답'));
+      review.appendChild(li);
+    });
+
+    var actions = $('result-actions');
+    actions.textContent = '';
+    if (r.passed) {
+      actions.appendChild(linkButton('홈으로', 'home.html', true));
+      actions.appendChild(linkButton('내 수강 기록 보기', 'my.html'));
+    } else {
+      actions.appendChild(linkButton('교육을 다시 듣기', 'learn.html', true));
+      var again = UI.el('button', 'btn btn-quiet', '지금 다시 풀기');
+      again.type = 'button';
+      again.addEventListener('click', function () { start(run.course); });
+      actions.appendChild(again);
+    }
+
+    show('result');
+  }
+
+  /* -----------------------------------------------------------------
+     들어올 때 — 무엇을 검증할지 정한다
+     ----------------------------------------------------------------- */
+
+  function begin() {
+    var courses = myCourses();
+    var wanted = param('course');
+
+    if (!courses.length) {
+      gate('🎧', '검증할 교육이 없습니다',
+        '담당자가 아직 내 설비의 교육을 만들지 않았습니다. 현장 관리자에게 알려 주세요.',
+        [linkButton('교육 목록 보기', 'learn.html', true)]);
+      return;
+    }
+
+    var course = wanted
+      ? Store.findBy(courses, 'id', wanted)
+      // 지정이 없으면 교육은 들었고 아직 통과하지 못한 것을 먼저 꺼낸다
+      : courses.filter(function (c) {
+          var row = progressOf(c.id);
+          return row && row.learnedAt && !(row.quiz && row.quiz.passed);
+        })[0];
+
+    if (!course) {
+      gate('🎧', '지금 검증할 교육이 없습니다',
+        wanted
+          ? '이 교육은 내 설비의 교육이 아닙니다. 교육 목록에서 다시 골라 주세요.'
+          : '교육을 들으면 이어서 이해도 검증으로 넘어갑니다.',
+        [linkButton('교육 목록 보기', 'learn.html', true)]);
+      return;
+    }
+
+    // ★ 순서를 지킨다. 듣지 않고 문항만 풀어 통과하는 길을 만들지 않는다.
+    var row = progressOf(course.id);
+    if (!row || !row.learnedAt) {
+      gate('🎧', '먼저 교육을 들어야 합니다',
+        '"' + course.title + '" 을(를) 아직 듣지 않았습니다. ' +
+        '교육을 끝까지 들으면 이해도 검증으로 이어집니다.',
+        [linkButton('이 교육 들으러 가기', 'learn.html', true)]);
+      return;
+    }
+
+    var questions = questionsOf(course);
+    if (!questions.length) {
+      gate('📋', '아직 문항이 없습니다',
+        '"' + course.title + '" 에 이해도 검증 문항이 들어 있지 않습니다. ' +
+        '문항이 없으면 이해했는지 확인할 수 없어 교육 완료로 기록하지 않습니다.',
+        [linkButton('교육 목록 보기', 'learn.html', true)]);
+      return;
+    }
+
+    start(course);
+  }
+
+  /* -----------------------------------------------------------------
+     이벤트 연결
+     ----------------------------------------------------------------- */
+
+  $('btn-next').addEventListener('click', function () {
+    UI.stopSpeak();
+    if (run.index < run.questions.length - 1) {
+      run.index += 1;
+      renderQuestion();
+    } else {
+      renderResult(grade());
+    }
   });
+
+  window.addEventListener('pagehide', UI.stopSpeak);
+  UI.onVoicesReady(renderVoiceNote);
+
+  renderVoiceNote();
+  begin();
 })();

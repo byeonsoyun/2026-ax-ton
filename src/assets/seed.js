@@ -101,10 +101,15 @@ var Seed = (function () {
 
   /* 교육 콘텐츠.
      quiz 의 type 세 가지는 발표 대본의 검증 방식을 그대로 옮긴 것이다.
-       hotspot — 사진에서 위험 지점 터치하기
+       hotspot — 설비 그림에서 위험 지점 짚기
        choice  — 올바른 작업 고르기
        match   — 보호구 연결하기
-     문항은 음성으로 읽어 주므로 글자를 한 자도 읽지 않고 끝낼 수 있어야 한다. */
+     문항은 음성으로 읽어 주므로 글자를 한 자도 읽지 않고 끝낼 수 있어야 한다.
+
+     ★ results 와 why 는 "그 선택이 실제로 어떤 사고가 되는지" 를 적는 자리다.
+       맞고 틀림만 알려 주면 다음에 또 같은 선택을 한다.
+       results 는 선택지 순서와 같은 길이로 맞춘다. 없으면 기능4 가 일반 문장으로 넘긴다.
+       기능2(관리자 콘텐츠 생성)가 앞으로 이 문장을 함께 만들어야 한다. */
   var COURSES = [
     { id: 'c-press', title: '프레스 3호기 안전교육', equipmentId: 'e-press3',
       languages: ['km', 'id', 'vi'], phraseIds: ['ph-1', 'ph-2', 'ph-6'],
@@ -116,10 +121,16 @@ var Seed = (function () {
         { id: 'q2', type: 'choice', hazard: 'pinch',
           prompt: '프레스가 멈췄습니다. 어떻게 해야 합니까?',
           options: ['손을 넣어 부품을 꺼낸다', '전원을 차단하고 관리자를 부른다', '발로 눌러 본다'],
-          answer: 1 },
+          answer: 1,
+          results: [
+            '멈춘 것처럼 보여도 남아 있는 압력으로 램이 떨어집니다. 손이 끼입니다.',
+            '맞습니다. 전원을 차단하고 관리자를 부르면 램이 떨어지지 않습니다.',
+            '발로 눌러 보는 동안 램이 내려오면 발이 끼입니다.'
+          ] },
         { id: 'q3', type: 'match', hazard: 'shock',
           prompt: '작업에 맞는 보호구를 연결하세요',
-          pairs: [['프레스 작업', '안전장갑'], ['배전반 점검', '절연장갑']] }
+          pairs: [['프레스 작업', '안전장갑'], ['배전반 점검', '절연장갑']],
+          why: '작업마다 맞는 보호구가 다릅니다. 배전반 점검에 일반 안전장갑을 끼면 감전을 막지 못합니다.' }
       ] },
     { id: 'c-paint', title: '도장 부스 1 안전교육', equipmentId: 'e-booth1',
       languages: ['id'], phraseIds: ['ph-4', 'ph-6'],
@@ -128,7 +139,12 @@ var Seed = (function () {
         { id: 'q1', type: 'choice', hazard: 'fire',
           prompt: '도장 작업 중 불이 났습니다. 먼저 무엇을 합니까?',
           options: ['물을 뿌린다', '환기팬을 끄고 대피한다', '창문을 연다'],
-          answer: 1 },
+          answer: 1,
+          results: [
+            '도료에 붙은 불에 물을 뿌리면 불이 퍼집니다.',
+            '맞습니다. 환기팬을 끄면 유증기가 덕트로 번지지 않습니다. 끄고 바로 대피합니다.',
+            '창문을 열면 바람이 들어와 불이 커집니다.'
+          ] },
         { id: 'q2', type: 'hotspot', hazard: 'chemical',
           prompt: '방독마스크를 써야 하는 구역을 누르세요',
           answer: { x: 38, y: 60, r: 16 } }
@@ -137,14 +153,22 @@ var Seed = (function () {
 
   /* 수강·검증 이력.
      W-4821-11 은 화재 대응에서 미통과 — 담당자 대시보드의 "이해도 취약 항목"이 여기서 나온다.
-     미통과는 노동자의 실패가 아니라 교육의 실패로 기록한다 (SCREEN 기능4). */
+     미통과는 노동자의 실패가 아니라 교육의 실패로 기록한다 (SCREEN 기능4).
+
+     ★ attempt · firstPassed 는 기능4 가 함께 남기는 값이다.
+       다시 풀면 최신 결과가 앞 결과를 덮으므로, 그것만 남기면
+       담당자 대시보드의 "최초 통과율"(목표 70~85%)을 계산할 근거가 사라진다.
+       기존 네 필드(score · passed · answers · at)는 그대로라
+       이 값을 읽지 않는 화면은 영향받지 않는다. */
   var PROGRESS = [
     { workerId: 'W-4821-07', courseId: 'c-press', lang: 'km',
       learnedAt: '2026-08-10T01:20:00.000Z',
-      quiz: { score: 100, passed: true, answers: [1, 1, 1], at: '2026-08-10T01:32:00.000Z' } },
+      quiz: { score: 100, passed: true, answers: [1, 1, 1], at: '2026-08-10T01:32:00.000Z',
+              attempt: 1, firstPassed: true } },
     { workerId: 'W-4821-11', courseId: 'c-paint', lang: 'id',
       learnedAt: '2026-08-11T05:10:00.000Z',
-      quiz: { score: 50, passed: false, answers: [0, 1], at: '2026-08-11T05:24:00.000Z' } },
+      quiz: { score: 50, passed: false, answers: [0, 1], at: '2026-08-11T05:24:00.000Z',
+              attempt: 1, firstPassed: false } },
     { workerId: 'W-4821-03', courseId: 'c-press', lang: 'vi',
       learnedAt: null, quiz: null }
   ];

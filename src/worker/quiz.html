@@ -24,40 +24,150 @@
 
 <main class="page">
 
-  <div class="pagehead">
-    <h1>이해도 검증</h1>
-    <p class="lead">글자를 한 자도 읽지 않고 끝낼 수 있어야 합니다. 이 제품의 심장입니다.</p>
-  </div>
-
   <p class="blocked" id="blocked" hidden>
     이 브라우저에서는 저장소를 쓸 수 없습니다. 입력해도 새로고침하면 사라집니다.
   </p>
 
-  <section class="todo">
-    <h2>아직 만들지 않은 화면입니다</h2>
-    <p class="why">문항 유형 세 가지 — hotspot(사진에서 위험 지점 터치) · choice(올바른 작업 고르기) · match(보호구 연결하기). 문항은 음성으로 읽어 주고, 통과하지 못하면 progress 에 passed:false 로 남아 교육 완료로 기록되지 않습니다. 미통과는 노동자의 실패가 아니라 교육의 실패로 적습니다. 최초 통과율 100%는 문항이 쉬운 것이라 지표 실패로 봅니다(목표 70~85%).</p>
-    <dl>
-      <dt>담당</dt><dd>노동자 A</dd>
-      <dt>기능번호</dt><dd>기능4</dd>
-      <dt>이 파일</dt><dd><code>worker/quiz.html</code> · <code>worker/quiz.js</code></dd>
-      <dt>읽는 키</dt><dd><code>courses</code> · <code>setup</code></dd>
-      <dt>쓰는 키</dt><dd><code>progress</code></dd>
-      <dt>근거 문서</dt><dd>SCREEN 기능4 · PRD §2.2 · 발표 대본 ②-둘째</dd>
-    </dl>
-  </section>
+  <p class="voicenote" id="voicenote" hidden></p>
 
-  <section class="card" aria-labelledby="t-peek">
-    <div class="sec-head">
-      <div>
-        <h2 id="t-peek">지금 읽을 수 있는 데이터</h2>
-        <p class="why">
-          로그인 화면의 <b>예시 데이터 채우기</b>를 눌렀다면 아래에 숫자가 보입니다.
-          상대 팀 화면이 아직 없어도 이 값으로 개발하시면 됩니다.
-        </p>
-      </div>
+  <!-- ================================================================
+       화면 A — 문항 진행
+       ================================================================ -->
+  <div id="view-quiz" class="quiz-stage" hidden>
+
+    <p class="doing-now" id="quiz-course"></p>
+
+    <div class="step-head">
+      <span class="step-count" id="step-count"></span>
+      <span class="step-dots" id="step-dots" aria-hidden="true"></span>
     </div>
-    <dl class="kpi-row" id="peek" style="margin:0"></dl>
-  </section>
+
+    <div class="quiz-head">
+      <span class="quiz-kind" id="quiz-kind" aria-hidden="true"></span>
+      <p class="quiz-prompt" id="quiz-prompt"></p>
+      <span id="prompt-audio"></span>
+    </div>
+
+    <div id="quiz-body"></div>
+
+    <!-- 결과 학습 — 맞고 틀림만 알려 주면 다음에 또 같은 선택을 한다.
+         지금 이대로 하면 무슨 일이 생기는지 그 자리에서 말한다. -->
+    <div class="consequence" id="consequence" hidden>
+      <span class="pict" id="consequence-ico" aria-hidden="true">⚠</span>
+      <p id="consequence-text"></p>
+    </div>
+
+    <div class="big-actions">
+      <button class="btn btn-primary" type="button" id="btn-next" hidden>다음 문항 ▶</button>
+    </div>
+
+  </div>
+
+  <!-- ================================================================
+       화면 B — 결과
+       ================================================================ -->
+  <div id="view-result" class="quiz-stage" hidden>
+
+    <div class="result-panel" id="result-panel">
+      <p class="pict" id="result-ico" aria-hidden="true"></p>
+      <h2 id="result-title"></h2>
+      <p class="score" id="result-score"></p>
+      <p class="scorenote" id="result-note"></p>
+    </div>
+
+    <!-- 미통과 화면에서 가장 중요한 한 줄 (SCREEN 기능4) -->
+    <p class="not-your-fault" id="result-fault" hidden></p>
+
+    <ul class="result-review" id="result-review"></ul>
+
+    <div class="big-actions" id="result-actions"></div>
+
+  </div>
+
+  <!-- ================================================================
+       화면 C — 아직 검증할 수 없음 (교육을 먼저 들어야 한다)
+       ================================================================ -->
+  <div id="view-gate" class="quiz-stage" hidden>
+    <section class="card">
+      <p class="pict" id="gate-ico" aria-hidden="true"
+         style="font-size:64px;text-align:center;margin:0">🎧</p>
+      <h2 style="text-align:center" id="gate-title"></h2>
+      <p class="muted" id="gate-why"></p>
+      <div class="big-actions" id="gate-actions"></div>
+    </section>
+  </div>
+
+  <!-- ================================================================
+       설비 도해 — hotspot 문항이 복제해서 쓴다.
+
+       ★ 사진이 아니라 그림이다. 외부 이미지를 불러올 수 없고(외부 요청 0건),
+         사진을 base64 로 넣으면 저장소 5MB 를 몇 장에 채운다.
+         실제 설비 사진이 필요해지는 시점이 서버가 필요해지는 시점이다.
+
+       ★ viewBox 를 0 0 100 100 으로 둔다. 좌표계가 곧 퍼센트라
+         courses 의 answer { x, y, r } 이 화면 크기와 무관하게 같은 자리를 가리킨다.
+       ================================================================ -->
+  <div id="diagrams" hidden aria-hidden="true">
+
+    <!-- 프레스 — 끼임 -->
+    <svg data-diagram="press" viewBox="0 0 100 100" fill="none"
+         stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <rect x="8" y="6" width="84" height="88" rx="3"/>
+      <circle cx="20" cy="18" r="6"/>
+      <line x1="20" y1="12" x2="20" y2="18"/>
+      <circle cx="78" cy="18" r="7"/>
+      <line x1="78" y1="18" x2="83" y2="13"/>
+      <rect x="30" y="34" width="40" height="9" fill="currentColor" stroke="none" opacity=".85"/>
+      <line x1="50" y1="43" x2="50" y2="58"/>
+      <rect x="32" y="58" width="36" height="12" stroke-width="2.5"/>
+      <line x1="14" y1="70" x2="86" y2="70"/>
+      <rect x="72" y="76" width="11" height="7" rx="1"/>
+    </svg>
+
+    <!-- 도장 부스 — 화재 · 화학물질 · 질식 -->
+    <svg data-diagram="booth" viewBox="0 0 100 100" fill="none"
+         stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <rect x="6" y="10" width="88" height="80" rx="3"/>
+      <circle cx="78" cy="22" r="9"/>
+      <line x1="72" y1="16" x2="84" y2="28"/>
+      <line x1="84" y1="16" x2="72" y2="28"/>
+      <rect x="30" y="52" width="24" height="22" stroke-width="2.5"/>
+      <path d="M22 56 L30 60 L22 64"/>
+      <circle cx="18" cy="60" r="3" fill="currentColor" stroke="none" opacity=".8"/>
+      <rect x="8" y="74" width="16" height="16"/>
+      <rect x="72" y="70" width="16" height="18" rx="2"/>
+      <line x1="72" y1="76" x2="88" y2="76"/>
+    </svg>
+
+    <!-- 배전반 — 감전 -->
+    <svg data-diagram="panel" viewBox="0 0 100 100" fill="none"
+         stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <rect x="18" y="8" width="64" height="84" rx="3"/>
+      <rect x="26" y="16" width="48" height="20"/>
+      <line x1="34" y1="16" x2="34" y2="36"/>
+      <line x1="50" y1="16" x2="50" y2="36"/>
+      <line x1="66" y1="16" x2="66" y2="36"/>
+      <rect x="30" y="46" width="20" height="14" rx="2" fill="currentColor" stroke="none" opacity=".8"/>
+      <line x1="62" y1="50" x2="62" y2="62" stroke-width="2.5"/>
+      <line x1="56" y1="62" x2="68" y2="62" stroke-width="2.5"/>
+      <line x1="58" y1="66" x2="66" y2="66" stroke-width="2.5"/>
+      <line x1="60" y1="70" x2="64" y2="70" stroke-width="2.5"/>
+      <circle cx="76" cy="50" r="3"/>
+      <rect x="30" y="76" width="40" height="8" rx="2"/>
+    </svg>
+
+    <!-- 그 밖의 설비. 도해가 없으므로 이름 붙은 구역도 주지 않고,
+         그림 아무 곳이나 눌러 짚는 방식으로 넘어간다. -->
+    <svg data-diagram="generic" viewBox="0 0 100 100" fill="none"
+         stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <rect x="12" y="14" width="76" height="72" rx="4"/>
+      <circle cx="30" cy="30" r="7"/>
+      <rect x="34" y="46" width="32" height="14" fill="currentColor" stroke="none" opacity=".8"/>
+      <rect x="34" y="66" width="32" height="10" stroke-width="2.5"/>
+      <rect x="68" y="70" width="12" height="8" rx="1"/>
+    </svg>
+
+  </div>
 
 </main>
 
