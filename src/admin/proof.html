@@ -10,11 +10,11 @@
 <link rel="stylesheet" href="admin.css">
 <script src="../assets/store.js"></script>
 <script src="../assets/auth.js"></script>
-<script>Auth.require('admin');</script>
+<script>Auth.require(['admin', 'operator']);</script>
 </head>
 <body class="has-tabbar">
 
-<header class="adminbar apphead">
+<header class="adminbar apphead noprint">
   <div class="who">
     <strong id="head-site">사업장 미등록</strong>
     <span id="head-sub"></span>
@@ -25,44 +25,130 @@
 
 <main class="page">
 
-  <div class="pagehead">
+  <div class="pagehead noprint">
     <h1>교육 증빙 생성</h1>
-    <p class="lead">증빙 작성 시간을 2시간에서 5분으로 줄이는 것이 도입의 현실적인 이유입니다.</p>
+    <p class="lead">저장된 교육 기록을 법정 교육일지 서식으로 그대로 옮깁니다.</p>
   </div>
 
-  <p class="blocked" id="blocked" hidden>
+  <p class="blocked noprint" id="blocked" hidden>
     이 브라우저에서는 저장소를 쓸 수 없습니다. 입력해도 새로고침하면 사라집니다.
   </p>
 
-  <section class="todo">
-    <h2>아직 만들지 않은 화면입니다</h2>
-    <p class="why">일시 · 언어 · 문항 · 점수 · 서명을 그대로 담은 교육일지를 만듭니다. ★ 생성된 기록은 수정할 수 없고, 미이수자와 이해도 미달자를 문서에서 숨기는 경로를 만들지 않습니다. ★ "면책" 표현을 쓰지 않습니다. 교육 실시의 증빙일 뿐 법적 책임을 대신하지 않습니다. PDF는 브라우저 인쇄(window.print + @media print)로 충분합니다 — 외부 라이브러리를 넣지 마세요.</p>
-    <dl>
-      <dt>담당</dt><dd>관리자 D</dd>
-      <dt>기능번호</dt><dd>기능5</dd>
-      <dt>이 파일</dt><dd><code>admin/proof.html</code> · <code>admin/proof.js</code></dd>
-      <dt>읽는 키</dt><dd><code>progress</code> · <code>courses</code> · <code>setup</code></dd>
-      <dt>쓰는 키</dt><dd>없음</dd>
-      <dt>근거 문서</dt><dd>SCREEN 기능5 · 발표 대본 ②-셋째</dd>
-    </dl>
-  </section>
+  <!-- ★ "면책" 이라고 쓰지 않는다. 증빙은 교육을 했다는 기록일 뿐이다. -->
+  <p class="ai-note off noprint">
+    <span class="tag">이 문서가 하는 일</span>
+    <span>이 증빙은 <b>교육을 실시했다는 기록</b>입니다. 법적 책임을 대신하지 않습니다.
+      미이수자와 이해도 미달자를 숨기는 기능은 넣지 않았습니다 —
+      숨길 수 있는 증빙은 증빙이 아닙니다.</span>
+  </p>
 
-  <section class="card" aria-labelledby="t-peek">
+  <section class="card noprint" aria-labelledby="t-pick">
     <div class="sec-head">
       <div>
-        <h2 id="t-peek">지금 읽을 수 있는 데이터</h2>
-        <p class="why">
-          로그인 화면의 <b>예시 데이터 채우기</b>를 눌렀다면 아래에 숫자가 보입니다.
-          상대 팀 화면이 아직 없어도 이 값으로 개발하시면 됩니다.
-        </p>
+        <h2 id="t-pick">무엇에 대한 증빙인가</h2>
+        <p class="why">교육을 고르면 그 교육 대상자 전원이 아래 일지에 들어갑니다.</p>
       </div>
     </div>
-    <dl class="kpi-row" id="peek" style="margin:0"></dl>
+
+    <div class="field">
+      <label for="pick-course">교육</label>
+      <select id="pick-course"></select>
+    </div>
+
+    <dl class="kpi-row" id="summary"></dl>
+
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn btn-primary" type="button" id="btn-print">인쇄 · PDF 로 저장</button>
+    </div>
+    <p class="field-hint">
+      브라우저 인쇄 창에서 대상을 <b>PDF 로 저장</b>으로 바꾸면 파일이 됩니다.
+      외부 프로그램을 쓰지 않습니다.
+    </p>
+  </section>
+
+  <!-- ================================================================
+       교육일지 — 여기부터가 인쇄되는 부분
+       ================================================================ -->
+  <article class="proof" id="proof" aria-labelledby="proof-title">
+
+    <header class="proof-head">
+      <div>
+        <p class="proof-kicker">안전보건교육 실시 기록</p>
+        <h2 id="proof-title">교육일지</h2>
+      </div>
+      <div class="proof-issued">
+        <span id="proof-issued-at"></span>
+        <span id="proof-issued-by"></span>
+      </div>
+    </header>
+
+    <table class="proof-meta">
+      <tbody id="proof-meta-rows"></tbody>
+    </table>
+
+    <h3>교육 내용 — 전달한 안전 문구</h3>
+    <ol class="proof-phrases" id="proof-phrases"></ol>
+
+    <h3>이해도 검증 — 문항</h3>
+    <ol class="proof-quiz" id="proof-quiz"></ol>
+
+    <h3>대상자별 기록</h3>
+    <p class="proof-note">
+      이 표의 결과는 <b>서명이 아니라 이해도 검증 결과</b>입니다.
+      서명은 참석의 증거일 뿐 이해의 증거가 아니라는 데서 이 서식이 출발했습니다.
+      미이수자와 미통과자도 그대로 적습니다.
+    </p>
+    <div class="tablewrap">
+      <table class="data proof-table">
+        <thead>
+          <tr>
+            <th scope="col">식별번호</th>
+            <th scope="col">언어</th>
+            <th scope="col">수강 일시</th>
+            <th scope="col">검증 일시</th>
+            <th scope="col">점수</th>
+            <th scope="col">결과</th>
+          </tr>
+        </thead>
+        <tbody id="proof-rows"></tbody>
+      </table>
+    </div>
+
+    <div class="proof-sign">
+      <div class="sign-box">
+        <span class="sign-label">교육 실시자</span>
+        <span class="sign-line" id="sign-admin"></span>
+      </div>
+      <div class="sign-box">
+        <span class="sign-label">사업주 확인</span>
+        <span class="sign-line"></span>
+      </div>
+    </div>
+
+    <p class="proof-foot" id="proof-foot">
+      이 문서는 브라우저에 저장된 교육 기록을 그대로 옮긴 것입니다.
+      따로 고칠 수 있는 사본을 만들지 않으므로, 내용을 바꾸려면 교육 기록 자체가 바뀌어야 합니다.
+      이 기록은 교육 실시 사실을 증명하며, 법적 책임을 대신하지 않습니다.
+    </p>
+
+  </article>
+
+  <!-- 여기부터 P4 가 채우면 됩니다 -->
+  <section class="todo noprint">
+    <h2>여기부터 채우시면 됩니다 — P4</h2>
+    <p class="why">아래는 골격에 넣지 않은 것들입니다. 지금 상태로도 인쇄까지 됩니다.</p>
+    <dl>
+      <dt>기간별 묶음</dt><dd>지금은 교육 하나씩입니다. 분기·연도 단위로 여러 교육을 한 문서에 넣는 화면</dd>
+      <dt>서식 맞추기</dt><dd>감독기관 제출 서식과 항목 이름을 맞추는 일 (우선순위 3층). <b>책임을 면한다는 뜻의 표현은 그대로 금지</b></dd>
+      <dt>위조 검증</dt><dd>생성 시점 해시·타임스탬프로 "수정 불가"를 기술로 뒷받침 (3층)</dd>
+      <dt>노동자 개인 증빙</dt><dd>노동자 마이페이지(P2)에서 자기 것만 출력하는 경로</dd>
+      <dt>내 파일</dt><dd><code>admin/proof.html</code> · <code>admin/proof.js</code> · <code>admin/admin.css</code></dd>
+    </dl>
   </section>
 
 </main>
 
-<nav class="tabbar fixed" aria-label="담당자 메뉴">
+<nav class="tabbar fixed noprint" aria-label="담당자 메뉴">
   <a href="dashboard.html"><span class="ico" aria-hidden="true">📊</span>대시보드</a>
   <a href="setup.html"><span class="ico" aria-hidden="true">🏭</span>설비</a>
   <a href="content.html"><span class="ico" aria-hidden="true">📝</span>콘텐츠</a>
@@ -70,7 +156,7 @@
   <a href="library.html"><span class="ico" aria-hidden="true">🔍</span>문구</a>
 </nav>
 
-<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<div class="toast noprint" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="../assets/ui.js"></script>
 <script src="proof.js"></script>
