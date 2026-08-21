@@ -1,52 +1,287 @@
 /* ===================================================================
-   home.js — 홈
+   home.js — 노동자 홈
 
-   담당: 노동자 A
-   기능번호: —
-   읽는 키: setup, courses, progress
+   담당: P2
+   기능번호: — (진입점)
+   읽는 키: setup, courses, library, progress
    쓰는 키: 없음
-   근거: 화면.txt 4~29행 · SCREEN 기능7·8·9 · PRD §4.2 §9.2
+   근거: SCREEN 화면2 · PRD §4.2
 
-   안전 문구 배너(음성 포함), 수강 → 검증 → 완료 3단계 상태, 수강·신고·소통·마이 메뉴가 들어옵니다. 글자를 읽지 않고도 어디로 가야 할지 알 수 있어야 하므로 메뉴는 픽토그램과 음성을 함께 씁니다.
+   ★ 글자를 한 자도 읽지 않고 어디로 가야 할지 알 수 있어야 한다.
+     그래서 이 화면의 모든 조작에 픽토그램과 음성이 함께 붙는다.
+
+   이 파일이 코드로 지키는 것 —
+
+   · 오늘의 안전 문구는 검수 완료(reviewed)된 것만 올린다.
+     홈 배너는 교육에 들어가지 않아도 보이는 자리라, 여기 잘못된 문구가
+     걸리면 가장 오래 노출된다.
+
+   · 수강 → 검증 → 완료 3단계를 픽토그램으로 보여 준다.
+     통과하지 못하면 완료가 아니다 (SCREEN 기능4).
 
    -------------------------------------------------------------------
-   여기부터 만드시면 됩니다.
-
-   · 데이터는 반드시 Store 를 거칩니다. localStorage 를 직접 부르지 마세요.
-     나중에 서버가 생기면 store.js 하나만 바꾸면 되기 때문입니다.
-   · 배지 · 칩 · 목록 · 토스트 같은 공용 조각은 ../assets/ui.js 에 있습니다.
-     각자 다시 만들면 네 화면의 디자인이 흩어집니다.
-   · 공용 파일(assets/)을 고쳐야 하면 팀에 먼저 말하세요. 네 명이 함께 씁니다.
-   · 예시 데이터는 로그인 화면의 "예시 데이터 채우기" 버튼으로 채웁니다.
+   골격입니다. 남은 것은 화면 아래 "여기부터 채우시면 됩니다" 에 적혀 있습니다.
    =================================================================== */
 
 (function () {
   'use strict';
 
+  var $ = UI.$;
   var user = Auth.current();
 
   UI.fillWorkerBar(user);
   UI.markCurrentTab();
   UI.warnIfBlocked();
 
-  /* ---------------------------------------------------------------
-     아래는 껍데기 확인용입니다. 실제 화면을 만들 때 지우세요.
-     --------------------------------------------------------------- */
+  function whoAmI() {
+    var state = Store.setup.load();
+    var row = Store.findBy(state.workers, 'id', user.userId) || {};
+    return {
+      id: user.userId,
+      lang: user.lang || row.lang || 'ko',
+      processId: user.processId || row.processId || ''
+    };
+  }
 
-  var peek = [
-    { label: 'setup (사업장·설비)', count: Store.setup.load().length },
-    { label: 'courses (교육)', count: Store.courses.load().length },
-    { label: 'progress (수강·검증 이력)', count: Store.progress.load().length }
+  var me = whoAmI();
+
+  /* -----------------------------------------------------------------
+     읽기
+     ----------------------------------------------------------------- */
+
+  function myCourses() {
+    var state = Store.setup.load();
+    return Store.courses.load().filter(function (c) {
+      if (!c || !c.approved) return false;
+      if (!me.processId) return true;
+      var eq = Store.findBy(state.equipments, 'id', c.equipmentId);
+      return !!eq && eq.processId === me.processId;
+    });
+  }
+
+  function progressOf(courseId) {
+    return Store.progress.load().filter(function (r) {
+      return r.workerId === me.id && r.courseId === courseId;
+    })[0] || null;
+  }
+
+  function stateOf(courseId) {
+    var row = progressOf(courseId);
+    if (!row) return 'todo';
+    if (row.quiz && row.quiz.passed) return 'done';
+    if (row.learnedAt) return 'verify';
+    return 'todo';
+  }
+
+  /* 내 언어로 된 번역. 없으면 null. */
+  function translationOf(phrase) {
+    var t = phrase.translations && phrase.translations[me.lang];
+    return (t && t.text) ? t : null;
+  }
+
+  /* -----------------------------------------------------------------
+     1. 오늘의 안전 문구
+
+     ★ 검수 완료된 것만. 내 설비 교육이 쓰는 문구를 먼저 고르고,
+       없으면 검수된 것 중 아무거나 하나 띄운다 — 빈 배너보다는 낫다.
+     ----------------------------------------------------------------- */
+
+  function pickTodayPhrase() {
+    var library = Store.library.load().filter(function (p) { return p.status === 'reviewed'; });
+    if (!library.length) return null;
+
+    var mine = {};
+    myCourses().forEach(function (c) {
+      (c.phraseIds || []).forEach(function (id) { mine[id] = true; });
+    });
+
+    var preferred = library.filter(function (p) { return mine[p.id]; });
+    var pool = preferred.length ? preferred : library;
+
+    // 날짜로 돌린다. 새로고침할 때마다 바뀌면 "오늘의 문구" 가 아니다.
+    var day = Math.floor(Date.now() / 86400000);
+    return pool[day % pool.length];
+  }
+
+  function renderToday() {
+    var phrase = pickTodayPhrase();
+    var box = $('today');
+
+    if (!phrase) {
+      box.className = 'today empty-today';
+      $('today-pict').textContent = '📋';
+      $('today-text').textContent = '아직 안전 문구가 준비되지 않았습니다.';
+      $('today-ko').textContent = '';
+      $('today-listen').textContent = '';
+      return;
+    }
+
+    var eqIcon = '⚠';
+    var state = Store.setup.load();
+    myCourses().some(function (c) {
+      if ((c.phraseIds || []).indexOf(phrase.id) === -1) return false;
+      var eq = Store.findBy(state.equipments, 'id', c.equipmentId);
+      if (eq) { eqIcon = eq.icon; return true; }
+      return false;
+    });
+
+    var t = translationOf(phrase);
+    $('today-pict').textContent = eqIcon;
+    $('today-text').textContent = t ? t.text : phrase.ko;
+    $('today-ko').textContent = t ? phrase.ko : '';
+
+    var listen = $('today-listen');
+    listen.textContent = '';
+    listen.appendChild(UI.audioButton(function () {
+      return { text: t ? t.text : phrase.ko, lang: t ? me.lang : 'ko', ko: phrase.ko };
+    }, '오늘의 안전 문구 듣기'));
+    listen.appendChild(UI.el('span', 'label', '들어 보기'));
+
+    if (!t) {
+      var note = UI.el('p', 'original');
+      note.appendChild(UI.waitBadge('내 언어 번역 준비 중'));
+      listen.parentNode.insertBefore(note, listen);
+    }
+  }
+
+  /* -----------------------------------------------------------------
+     2. 수강 → 검증 → 완료 3단계
+     ----------------------------------------------------------------- */
+
+  function renderStage() {
+    var courses = myCourses();
+    var track = $('stage-track');
+    var say = $('stage-say');
+    var actions = $('stage-actions');
+    actions.textContent = '';
+
+    function mark(step, value) {
+      var li = track.querySelector('[data-step="' + step + '"]');
+      if (li) li.setAttribute('data-state', value);
+    }
+
+    if (!courses.length) {
+      ['learn', 'quiz', 'done'].forEach(function (s) { mark(s, 'wait'); });
+      say.textContent = '아직 받을 교육이 없습니다. 관리자가 교육을 만들면 여기 나옵니다.';
+      return;
+    }
+
+    // 가장 급한 교육 하나를 고른다 — 미수강 > 검증 대기 > 완료
+    var todo = courses.filter(function (c) { return stateOf(c.id) === 'todo'; })[0];
+    var verify = courses.filter(function (c) { return stateOf(c.id) === 'verify'; })[0];
+    var target = todo || verify || courses[0];
+    var state = stateOf(target.id);
+
+    if (state === 'todo') {
+      mark('learn', 'now'); mark('quiz', 'wait'); mark('done', 'wait');
+      say.textContent = '"' + target.title + '" 을 아직 듣지 않았습니다.';
+      actions.appendChild(bigLink('🎧', '교육 듣기', 'learn.html'));
+    } else if (state === 'verify') {
+      mark('learn', 'done'); mark('quiz', 'now'); mark('done', 'wait');
+      say.textContent = '"' + target.title + '" 을 들었습니다. 이해했는지 확인이 남았습니다.';
+      actions.appendChild(bigLink('👆', '이해 확인하기',
+        'quiz.html?course=' + encodeURIComponent(target.id)));
+    } else {
+      mark('learn', 'done'); mark('quiz', 'done'); mark('done', 'done');
+      say.textContent = '받아야 할 교육을 모두 마쳤습니다.';
+      actions.appendChild(bigLink('🙋', '내 기록 보기', 'my.html'));
+    }
+
+    // 상태를 소리로도 알려 준다
+    var listen = UI.audioButton(function () {
+      return { text: say.textContent, lang: 'ko' };
+    }, '내 교육 상태 듣기');
+    listen.classList.add('inline-audio');
+    say.appendChild(listen);
+  }
+
+  function bigLink(icon, label, href) {
+    var a = UI.el('a', 'btn btn-primary');
+    a.href = href;
+    var ico = UI.el('span', null, icon);
+    ico.setAttribute('aria-hidden', 'true');
+    a.appendChild(ico);
+    a.appendChild(document.createTextNode(' ' + label));
+    return a;
+  }
+
+  /* -----------------------------------------------------------------
+     3. 메뉴 4갈래 — 픽토그램 + 글자 + 음성
+     ----------------------------------------------------------------- */
+
+  var MENU = [
+    { icon: '🎧', label: '안전교육 듣기', href: 'learn.html', say: '안전교육을 듣습니다' },
+    { icon: '📷', label: '위험한 곳 알리기', href: 'report.html', say: '위험한 곳을 알립니다. 이름은 남지 않습니다' },
+    { icon: '💬', label: '물어보기', href: 'talk.html', say: '궁금한 것을 물어봅니다' },
+    { icon: '🙋', label: '내 기록', href: 'my.html', say: '내 교육 기록을 봅니다' }
   ];
 
-  var box = UI.$('peek');
-  peek.forEach(function (row) {
-    var cell = UI.el('div', 'kpi' + (row.count ? '' : ' alert'));
-    cell.appendChild(UI.el('dt', null, row.label));
-    var dd = UI.el('dd', null, String(row.count));
-    dd.appendChild(UI.el('small', null, '건'));
-    cell.appendChild(dd);
-    cell.appendChild(UI.el('p', 'hint', row.count ? '읽을 수 있습니다' : '비어 있습니다'));
-    box.appendChild(cell);
+  function renderMenu() {
+    var box = $('bigmenu');
+    box.textContent = '';
+
+    MENU.forEach(function (item) {
+      var cell = UI.el('div', 'bigmenu-cell');
+
+      var a = UI.el('a', 'bigmenu-link');
+      a.href = item.href;
+      var ico = UI.el('span', 'ico', item.icon);
+      ico.setAttribute('aria-hidden', 'true');
+      a.appendChild(ico);
+      a.appendChild(UI.el('span', 'name', item.label));
+      cell.appendChild(a);
+
+      // 글자를 못 읽어도 무엇인지 알 수 있게
+      cell.appendChild(UI.audioButton(function () {
+        return { text: item.say, lang: 'ko' };
+      }, item.label + ' 설명 듣기'));
+
+      box.appendChild(cell);
+    });
+  }
+
+  /* -----------------------------------------------------------------
+     4. 번역 이상 신고 안내 — 음성으로도
+     ----------------------------------------------------------------- */
+
+  function renderBadTrans() {
+    var box = $('badtrans-listen');
+    box.textContent = '';
+    box.appendChild(UI.audioButton(function () {
+      return {
+        text: '안전 문구의 말이 이상하면 관리자에게 알려 주세요. 알려 주신 분이 누구인지는 기록하지 않습니다.',
+        lang: 'ko'
+      };
+    }, '안내 듣기'));
+    box.appendChild(UI.el('span', 'label', '설명 듣기'));
+  }
+
+  function renderVoiceNote() {
+    var note = UI.voiceNote(me.lang);
+    var box = $('voicenote');
+    box.textContent = note;
+    box.hidden = !note;
+  }
+
+  /* -----------------------------------------------------------------
+     그리기
+     ----------------------------------------------------------------- */
+
+  function render() {
+    renderVoiceNote();
+    renderToday();
+    renderStage();
+    renderMenu();
+    renderBadTrans();
+  }
+
+  window.addEventListener('pagehide', UI.stopSpeak);
+  UI.onVoicesReady(renderVoiceNote);
+
+  window.addEventListener('storage', function (e) {
+    if (e.key === Store.courses.KEY || e.key === Store.library.KEY ||
+        e.key === Store.progress.KEY || e.key === Store.setup.KEY) render();
   });
+
+  render();
 })();

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>위험요소 신고 — 안전교육 이해도 검증 플랫폼</title>
+<title>위험한 곳 알리기 — 안전교육 이해도 검증 플랫폼</title>
 <link rel="stylesheet" href="../assets/style.css">
 <link rel="stylesheet" href="../assets/style-admin.css">
 <link rel="stylesheet" href="../assets/app.css">
@@ -24,39 +24,113 @@
 
 <main class="page">
 
-  <div class="pagehead">
-    <h1>위험요소 신고</h1>
-    <p class="lead">공장·설비를 그림으로 고르고, 위험유형을 픽토그램으로 고르면 접수됩니다.</p>
-  </div>
-
   <p class="blocked" id="blocked" hidden>
     이 브라우저에서는 저장소를 쓸 수 없습니다. 입력해도 새로고침하면 사라집니다.
   </p>
 
-  <section class="todo">
-    <h2>아직 만들지 않은 화면입니다</h2>
-    <p class="why">설비 선택(그림 목록) → 위험유형 선택(픽토그램) → 음성메모(선택) → 접수. ★ 신고는 익명이 기본입니다. reports 에 신고자를 식별할 수 있는 값을 절대 넣지 마세요. 익명성이 깨지면 신고가 멈추고, 재해 감소의 선행지표도 함께 사라집니다.</p>
-    <dl>
-      <dt>담당</dt><dd>노동자 B</dd>
-      <dt>기능번호</dt><dd>기능8</dd>
-      <dt>이 파일</dt><dd><code>worker/report.html</code> · <code>worker/report.js</code></dd>
-      <dt>읽는 키</dt><dd><code>setup</code></dd>
-      <dt>쓰는 키</dt><dd><code>reports</code></dd>
-      <dt>근거 문서</dt><dd>화면.txt 신고 페이지 · SCREEN 기능8 · PRD §9.2</dd>
-    </dl>
+  <p class="voicenote" id="voicenote" hidden></p>
+
+  <!-- ★ 익명 고지를 맨 위에. 이 화면에서 가장 중요한 문장이다. -->
+  <section class="anon-note" aria-labelledby="anon-title">
+    <p class="pict" aria-hidden="true">🕶</p>
+    <h2 id="anon-title">이름을 남기지 않습니다</h2>
+    <p>
+      누가 알렸는지는 <b>저장하지 않습니다.</b>
+      관리자도 알 수 없습니다. 걱정하지 말고 알려 주세요.
+    </p>
+    <div class="listen" id="anon-listen"></div>
   </section>
 
-  <section class="card" aria-labelledby="t-peek">
+  <!-- 화면 A — 신고하기 -->
+  <div id="view-form">
+
+    <!-- 1. 어느 설비 -->
+    <section class="card" aria-labelledby="t-equip">
+      <div class="sec-head">
+        <div>
+          <h2 id="t-equip">① 어디입니까</h2>
+          <p class="why">그림을 눌러 고르세요.</p>
+        </div>
+        <span class="badge badge-neutral" id="b-equip">미선택</span>
+      </div>
+      <div class="picker big" id="pick-equip" role="group" aria-labelledby="t-equip"></div>
+    </section>
+
+    <!-- 2. 어떤 위험 -->
+    <section class="card" aria-labelledby="t-hazard">
+      <div class="sec-head">
+        <div>
+          <h2 id="t-hazard">② 무엇이 위험합니까</h2>
+          <p class="why">그림을 눌러 고르세요.</p>
+        </div>
+        <span class="badge badge-neutral" id="b-hazard">미선택</span>
+      </div>
+      <div class="picker big" id="pick-hazard" role="group" aria-labelledby="t-hazard"></div>
+    </section>
+
+    <!-- 3. 더 할 말 (선택) -->
+    <section class="card" aria-labelledby="t-memo">
+      <div class="sec-head">
+        <div>
+          <h2 id="t-memo">③ 더 할 말 (안 써도 됩니다)</h2>
+          <p class="why">
+            위 두 가지만 골라도 신고가 됩니다. 글을 쓰기 어려우면 넘어가세요.
+          </p>
+        </div>
+      </div>
+      <div class="field">
+        <label for="memo">내용</label>
+        <input type="text" id="memo" placeholder="예) 덮개가 흔들립니다">
+      </div>
+    </section>
+
+    <div class="big-actions">
+      <button class="btn btn-primary" type="button" id="btn-send">✋ 이대로 알리기</button>
+    </div>
+
+  </div>
+
+  <!-- 화면 B — 접수됐습니다 -->
+  <div id="view-done" hidden>
+    <section class="card done-panel">
+      <p class="pict" aria-hidden="true">✅</p>
+      <h2>알려 주셔서 고맙습니다</h2>
+      <p class="ticket-label">접수 번호</p>
+      <p class="ticket" id="ticket"></p>
+      <p class="muted">
+        이 번호를 적어 두시면 나중에 어떻게 됐는지 물어볼 수 있습니다.
+        번호에는 누구인지가 들어 있지 않습니다.
+      </p>
+      <div class="listen" id="done-listen"></div>
+      <div class="big-actions">
+        <button class="btn btn-primary" type="button" id="btn-again">또 알리기</button>
+        <a class="btn btn-quiet" href="home.html">홈으로</a>
+      </div>
+    </section>
+  </div>
+
+  <!-- 우리 현장에 들어온 신고 — 누가 냈는지는 아무도 모른다 -->
+  <section class="card" aria-labelledby="t-list">
     <div class="sec-head">
       <div>
-        <h2 id="t-peek">지금 읽을 수 있는 데이터</h2>
-        <p class="why">
-          로그인 화면의 <b>예시 데이터 채우기</b>를 눌렀다면 아래에 숫자가 보입니다.
-          상대 팀 화면이 아직 없어도 이 값으로 개발하시면 됩니다.
-        </p>
+        <h2 id="t-list">우리 현장에 들어온 신고</h2>
+        <p class="why" id="list-why"></p>
       </div>
     </div>
-    <dl class="kpi-row" id="peek" style="margin:0"></dl>
+    <ul class="report-list" id="report-list"></ul>
+  </section>
+
+  <!-- 여기부터 P2 가 채우면 됩니다 -->
+  <section class="todo">
+    <h2>여기부터 채우시면 됩니다 — P2</h2>
+    <p class="why">아래는 골격에 넣지 않은 것들입니다. 지금 상태로도 신고는 저장됩니다.</p>
+    <dl>
+      <dt>음성 메모</dt><dd>말로 남기는 기능. 녹음 파일을 브라우저에만 담으면 5MB 를 금방 채웁니다 — 서버가 필요한 시점입니다 (우선순위 3층)</dd>
+      <dt>사진 첨부</dt><dd>같은 이유로 3층입니다</dd>
+      <dt>회신 확인</dt><dd>접수 번호로 조치 결과를 보는 화면. <b>신고자를 식별하지 않는 방식</b>이어야 합니다 (3층)</dd>
+      <dt>지켜야 할 것</dt><dd><b><code>Store.reports</code> 에 신고자를 알 수 있는 값을 절대 넣지 마세요.</b> 익명성이 깨지면 신고가 멈춥니다</dd>
+      <dt>내 파일</dt><dd><code>worker/report.html</code> · <code>worker/report.js</code> · <code>worker/worker.css</code></dd>
+    </dl>
   </section>
 
 </main>

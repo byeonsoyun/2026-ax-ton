@@ -628,3 +628,513 @@
   font-weight: 700;
   color: var(--brand);
 }
+
+
+/* ===================================================================
+   [P2] 홈 · 신고 · 소통 · 마이
+
+   P1 구역과 섞이지 않게 여기 아래에만 씁니다.
+   =================================================================== */
+
+/* -------------------------------------------------------------------
+   홈 — 오늘의 안전 문구 배너
+   교육에 들어가지 않아도 한 번은 눈과 귀에 닿는 자리다.
+   ------------------------------------------------------------------- */
+
+.today {
+  padding: 20px 16px;
+  border-radius: var(--radius);
+  background: var(--brand-soft);
+  border: 1px solid #c3d8ef;
+  text-align: center;
+  margin-bottom: var(--gap);
+}
+
+.today .pict { font-size: 64px; line-height: 1.1; margin: 0 0 6px; }
+
+.today .translated {
+  margin: 0;
+  font-size: 1.3em;
+  font-weight: 800;
+  line-height: 1.45;
+  color: #123f6d;
+  overflow-wrap: anywhere;
+}
+
+.today .original {
+  margin: 8px 0 0;
+  font-size: .82em;
+  color: #3f6690;
+  overflow-wrap: anywhere;
+}
+
+.today.empty-today {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.today.empty-today .translated { color: var(--ink-2); font-size: 1.05em; font-weight: 700; }
+
+.today .listen {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.today .listen .label { font-size: .84em; font-weight: 700; color: var(--brand); }
+
+/* -------------------------------------------------------------------
+   홈 — 수강 → 검증 → 완료 3단계
+
+   글자를 읽지 않고도 지금 어디까지 왔는지 알 수 있어야 한다.
+   색만으로 구분하지 않는다 — 아이콘과 테두리 모양이 함께 바뀐다.
+   ------------------------------------------------------------------- */
+
+.stage-track {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.stage-track li {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 6px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink-3);
+}
+
+.stage-track li .ico { font-size: 28px; line-height: 1; filter: grayscale(1); opacity: .45; }
+.stage-track li .name { font-size: .8em; font-weight: 700; }
+
+/* 지금 할 차례 — 굵은 테두리와 브랜드 색 */
+.stage-track li[data-state="now"] {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.stage-track li[data-state="now"] .ico { filter: none; opacity: 1; }
+
+/* 끝난 것 */
+.stage-track li[data-state="done"] {
+  border-color: #b6ddc5;
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.stage-track li[data-state="done"] .ico { filter: none; opacity: 1; }
+
+.stage-say {
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: .95em;
+  font-weight: 700;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.inline-audio { flex: 0 0 auto; }
+
+/* -------------------------------------------------------------------
+   홈 — 메뉴 4갈래
+   ------------------------------------------------------------------- */
+
+.bigmenu {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+}
+
+.bigmenu-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.bigmenu-link {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--tap-min);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.bigmenu-link .ico { font-size: 34px; line-height: 1; }
+
+.bigmenu-link .name {
+  font-size: .84em;
+  font-weight: 700;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.bigmenu-link:focus-visible { outline: 3px solid #7aa8d8; outline-offset: 2px; border-radius: 10px; }
+
+@media (max-width: 360px) {
+  .bigmenu { grid-template-columns: 1fr; }
+}
+
+/* -------------------------------------------------------------------
+   기능8 신고 — 익명 고지가 이 화면에서 가장 중요한 문장이다
+   ------------------------------------------------------------------- */
+
+.anon-note {
+  padding: 18px 16px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 2px solid var(--brand);
+  text-align: center;
+  margin-bottom: var(--gap);
+}
+
+.anon-note .pict { font-size: 48px; line-height: 1.1; margin: 0 0 4px; }
+
+.anon-note h2 {
+  margin: 0 0 6px;
+  font-size: 1.15em;
+  font-weight: 800;
+  color: var(--brand);
+}
+
+.anon-note p {
+  margin: 0;
+  font-size: .92em;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+
+.anon-note .listen {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.anon-note .listen .label { font-size: .84em; font-weight: 700; color: var(--brand); }
+
+/* 신고 화면의 그림 고르기는 더 크게 — 장갑 낀 손으로 급히 누른다 */
+.picker.big .chip {
+  min-height: 76px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.picker.big .chip .ico { font-size: 30px; }
+.picker.big .chip .sub { font-size: .72em; }
+
+/* 접수됐습니다 */
+.done-panel { text-align: center; }
+.done-panel .pict { font-size: 64px; line-height: 1.1; margin: 0; }
+.done-panel h2 { margin: 6px 0 14px; font-size: 1.25em; }
+
+.done-panel .ticket-label {
+  margin: 0;
+  font-size: .78em;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+
+.done-panel .ticket {
+  margin: 2px 0 10px;
+  font-size: 1.9em;
+  font-weight: 800;
+  letter-spacing: .04em;
+  color: var(--brand);
+}
+
+.done-panel .listen {
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.done-panel .listen .label { font-size: .84em; font-weight: 700; color: var(--brand); }
+
+/* 신고 목록 */
+.report-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.report-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.report-item > .ico {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--bg);
+  font-size: 24px;
+}
+
+.report-item .body { flex: 1 1 auto; min-width: 0; }
+.report-item .body strong { display: block; font-size: .95em; overflow-wrap: anywhere; }
+.report-item .body .memo { margin: 3px 0 0; font-size: .84em; color: var(--ink-2); overflow-wrap: anywhere; }
+.report-item .body .meta { margin: 3px 0 0; font-size: .76em; color: var(--ink-3); }
+
+/* -------------------------------------------------------------------
+   기능7 소통 — 게시판
+   ------------------------------------------------------------------- */
+
+.post-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.post-item {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.post-open {
+  width: 100%;
+  min-height: var(--tap-min);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.post-open:focus-visible { outline: 3px solid #7aa8d8; outline-offset: 2px; border-radius: var(--radius); }
+
+.post-open .body { flex: 1 1 auto; min-width: 0; }
+.post-open .body strong { display: block; font-size: 1em; overflow-wrap: anywhere; }
+.post-open .body .meta { margin: 3px 0 0; font-size: .76em; color: var(--ink-3); }
+
+.comment-count {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 46px;
+  padding: 6px 0;
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.comment-count .n { font-size: 1.1em; font-weight: 800; color: var(--brand); line-height: 1.1; }
+.comment-count .l { font-size: .68em; color: var(--ink-3); }
+
+.post-head { margin-bottom: 10px; }
+.post-head h2 { margin: 0; font-size: 1.2em; overflow-wrap: anywhere; }
+.post-head .meta { margin: 4px 0 0; font-size: .78em; color: var(--ink-3); }
+
+.post-body {
+  margin: 0;
+  font-size: .98em;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.post-body:empty { display: none; }
+
+.comment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comment-item {
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: 10px;
+}
+
+.comment-item .meta { margin: 0 0 3px; font-size: .74em; color: var(--ink-3); }
+.comment-item .body { margin: 0; font-size: .92em; line-height: 1.6; overflow-wrap: anywhere; }
+
+/* -------------------------------------------------------------------
+   마이페이지 — 수강 증빙 인쇄
+
+   기능5 와 같은 방식이다. 증빙을 저장하지 않고 기록을 그대로 그린다.
+   못 들은 교육을 빼고 뽑는 경로를 만들지 않는다.
+   ------------------------------------------------------------------- */
+
+.proof {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-top: var(--gap);
+  font-size: .9em;
+  line-height: 1.6;
+}
+
+.proof-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.proof-kicker {
+  margin: 0;
+  font-size: .76em;
+  font-weight: 700;
+  letter-spacing: .05em;
+  color: var(--ink-3);
+}
+
+.proof-head h2 { margin: 4px 0 0; font-size: 1.35em; }
+.proof-issued { font-size: .76em; color: var(--ink-3); text-align: right; }
+
+.proof h3 {
+  margin: 20px 0 8px;
+  font-size: .95em;
+  font-weight: 800;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--line);
+}
+
+.proof-meta { width: 100%; border-collapse: collapse; margin-top: 12px; }
+
+.proof-meta th,
+.proof-meta td {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+  font-size: .92em;
+}
+
+.proof-meta th {
+  width: 32%;
+  background: #f6f8fa;
+  font-weight: 700;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.proof-meta td { overflow-wrap: anywhere; }
+
+/* 미통과·미수강 줄을 옅게 만들지 않는다. 흐리게 두는 것도 숨기는 것이다. */
+.proof-table tbody tr[data-state="fail"] td { background: #fff8f7; }
+.proof-table tbody tr[data-state="none"] td,
+.proof-table tbody tr[data-state="noquiz"] td { background: #fafbfc; }
+
+.proof-foot {
+  margin: 18px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: .78em;
+  line-height: 1.7;
+  color: var(--ink-3);
+}
+
+/* 화면에서는 증빙을 접어 둔다 — 인쇄할 때만 필요하다 */
+.page > .proof { display: none; }
+
+@media print {
+  .noprint,
+  .todo,
+  .tabbar,
+  .workerbar,
+  .pagehead,
+  .card,
+  .anon-note,
+  .today,
+  .bigmenu,
+  .blocked,
+  .toast { display: none !important; }
+
+  html, body { background: #fff; color: #000; }
+
+  .page { padding: 0; display: block; }
+
+  /* 화면에서 접어 뒀던 증빙만 펼친다 */
+  .page > .proof {
+    display: block;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+    font-size: 10.5pt;
+  }
+
+  .tablewrap { overflow: visible; border: 0; border-radius: 0; }
+
+  table.data,
+  .proof-meta { page-break-inside: auto; }
+
+  table.data tr,
+  .proof-meta tr { page-break-inside: avoid; }
+
+  table.data thead { display: table-header-group; }
+
+  table.data th,
+  table.data td { border: 1px solid #999; padding: 5px 7px; }
+
+  .proof h3 { page-break-after: avoid; }
+
+  /* 배지는 색이 빠져도 아이콘과 글자로 뜻이 남는다 */
+  .badge {
+    border-color: #666 !important;
+    background: none !important;
+    color: #000 !important;
+  }
+
+  .proof-table tbody tr td { background: none !important; }
+
+  a[href]::after { content: ""; }
+}
