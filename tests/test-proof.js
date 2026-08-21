@@ -31,9 +31,14 @@ function open(opts = {}) {
   has('발급자', text(t.$('proof-issued-by')), '김현수');
   eq('교육 실시자 서명란에 이름', text(t.$('sign-admin')), '김현수');
 
-  // 전달한 안전 문구 3개
-  eq('안전 문구 3줄', t.$('proof-phrases').children.length, 3);
+  // 전달한 안전 문구 4개 (ph-1, ph-2, ph-3, ph-6)
+  eq('안전 문구 4줄', t.$('proof-phrases').children.length, 4);
   has('문구 내용이 그대로', text(t.$('proof-phrases')), '프레스가 멈춰도 손을 넣지 마십시오');
+
+  /* ★ ph-3 은 인도네시아어 번역이 중지돼 그 언어 노동자에게는 전달되지 않았다.
+       증빙에 그 사실을 적는다 — 무엇이 전달되지 않았는지가 이 문서의 내용이다. */
+  has('어느 언어에 전달되지 않았는지 적는다',
+    text(t.$('proof-phrases')), '인도네시아어 노동자에게는 전달되지 않았습니다');
 
   // 문항 3개
   eq('문항 3줄', t.$('proof-quiz').children.length, 3);

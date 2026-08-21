@@ -100,9 +100,15 @@ PAGES.forEach(([html, js, login]) => {
     reports.every((r) => !('workerId' in r) && !('author' in r) && !('userId' in r)),
     JSON.stringify(reports.map(Object.keys)));
 
-  // 오역 문구는 사용 중지여야 한다
+  /* 오역 문구는 사용 중지여야 한다.
+     ★ ph-3 은 인도네시아어 번역만 뜻이 뒤집혔다. 그 언어만 내려가고
+       한국어·크메르어는 계속 나간다 — 문구 전체를 내리면 크메르어 노동자도
+       이 안전 지시를 못 듣고, 그것은 오역보다 나은 상태가 아니다. */
   const ph3 = S.library.load().find((p) => p.id === 'ph-3');
-  eq('★ 역번역이 뒤집힌 ph-3 은 사용 중지', ph3.status, 'stopped');
+  eq('★ 뜻이 뒤집힌 인도네시아어는 나가지 않는다', S.phraseOk(ph3, 'id'), false);
+  eq('★ 크메르어는 계속 나간다', S.phraseOk(ph3, 'km'), true);
+  eq('한국어 원문도 계속 나간다', S.phraseOk(ph3, 'ko'), true);
+  eq('신고에 어느 언어인지 남아 있다', ph3.flags[0].lang, 'id');
 }
 
 /* -------------------------------------------------------------------

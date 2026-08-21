@@ -200,8 +200,17 @@ var Store = (function () {
     });
 
   /* 4. library — 운영자 기능9. 안전 문구와 언어별 검수 상태
-        { id, category, ko, translations: { km: { text, back } }, status }
+        { id, category, ko, status,
+          translations: { km: { text, back, status } },
+          flags: [ { note, lang, at, resolvedAt } ] }
+
         status 는 PHRASE_STATUS 의 세 가지 중 하나.
+        translations[code].status 는 그 언어만의 판정이고, 없으면 문구 전체를 따른다.
+        flags[].lang 이 있으면 그 언어만 중지된다 — 크메르어 오역 하나로
+        인도네시아어 노동자까지 안전 지시를 못 듣게 되지 않는다.
+
+        읽을 때는 Store.phraseOk(p, lang) 을 쓴다. p.status 를 직접 보면
+        언어별 판정이 무시된다.
         검수 완료가 아닌 문구는 안전 지시로 쓰지 않는다 (SCREEN 기능9 · PRD §9.3). */
   var library = listStore('library');
 
@@ -284,6 +293,62 @@ var Store = (function () {
   function language(code) { return findBy(LANGUAGES, 'code', code); }
   function hazard(code)   { return findBy(HAZARDS, 'code', code); }
   function role(code)     { return findBy(ROLES, 'code', code); }
+
+  /* -----------------------------------------------------------------
+     문구를 언어별로 판정한다 — phraseStatus / phraseOk
+
+     ★ 검수 상태가 문구 단위이면, 크메르어 번역 하나가 오역이어도 문구 전체가
+       내려가고 인도네시아어·베트남어 노동자도 그 안전 지시를 함께 못 듣습니다.
+       그것은 오역보다 나은 상태가 아닙니다 — 안전 지시가 조용히 사라집니다.
+
+     그래서 언어마다 상태를 가질 수 있게 합니다.
+       translations[code].status — 그 언어의 판정 (없으면 문구 전체를 따름)
+       p.status                  — 문구 전체의 판정
+
+     둘이 다르면 **엄한 쪽**을 따릅니다. 중지 > 대기 > 완료.
+     한국어 원문이 아직 대기인데 번역만 완료라고 해서 쓸 수는 없고,
+     문구 전체가 중지면 어느 언어로도 나가지 않아야 합니다.
+
+     번역이 없는 언어는 판정이 아니라 "아직 없음" 입니다. 그때는 문구 전체의
+     상태를 따르고, 노동자 화면은 한국어를 띄우며 "준비 중" 을 남깁니다
+     (learn.js) — 조용히 숨기지 않습니다.
+     ----------------------------------------------------------------- */
+
+  var STATUS_RANK = { reviewed: 0, waiting: 1, stopped: 2 };
+
+  function stricter(a, b) {
+    var ra = STATUS_RANK[a] === undefined ? 1 : STATUS_RANK[a];
+    var rb = STATUS_RANK[b] === undefined ? 1 : STATUS_RANK[b];
+    return ra >= rb ? a : b;
+  }
+
+  function phraseStatus(phrase, lang) {
+    if (!phrase) return 'stopped';
+
+    var whole = STATUS_RANK[phrase.status] === undefined ? 'waiting' : phrase.status;
+    if (!lang || lang === 'ko') return whole;
+
+    var t = obj(phrase.translations)[lang];
+    if (!t || !t.text) return whole;              // 번역이 없다 — 판정이 아니다
+    if (STATUS_RANK[t.status] === undefined) return whole;
+
+    return stricter(whole, t.status);
+  }
+
+  /* 이 언어로 안전 지시로 쓸 수 있는가.
+     검수 완료가 아닌 문구는 안전 지시로 쓰지 않는다 (PRD §9.3). */
+  function phraseOk(phrase, lang) {
+    return phraseStatus(phrase, lang) === 'reviewed';
+  }
+
+  /* 이 문구가 중지된 언어들. 화면에 "무엇이 왜 빠졌는지" 를 적을 때 쓴다. */
+  function stoppedLangs(phrase) {
+    if (!phrase) return [];
+    var t = obj(phrase.translations);
+    return Object.keys(t).filter(function (code) {
+      return t[code] && t[code].status === 'stopped';
+    });
+  }
 
   /* -----------------------------------------------------------------
      문항을 노동자의 언어로 읽는다 — qtext / qhas
@@ -377,6 +442,9 @@ var Store = (function () {
 
     // 문항을 노동자의 언어로 읽는 통로 (화면에서 q.i18n 을 직접 뒤지지 않는다)
     qtext: qtext, qhas: qhas,
+
+    // 문구를 언어별로 판정하는 통로 (화면에서 p.status 를 직접 보지 않는다)
+    phraseStatus: phraseStatus, phraseOk: phraseOk, stoppedLangs: stoppedLangs,
 
     // 저장소 8개
     accounts: accounts, session: session, setup: setup, library: library,

@@ -16,7 +16,9 @@ const text = (n) => (n ? n.textContent.trim().replace(/\s+/g, ' ') : '');
   eq('내 공정 교육만 1개 보인다 (도장 부스는 제외)', cards.length, 1);
   has('제목', text(cards[0].querySelector('strong')), '프레스 3호기 안전교육');
   has('설비 이름', text(cards[0].querySelector('.meta')), '프레스 3호기');
-  has('검수 통과 문구 3개', text(cards[0].querySelector('.meta')), '안전 문구 3개');
+  /* c-press 는 문구 4개(ph-1,2,3,6). 이 노동자는 크메르어이고 넷 다 크메르어로
+     쓸 수 있다 — ph-3 은 인도네시아어만 중지됐고 크메르어는 검수 완료다. */
+  has('내 언어로 쓸 수 있는 문구 4개', text(cards[0].querySelector('.meta')), '안전 문구 4개');
   // 예시 데이터에서 이 노동자는 c-press 를 이미 통과했다 → 완료로 보이는 것이 정상
   has('이미 통과한 교육은 완료 배지', text(cards[0].querySelector('.tags')), '완료');
 
@@ -28,8 +30,8 @@ const text = (n) => (n ? n.textContent.trim().replace(/\s+/g, ' ') : '');
 
   eq('목록이 숨는다', t.$('view-list').hidden, true);
   eq('수강 화면이 뜬다', t.$('view-step').hidden, false);
-  has('진행 표시', text(t.$('step-count')), '1 / 3');
-  eq('진행 점 3개', t.$('step-dots').children.length, 3);
+  has('진행 표시', text(t.$('step-count')), '1 / 4');
+  eq('진행 점 4개', t.$('step-dots').children.length, 4);
   eq('첫 장에서 이전 버튼은 잠김', t.$('btn-prev').disabled, true);
 
   // ph-1 의 크메르어 번역이 크게, 한국어 원문이 작게
@@ -41,11 +43,18 @@ const text = (n) => (n ? n.textContent.trim().replace(/\s+/g, ' ') : '');
   const next = () => t.$('btn-next').dispatchEvent(new t.win.MouseEvent('click', { bubbles: true }));
 
   next();
-  has('두 번째 장', text(t.$('step-count')), '2 / 3');
+  has('두 번째 장', text(t.$('step-count')), '2 / 4');
   eq('이제 이전 버튼이 열린다', t.$('btn-prev').disabled, false);
 
   next();
-  has('세 번째 장', text(t.$('step-count')), '3 / 3');
+  /* ★ 세 번째가 ph-3 이다 — 인도네시아어에서는 중지된 문구인데
+       크메르어 노동자에게는 그대로 나온다. 이것이 언어별 판정의 이유다. */
+  has('세 번째 장', text(t.$('step-count')), '3 / 4');
+  has('★ 인도네시아어만 중지된 문구가 크메르어로는 나온다',
+    text(t.$('phrase-card')), 'ទោះម៉ាស៊ីនឈប់');
+
+  next();
+  has('네 번째 장', text(t.$('step-count')), '4 / 4');
   has('마지막 장은 버튼 글자가 바뀐다', text(t.$('btn-next')), '다 들었습니다');
 
   const beforeRow = t.win.Store.progress.load().find(
@@ -110,7 +119,7 @@ const text = (n) => (n ? n.textContent.trim().replace(/\s+/g, ' ') : '');
 
   const cards = doc.querySelectorAll('#course-list .course-card');
   has('쓸 수 있는 문구가 0개', text(cards[0].querySelector('.meta')), '안전 문구 0개');
-  has('몇 개가 빠졌는지 밝힌다', text(cards[0].querySelector('.tags')), '검수 대기 3개 제외');
+  has('몇 개가 빠졌는지 밝힌다', text(cards[0].querySelector('.tags')), '검수 대기 4개 제외');
 
   cards[0].querySelector('.course-open').dispatchEvent(new t.win.MouseEvent('click', { bubbles: true }));
   eq('수강 화면으로 넘어가지 않는다', t.$('view-step').hidden, true);

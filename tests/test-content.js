@@ -38,12 +38,17 @@ const checkAll = (win, root, name, values) => {
   const codes = [...langs].map((i) => i.value).sort();
   eq('km · id · vi', codes.join(','), 'id,km,vi');
 
-  // ★ 검수 완료 4개만 (ph-1,2,4,6). ph-3 중지 · ph-5 대기 는 없어야 한다
+  /* ★ 검수를 지난 문구만 선택지에 오른다.
+
+     판정은 언어별이다. ph-3 은 인도네시아어만 중지됐고 크메르어로는 쓸 수 있으므로
+     선택지에 남는다 — 여기서 빼면 크메르어 노동자도 그 안전 지시를 못 받는다.
+     어느 언어에서 빠지는지는 아래 "그 언어에서 나가지 않는 조합" 경고가 적는다.
+     ph-5 는 검수 대기라 어느 언어로도 못 쓴다 — 선택지에 없다. */
   const phrases = t.$('pick-phrase').querySelectorAll('input[name="phrase"]');
-  eq('★ 검수 완료된 문구 4개만 선택지에 오른다', phrases.length, 4);
+  eq('★ 쓸 수 있는 문구 5개가 선택지에 오른다', phrases.length, 5);
   const pids = [...phrases].map((i) => i.value).sort();
-  eq('ph-3(중지) · ph-5(대기) 는 없다', pids.join(','), 'ph-1,ph-2,ph-4,ph-6');
-  has('몇 개가 빠졌는지 밝힌다', text(t.$('phrase-note')), '2개는 고를 수 없습니다');
+  eq('ph-5(대기) 는 없다', pids.join(','), 'ph-1,ph-2,ph-3,ph-4,ph-6');
+  has('몇 개가 빠졌는지 밝힌다', text(t.$('phrase-note')), '1개는 고를 수 없습니다');
 
   // 설비를 고르면 제목이 채워진다
   eq('설비가 3대', t.$('draft-equip').querySelectorAll('option').length, 3);
@@ -238,7 +243,10 @@ const checkAll = (win, root, name, values) => {
   const row = [...t.$('course-rows').querySelectorAll('tr')]
     .find((r) => text(r).includes('프레스 3호기'));
   ok('교육이 목록에 있다', !!row);
-  has('쓸 수 있는 문구가 줄었다고 보여 준다', text(row), '문구 2 / 3');
+  /* c-press 는 문구 4개(ph-1,2,3,6)다. 이 검사가 ph-1 을 문구 전체 중지로 만들었고,
+     ph-3 은 인도네시아어만 중지다 —
+     모든 언어에서 나가는 것은 2개, 일부 언어에서만 빠진 것이 1개. */
+  has('쓸 수 있는 문구가 줄었다고 보여 준다', text(row), '문구 2 / 4');
   has('중지된 문구가 있다고 알린다', text(row), '1개 중지됨');
   // 예시 데이터에서 프레스 공정 노동자는 W-4821-07 한 명이다
   has('그 공정 노동자 수를 센다', text(row), '1명');

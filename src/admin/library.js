@@ -12,6 +12,11 @@
 
    이 파일이 코드로 지키는 것 —
 
+   · 검수 판정은 언어별로 낼 수 있다 (translations[code].status).
+     크메르어 번역 하나가 오역이어도 문구 전체를 내리면 인도네시아어·베트남어
+     노동자도 그 안전 지시를 못 듣는다. 그것은 오역보다 나은 상태가 아니다.
+     읽을 때는 Store.phraseOk(p, lang) 을 쓴다.
+
    · 오역 신고는 접수하는 순간 status 를 'stopped' 로 내린다.
      확인한 뒤 내리는 순서가 아니다. 오역이 걸린 문구가 현장에 한 시간 더
      붙어 있는 것이 더 위험하다.
@@ -43,6 +48,11 @@
      ----------------------------------------------------------------- */
 
   function phrases() { return Store.library.load(); }
+
+  function langName(code) {
+    var l = Store.language(code);
+    return (l && l.name) || code;
+  }
 
   function langsOf(phrase) {
     var t = phrase.translations || {};
@@ -100,16 +110,27 @@
     else if (message) UI.toast(message);
   }
 
-  function setStatus(id, status) {
+  /* 판정을 내린다. lang 이 있으면 그 언어만, 없으면 문구 전체.
+
+     ★ 언어별 판정이 있는 이유 — 크메르어 번역 하나가 오역이어도 문구 전체를
+       내리면 인도네시아어·베트남어 노동자도 그 안전 지시를 못 듣는다.
+       그것은 오역보다 나은 상태가 아니다. */
+  function setStatus(id, status, lang) {
+    var target = Store.findBy(phrases(), 'id', id);
+
     if (status === 'reviewed') {
-      var target = Store.findBy(phrases(), 'id', id);
       if (target && !langsOf(target).length) {
         UI.toast('번역이 하나도 없는 문구는 검수 완료로 둘 수 없습니다.');
         return;
       }
-      if (target && openFlags(target).length) {
+      /* 그 언어의 신고만 본다. 다른 언어 신고 때문에 이 언어를 다시 쓰지
+         못하게 막으면, 운영자는 신고를 한꺼번에 닫아 버리게 된다. */
+      var open = openFlags(target).filter(function (f) {
+        return lang ? (f.lang === lang) : true;
+      });
+      if (target && open.length) {
         if (!window.confirm(
-          '이 문구에는 아직 처리하지 않은 오역 신고가 있습니다.\n' +
+          '아직 처리하지 않은 오역 신고가 있습니다.\n' +
           '신고를 처리하지 않고 다시 쓰기로 하시겠습니까?')) return;
       }
     }
@@ -117,26 +138,55 @@
     commit(function (list) {
       var p = Store.findBy(list, 'id', id);
       if (!p) return;
-      p.status = status;
-      // 다시 쓰기로 했다면 그 판단으로 신고를 닫는다. 신고가 계속 열려 있으면
-      // 큐에 남아서 무엇을 처리했는지 알 수 없다.
+
+      if (lang) {
+        var t = (p.translations || {})[lang];
+        if (!t) return;
+        t.status = status;
+      } else {
+        p.status = status;
+      }
+
+      /* 다시 쓰기로 했다면 그 판단으로 신고를 닫는다. 신고가 계속 열려 있으면
+         큐에 남아서 무엇을 처리했는지 알 수 없다.
+         ★ 언어별 판정으로는 그 언어의 신고만 닫는다. 문구 전체 신고는
+           그대로 남긴다 — 한 언어를 고친 것이 문구 전체를 고친 것은 아니다. */
       if (status === 'reviewed') {
         (p.flags || []).forEach(function (f) {
-          if (!f.resolvedAt) f.resolvedAt = new Date().toISOString();
+          if (f.resolvedAt) return;
+          if (lang && f.lang !== lang) return;
+          f.resolvedAt = new Date().toISOString();
         });
       }
-    }, status === 'reviewed' ? '검수 완료로 올렸습니다.' : '사용 중지로 내렸습니다.');
+    }, statusMessage(status, lang));
   }
 
-  /* ★ 접수 = 즉시 중지. 두 동작이 한 사이클 안에 같이 일어난다. */
-  function fileFlag(id, note) {
+  function statusMessage(status, lang) {
+    var who = lang ? (langName(lang) + ' 번역을 ') : '이 문구를 ';
+    return status === 'reviewed'
+      ? who + '검수 완료로 올렸습니다.'
+      : who + '사용 중지로 내렸습니다.';
+  }
+
+  /* ★ 접수 = 즉시 중지. 두 동작이 한 사이클 안에 같이 일어난다.
+       확인한 뒤 내리는 순서가 아니다 — 오역이 한 시간 더 붙어 있는 것이 더 위험하다.
+
+     lang 이 있으면 그 언어만 내려간다. 나머지 언어 노동자는 계속 듣는다. */
+  function fileFlag(id, note, lang) {
     commit(function (list) {
       var p = Store.findBy(list, 'id', id);
       if (!p) return;
       if (!Array.isArray(p.flags)) p.flags = [];
-      p.flags.push({ note: note, at: new Date().toISOString(), resolvedAt: null });
-      p.status = 'stopped';
-    }, '접수했습니다. 이 문구는 지금부터 사용 중지입니다.');
+      p.flags.push({
+        note: note, lang: lang || '',
+        at: new Date().toISOString(), resolvedAt: null
+      });
+
+      if (lang && (p.translations || {})[lang]) p.translations[lang].status = 'stopped';
+      else p.status = 'stopped';
+    }, lang
+      ? '접수했습니다. ' + langName(lang) + ' 번역만 사용 중지입니다. 다른 언어는 계속 나갑니다.'
+      : '접수했습니다. 이 문구는 지금부터 사용 중지입니다.');
   }
 
   /* -----------------------------------------------------------------
@@ -161,19 +211,38 @@
       var top = UI.el('div', 'queue-top');
       top.appendChild(UI.el('strong', null, p.ko));
       top.appendChild(UI.phraseBadge(p.status));
+      /* 어느 언어가 내려갔는지. 문구 전체가 살아 있어도 한 언어만 멈춰 있을 수 있다. */
+      Store.stoppedLangs(p).forEach(function (code) {
+        top.appendChild(UI.stopBadge(langName(code) + ' 중지'));
+      });
       item.appendChild(top);
 
       openFlags(p).forEach(function (f) {
         item.appendChild(UI.el('p', 'body', f.note || '(내용 없음)'));
-        item.appendChild(UI.el('p', 'meta', '접수 ' + UI.formatDate(f.at)));
+        // 어느 언어의 신고인지. 그 언어만 내려간 것과 문구 전체가 내려간 것은 다르다
+        item.appendChild(UI.el('p', 'meta', '접수 ' + UI.formatDate(f.at) +
+          ' · ' + (f.lang ? langName(f.lang) + ' 번역' : '문구 전체')));
       });
 
       var row = UI.el('div', 'btn-row');
 
-      var fixed = UI.el('button', 'btn-sm go', '고쳐졌습니다 — 다시 사용');
-      fixed.type = 'button';
-      fixed.addEventListener('click', function () { setStatus(p.id, 'reviewed'); });
-      row.appendChild(fixed);
+      /* 신고마다 "다시 사용" 을 따로 준다.
+         인도네시아어 신고를 처리하는 것과 문구 전체를 다시 쓰는 것은 다른 판단이다.
+         한 버튼으로 묶으면 한 언어를 고친 것이 문구 전체를 되살리게 된다. */
+      var langsFlagged = {};
+      openFlags(p).forEach(function (f) { langsFlagged[f.lang || ''] = true; });
+
+      Object.keys(langsFlagged).forEach(function (code) {
+        var label = code
+          ? langName(code) + ' 번역이 고쳐졌습니다 — 다시 사용'
+          : '고쳐졌습니다 — 문구 전체 다시 사용';
+        var fixed = UI.el('button', 'btn-sm go', label);
+        fixed.type = 'button';
+        fixed.addEventListener('click', function () {
+          setStatus(p.id, 'reviewed', code || undefined);
+        });
+        row.appendChild(fixed);
+      });
 
       var keep = UI.el('button', 'btn-sm', '신고만 닫기 (중지 유지)');
       keep.type = 'button';
@@ -183,7 +252,7 @@
           (t.flags || []).forEach(function (f) {
             if (!f.resolvedAt) f.resolvedAt = new Date().toISOString();
           });
-        }, '신고를 닫았습니다. 문구는 계속 사용 중지입니다.');
+        }, '신고를 닫았습니다. 중지는 그대로입니다.');
       });
       row.appendChild(keep);
 
@@ -200,7 +269,14 @@
     var box = $('review-list');
     box.textContent = '';
 
-    var need = list.filter(function (p) { return p.status !== 'reviewed'; });
+    /* 문구 전체가 대기·중지이거나, 어느 한 언어라도 완료가 아니면 판정이 필요하다.
+       p.status 만 보면 "인도네시아어만 중지" 인 문구가 목록에서 사라진다. */
+    var need = list.filter(function (p) {
+      if (p.status !== 'reviewed') return true;
+      return langsOf(p).some(function (code) {
+        return Store.phraseStatus(p, code) !== 'reviewed';
+      });
+    });
 
     if (!need.length) {
       box.appendChild(UI.el('p', 'empty', '판정이 필요한 문구가 없습니다.'));
@@ -223,12 +299,11 @@
       langs.forEach(function (code) {
         var t = p.translations[code];
         var lang = Store.language(code);
-        var langName = lang ? lang.name : code;
         var marks = diffWords(p.ko, t.back);
         var newCount = marks.filter(function (m) { return m.isNew; }).length;
         var flipped = negationFlipped(p.ko, t.back);
 
-        block.appendChild(UI.el('p', 'meta', langName));
+        block.appendChild(UI.el('p', 'meta', langName(code)));
 
         // 부정이 뒤집힌 경우만 크게 경고한다. 나머지는 낱말 개수만 알린다.
         if (flipped) {
@@ -241,7 +316,7 @@
 
         var diff = UI.el('div', 'diff' + (flipped ? ' danger' : ''));
         diff.appendChild(diffCell('원문 (한국어)', p.ko, null));
-        diff.appendChild(diffCell('역번역 — ' + langName + ' 를 한국어로 되돌린 것',
+        diff.appendChild(diffCell('역번역 — ' + langName(code) + ' 를 한국어로 되돌린 것',
           t.back, newCount ? marks : null));
         block.appendChild(diff);
 
@@ -251,17 +326,40 @@
         block.appendChild(UI.el('p', 'diff-note', note));
 
         block.appendChild(UI.el('p', 'meta', '번역문 — ' + t.text));
+
+        /* ★ 이 언어만의 판정. 크메르어 오역 하나로 문구 전체를 내리면
+             인도네시아어·베트남어 노동자도 이 안전 지시를 못 듣는다. */
+        var langRow = UI.el('div', 'btn-row lang-verdict');
+        langRow.appendChild(UI.phraseBadge(Store.phraseStatus(p, code)));
+
+        if (Store.phraseStatus(p, code) !== 'reviewed') {
+          var langOk = UI.el('button', 'btn-sm go', langName(code) + '만 검수 완료');
+          langOk.type = 'button';
+          langOk.addEventListener('click', function () {
+            setStatus(p.id, 'reviewed', code);
+          });
+          langRow.appendChild(langOk);
+        }
+        if (Store.phraseStatus(p, code) !== 'stopped') {
+          var langStop = UI.el('button', 'btn-sm danger', langName(code) + '만 중지');
+          langStop.type = 'button';
+          langStop.addEventListener('click', function () {
+            setStatus(p.id, 'stopped', code);
+          });
+          langRow.appendChild(langStop);
+        }
+        block.appendChild(langRow);
       });
 
       var row = UI.el('div', 'btn-row');
 
-      var okBtn = UI.el('button', 'btn-sm go', '검수 완료 — 안전 지시로 쓴다');
+      var okBtn = UI.el('button', 'btn-sm go', '문구 전체 검수 완료 — 안전 지시로 쓴다');
       okBtn.type = 'button';
       okBtn.addEventListener('click', function () { setStatus(p.id, 'reviewed'); });
       row.appendChild(okBtn);
 
       if (p.status !== 'stopped') {
-        var stopBtn = UI.el('button', 'btn-sm danger', '사용 중지');
+        var stopBtn = UI.el('button', 'btn-sm danger', '문구 전체 사용 중지');
         stopBtn.type = 'button';
         stopBtn.addEventListener('click', function () { setStatus(p.id, 'stopped'); });
         row.appendChild(stopBtn);
@@ -280,7 +378,12 @@
     var body = $('phrase-rows');
     body.textContent = '';
 
-    var shown = filter === 'all' ? list : list.filter(function (p) { return p.status === filter; });
+    /* 걸러 보기도 언어별 판정을 본다. p.status 만 보면 "인도네시아어만 중지" 인
+       문구가 '사용 중지' 목록에서 빠진다. */
+    var shown = filter === 'all' ? list : list.filter(function (p) {
+      if (p.status === filter) return true;
+      return langsOf(p).some(function (code) { return Store.phraseStatus(p, code) === filter; });
+    });
 
     if (!shown.length) {
       var empty = UI.el('tr');
@@ -310,9 +413,17 @@
       if (!langs.length) {
         chips.appendChild(UI.el('span', 'badge badge-neutral', '번역 없음'));
       } else {
+        /* 언어마다 그 언어의 판정을 함께 보인다.
+           색만으로 구분하지 않는다 — 아이콘 + 글자 + 색 3중 (UI.phraseBadge). */
         langs.forEach(function (code) {
-          var lang = Store.language(code);
-          chips.appendChild(UI.el('span', 'badge badge-neutral', lang ? lang.name : code));
+          var st = Store.phraseStatus(p, code);
+          if (st === 'reviewed') {
+            chips.appendChild(UI.el('span', 'badge badge-neutral', langName(code)));
+          } else {
+            var b = UI.phraseBadge(st);
+            b.appendChild(document.createTextNode(' ' + langName(code)));
+            chips.appendChild(b);
+          }
         });
       }
       langCell.appendChild(chips);
@@ -320,6 +431,10 @@
 
       var statusCell = UI.el('td');
       statusCell.appendChild(UI.phraseBadge(p.status));
+      // 문구 전체는 살아 있어도 한 언어만 멈춰 있을 수 있다. 그 사실을 숨기지 않는다.
+      Store.stoppedLangs(p).forEach(function (code) {
+        statusCell.appendChild(UI.el('span', 'sub', langName(code) + ' 중지'));
+      });
       tr.appendChild(statusCell);
 
       var actCell = UI.el('td');
@@ -352,20 +467,25 @@
     var box = $('stats');
     box.textContent = '';
 
+    /* 언어 하나만 중지된 문구도 '사용 중지' 로 센다 — 어딘가에서 안전 지시가
+       나가지 않고 있다는 뜻이고, 그것이 이 타일이 알려야 하는 것이다. */
     var count = function (status) {
-      return list.filter(function (p) { return p.status === status; }).length;
+      return list.filter(function (p) {
+        if (p.status === status) return true;
+        return langsOf(p).some(function (code) { return Store.phraseStatus(p, code) === status; });
+      }).length;
     };
     var flagged = list.filter(function (p) { return openFlags(p).length; }).length;
 
     var tiles = [
       { label: '검수 완료', value: count('reviewed'), unit: '개',
-        hint: '안전 지시로 쓸 수 있습니다', alert: false },
+        hint: '한 언어라도 안전 지시로 쓸 수 있습니다', alert: false },
       { label: '검수 대기', value: count('waiting'), unit: '개',
-        hint: '아직 쓰이지 않습니다', alert: false },
+        hint: '한 언어라도 아직 쓰이지 않습니다', alert: false },
       { label: '오역 신고', value: flagged, unit: '건',
-        hint: '접수 즉시 사용 중지된 것', alert: flagged > 0 },
+        hint: '접수 즉시 그 언어가 중지된 것', alert: flagged > 0 },
       { label: '사용 중지', value: count('stopped'), unit: '개',
-        hint: '어떤 화면에도 나오지 않습니다', alert: false },
+        hint: '한 언어라도 나오지 않습니다', alert: false },
       { label: '전체', value: list.length, unit: '개',
         hint: '원래 목표는 200개입니다', alert: false }
     ];
@@ -388,10 +508,53 @@
   function renderFlagForm(list) {
     // 이미 중지된 문구는 다시 신고할 이유가 적다. 쓰이고 있는 것만 올린다.
     var usable = list.filter(function (p) { return p.status !== 'stopped'; });
+    var keep = $('flag-phrase').value;
     UI.fillSelect($('flag-phrase'), usable,
       function (p) { return p.id; },
       function (p) { return p.ko; });
+    if (keep && Store.findBy(usable, 'id', keep)) $('flag-phrase').value = keep;
     $('form-flag').hidden = !usable.length;
+    renderFlagLangs();
+  }
+
+  /* 고른 문구가 가진 언어만 올린다. 없는 언어를 신고하면 내릴 대상이 없다.
+
+     ★ 첫 칸은 빈 칸이고, 고르지 않으면 접수되지 않는다. 기본값을 두지 않는 이유 —
+
+       특정 언어를 기본으로 두면, 손대지 않고 접수한 순간 엉뚱한 언어가 내려가고
+       정작 오역인 번역은 계속 현장에 나간다.
+       "문구 전체" 를 기본으로 두면 한 언어의 오역으로 다른 언어 노동자까지
+       안전 지시를 잃는다 — 언어별 판정을 만든 이유가 사라진다.
+
+     둘 다 조용히 잘못되므로, 한 번 고르게 하는 쪽을 택했다. */
+  var FLAG_ALL = 'ALL';
+
+  function renderFlagLangs() {
+    var sel = $('flag-lang');
+    if (!sel) return;
+    var p = Store.findBy(phrases(), 'id', $('flag-phrase').value);
+    var codes = p ? langsOf(p).filter(function (code) {
+      return Store.phraseStatus(p, code) !== 'stopped';
+    }) : [];
+
+    sel.textContent = '';
+
+    var blank = document.createElement('option');
+    blank.value = '';
+    blank.textContent = '— 고르세요 —';
+    sel.appendChild(blank);
+
+    codes.forEach(function (code) {
+      var opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = langName(code) + ' 번역만';
+      sel.appendChild(opt);
+    });
+
+    var whole = document.createElement('option');
+    whole.value = FLAG_ALL;
+    whole.textContent = '문구 전체 (한국어 원문이 잘못됐을 때)';
+    sel.appendChild(whole);
   }
 
   /* -----------------------------------------------------------------
@@ -417,13 +580,21 @@
      이벤트 연결
      ----------------------------------------------------------------- */
 
+  $('flag-phrase').addEventListener('change', renderFlagLangs);
+
   $('form-flag').addEventListener('submit', function (e) {
     e.preventDefault();
     var id = $('flag-phrase').value;
     var note = $('flag-note').value.trim();
     if (!id) { UI.toast('신고할 문구를 골라 주세요.'); return; }
+    var pick = $('flag-lang').value;
+    if (!pick) {
+      UI.toast('어느 언어의 번역인지 골라 주세요. 그 언어만 사용 중지됩니다.');
+      $('flag-lang').focus();
+      return;
+    }
     if (!note) { UI.toast('무엇이 잘못됐는지 한 줄 적어 주세요.'); $('flag-note').focus(); return; }
-    fileFlag(id, note);
+    fileFlag(id, note, pick === FLAG_ALL ? '' : pick);
     $('flag-note').value = '';
   });
 
