@@ -11,7 +11,7 @@
 
 | 포지션 | 담당자 | 브랜치 | 맡는 화면 |
 |---|---|---|---|
-| **P1** 관리 + 노동자 핵심 | 변소윤 | `feature/byeonsoyun` | `learn`(기능3) · `quiz`(기능4) + 뼈대·`setup`(완료) + 전체 리뷰·머지 |
+| **P1** 관리 + 노동자 핵심 | 변소윤 | `feature/byeonsoyun` | `learn`(기능3, 완료) · `quiz`(기능4, 완료) + 뼈대·`setup`(완료) + 전체 리뷰·머지 |
 | **P2** 노동자 생활 화면 | *(미정)* | | `home` · `report`(기능8) · `talk`(기능7) · `my` |
 | **P3** 담당자 화면 | *(미정)* | | `dashboard`(기능6) · `content`(기능2) |
 | **P4** 증빙과 검수 | *(미정)* | | `proof`(기능5) · `library`(기능9) |
@@ -69,8 +69,8 @@ Claude Code 를 열면 브랜치를 확인하고, 포지션이 기록돼 있지 
 
 | 파일 | 무엇 | 상태 |
 |---|---|---|
-| `src/worker/learn.html` `.js` | 기능3 안전교육 수강 | 껍데기 |
-| `src/worker/quiz.html` `.js` | **기능4 이해도 검증** | 껍데기 |
+| `src/worker/learn.html` `.js` | 기능3 안전교육 수강 | **완료** |
+| `src/worker/quiz.html` `.js` | **기능4 이해도 검증** | **완료** |
 | `src/admin/setup.html` `.js` | 기능1 사업장·설비 등록 | **완료** |
 | `src/assets/**` | 공용 모듈 전체 | 완료 (필요 시 확장) |
 | `docs/**` `CLAUDE.md` | 문서 | 완료 |

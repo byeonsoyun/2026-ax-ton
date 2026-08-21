@@ -3,7 +3,7 @@
 
    담당: P1
    기능번호: 기능4
-   읽는 키: courses, library, setup, progress
+   읽는 키: courses, setup, progress
    쓰는 키: progress
    근거: SCREEN 기능4 · PRD §4.2
 
