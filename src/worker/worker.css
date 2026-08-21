@@ -12,4 +12,619 @@
      · 문해력을 전제하지 않습니다 — 모든 안내에 음성을 병행합니다
      · 색상만으로 상태를 구분하지 않습니다 — 아이콘 + 글자 + 색
      · 저사양 안드로이드를 지원합니다 — 애니메이션과 블러를 최소화합니다
+
+   구역 나눔 — 같은 파일을 둘이 고치므로 자기 구역에만 씁니다.
+     [P1] 음성 안내 · 기능3 수강 · 기능4 검증          ← 지금 이 파일의 아래 전부
+     [P2] 홈 · 신고 · 소통 · 마이                       ← 맨 아래에 새 구역을 만들어 쓰세요
    =================================================================== */
+
+
+/* ===================================================================
+   [P1] 여기부터
+   =================================================================== */
+
+/* -------------------------------------------------------------------
+   음성 안내 줄 — 그 언어 음성이 기기에 없을 때 왜 한국어로 들리는지 적는다.
+   조용히 실패하면 글자를 못 읽는 사람은 아무것도 못 받은 채 넘어간다.
+   ------------------------------------------------------------------- */
+
+.voicenote {
+  margin: 0 0 var(--gap);
+  padding: 10px 12px;
+  border: 1px solid #e6d3a6;
+  border-left: 5px solid var(--warn);
+  border-radius: var(--radius);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: .84em;
+  font-weight: 600;
+}
+
+.voicenote[hidden] { display: none; }
+
+/* -------------------------------------------------------------------
+   기능3 · 교육 목록
+   ------------------------------------------------------------------- */
+
+.course-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.course-card {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+/* 카드 전체가 누를 수 있는 자리다. 아이콘만 눌리면 장갑 낀 손으로 못 맞춘다 */
+.course-open {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--tap-min);
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.course-open .ico {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--brand-soft);
+  font-size: 28px;
+}
+
+.course-open .body { flex: 1 1 auto; min-width: 0; }
+
+.course-open .body strong {
+  display: block;
+  font-size: 1.05em;
+  overflow-wrap: anywhere;
+}
+
+.course-open .body .meta {
+  margin: 2px 0 0;
+  font-size: .8em;
+  color: var(--ink-3);
+}
+
+/* app.css 의 .tags 는 .item 안에서만 걸린다. 여기 목록은 .item 이 아니라 다시 쓴다 */
+.course-open .body .tags {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.course-open:focus-visible { outline: 3px solid #7aa8d8; outline-offset: 2px; }
+
+/* -------------------------------------------------------------------
+   기능3 · 수강 진행 — 문구 한 장씩
+   ------------------------------------------------------------------- */
+
+.step-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+}
+
+.step-count { font-size: .9em; font-weight: 800; color: var(--ink-2); }
+
+.step-dots { display: flex; align-items: center; gap: 6px; }
+
+.step-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--line);
+}
+
+/* 지난 장은 채우고 지금 장은 테두리를 준다 — 색만으로 구분하지 않는다 */
+.step-dots span[data-state="done"] { background: var(--brand); }
+
+.step-dots span[data-state="now"] {
+  width: 14px;
+  height: 14px;
+  background: var(--surface);
+  border: 3px solid var(--brand);
+}
+
+.phrase-card {
+  padding: 18px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+/* 픽토그램이 먼저 보인다. 글자를 못 읽어도 무엇에 대한 얘기인지는 알 수 있게 */
+.phrase-card .pict {
+  font-size: 72px;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+
+.phrase-card .translated {
+  margin: 0;
+  font-size: 1.45em;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.phrase-card .original {
+  margin: 10px 0 0;
+  font-size: .86em;
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+
+.phrase-card .listen {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.phrase-card .listen .label {
+  font-size: .84em;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.step-nav {
+  margin-top: var(--gap);
+  display: flex;
+  gap: var(--gap);
+}
+
+.step-nav .btn {
+  flex: 1 1 0;
+  min-height: var(--tap-min);
+  justify-content: center;
+}
+
+.step-nav .btn.wide { flex: 2 1 0; }
+
+/* -------------------------------------------------------------------
+   기능4 · 이해도 검증 — 문항 머리
+   ------------------------------------------------------------------- */
+
+.quiz-head {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+}
+
+.quiz-kind {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--brand-soft);
+  font-size: 28px;
+}
+
+.quiz-prompt {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: 1.15em;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+/* -------------------------------------------------------------------
+   기능4 · hotspot — 설비 도해 위에서 위험 지점 짚기
+
+   도해는 viewBox="0 0 100 100" 으로 그린다. 좌표계가 곧 퍼센트라
+   화면 크기가 달라져도 정답 자리가 그대로 맞는다.
+   ------------------------------------------------------------------- */
+
+.quiz-figure {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  aspect-ratio: 1 / 1;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--ink-2);
+  touch-action: manipulation;
+}
+
+/* aspect-ratio 를 모르는 구형 웹뷰용 대체 — 패딩으로 정사각형을 만든다 */
+@supports not (aspect-ratio: 1 / 1) {
+  .quiz-figure { height: 0; padding-top: 100%; }
+  .quiz-figure > svg { position: absolute; top: 0; left: 0; }
+}
+
+.quiz-figure > svg { display: block; width: 100%; height: 100%; }
+
+/* 이름 붙은 위험 구역. 좌표는 퍼센트라 화면 크기가 바뀌어도 같은 자리다 */
+.zone {
+  position: absolute;
+  min-width: var(--tap-min);
+  min-height: var(--tap-min);
+  padding: 0;
+  border: 3px dashed transparent;
+  border-radius: 10px;
+  background: none;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+}
+
+.zone:hover, .zone:focus-visible {
+  border-color: #b98a00;
+  background: rgba(217, 164, 6, .14);
+}
+
+.zone:focus-visible { outline: 3px solid #7aa8d8; outline-offset: 2px; }
+
+/* 누른 자리 표시 — 아이콘 + 색 두 겹. 색을 지워도 맞고 틀림이 남는다 */
+.zone[data-mark]::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.zone[data-mark="ok"] {
+  border-style: solid;
+  border-color: var(--ok);
+  background: rgba(28, 107, 58, .14);
+}
+
+.zone[data-mark="ok"]::after {
+  content: "\2713";
+  background: var(--ok);
+  color: #fff;
+}
+
+.zone[data-mark="no"] {
+  border-style: solid;
+  border-color: var(--stop);
+  background: rgba(163, 34, 24, .14);
+}
+
+.zone[data-mark="no"]::after {
+  content: "\2715";
+  background: var(--stop);
+  color: #fff;
+}
+
+/* 구역이 정의되지 않은 교육에서는 도해 아무 곳이나 누를 수 있다.
+   그때 누른 지점을 표시하는 점 */
+.tapmark {
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  margin: -19px 0 0 -19px;
+  border-radius: 50%;
+  border: 3px solid var(--brand);
+  background: rgba(16, 82, 155, .18);
+  pointer-events: none;
+}
+
+.zonehint {
+  margin: 10px 0 0;
+  font-size: .82em;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+/* -------------------------------------------------------------------
+   기능4 · choice — 올바른 작업 고르기
+   ------------------------------------------------------------------- */
+
+.choice-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.choice-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.choice-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--tap-min);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 1.02em;
+  font-weight: 600;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.choice-btn .no {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  font-weight: 800;
+  font-size: .9em;
+}
+
+.choice-btn .text { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+
+.choice-btn:focus-visible { outline: 3px solid #7aa8d8; outline-offset: 2px; }
+
+.choice-btn[data-mark="ok"] { border-color: var(--ok); background: var(--ok-soft); }
+.choice-btn[data-mark="ok"] .no { background: var(--ok); color: #fff; border-color: var(--ok); }
+.choice-btn[data-mark="no"] { border-color: var(--stop); background: var(--stop-soft); }
+.choice-btn[data-mark="no"] .no { background: var(--stop); color: #fff; border-color: var(--stop); }
+
+/* -------------------------------------------------------------------
+   기능4 · match — 작업과 보호구 연결하기
+
+   드래그를 쓰지 않는다. 장갑 낀 손으로는 왼쪽 하나 누르고
+   오른쪽 하나 누르는 편이 정확하다.
+   ------------------------------------------------------------------- */
+
+.match-board {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.match-col-head {
+  display: flex;
+  gap: var(--gap);
+  font-size: .8em;
+  font-weight: 800;
+  color: var(--ink-3);
+}
+
+.match-col-head span { flex: 1 1 0; }
+
+.match-row {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+}
+
+.match-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: var(--tap-min);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.match-btn:focus-visible { outline: 3px solid #7aa8d8; outline-offset: 2px; }
+.match-btn[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); }
+.match-btn[data-mark="ok"] { border-color: var(--ok); background: var(--ok-soft); }
+.match-btn[data-mark="no"] { border-color: var(--stop); background: var(--stop-soft); }
+
+/* 이어졌다는 표시 — 짝 번호를 글자로 같이 준다. 선만 그으면 색약에서 안 보인다 */
+.match-btn .pairno {
+  flex: 0 0 auto;
+  min-width: 26px;
+  height: 26px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #fff;
+  font-size: .78em;
+  font-weight: 800;
+}
+
+.match-btn[data-pair] .pairno { display: flex; }
+
+.match-linked {
+  flex: 0 0 auto;
+  width: 22px;
+  text-align: center;
+  color: var(--ink-3);
+  font-weight: 800;
+}
+
+/* -------------------------------------------------------------------
+   결과 학습 — 누른 것이 실제로 어떤 사고가 되는지 바로 말한다.
+   맞았는지 틀렸는지만 알려 주면 다음에 또 같은 선택을 한다.
+   ------------------------------------------------------------------- */
+
+.consequence {
+  margin: var(--gap) 0 0;
+  padding: 14px;
+  border-radius: var(--radius);
+  border: 1px solid #e6d3a6;
+  border-left: 5px solid var(--warn);
+  background: var(--warn-soft);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+}
+
+.consequence .pict { flex: 0 0 auto; font-size: 30px; line-height: 1.2; }
+
+.consequence p {
+  margin: 0;
+  font-size: .95em;
+  font-weight: 600;
+  color: var(--warn);
+  overflow-wrap: anywhere;
+}
+
+.consequence[hidden] { display: none; }
+
+/* -------------------------------------------------------------------
+   기능4 · 결과 화면
+   ------------------------------------------------------------------- */
+
+.result-panel {
+  padding: 20px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  text-align: center;
+}
+
+.result-panel .pict { font-size: 64px; line-height: 1.1; }
+
+.result-panel h2 { margin: 8px 0 4px; font-size: 1.3em; }
+
+.result-panel .score {
+  margin: 0;
+  font-size: 2.4em;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.result-panel .scorenote { margin: 4px 0 0; font-size: .84em; color: var(--ink-2); }
+
+.result-panel.pass { border-color: #b6ddc5; background: var(--ok-soft); }
+.result-panel.pass .score { color: var(--ok); }
+.result-panel.fail { border-color: #edbdb8; background: var(--stop-soft); }
+.result-panel.fail .score { color: var(--stop); }
+
+/* 미통과 화면에서 가장 중요한 한 줄.
+   미통과는 노동자의 실패가 아니라 교육의 실패로 기록한다 (SCREEN 기능4) */
+.not-your-fault {
+  margin: var(--gap) 0 0;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--brand);
+  font-size: .95em;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: left;
+}
+
+.result-review {
+  list-style: none;
+  margin: var(--gap) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.result-review li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.result-review .body { flex: 1 1 auto; min-width: 0; }
+.result-review .body strong { display: block; font-size: .95em; overflow-wrap: anywhere; }
+.result-review .body .meta { margin: 2px 0 0; font-size: .8em; color: var(--ink-3); }
+
+/* -------------------------------------------------------------------
+   공통 — 큰 버튼 줄. 노동자 화면의 주요 조작은 전부 60px 이상이다.
+   ------------------------------------------------------------------- */
+
+.big-actions {
+  margin-top: var(--gap);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.big-actions .btn {
+  min-height: var(--tap-min);
+  justify-content: center;
+}
+
+.pair-actions {
+  margin-top: var(--gap);
+  display: flex;
+  gap: 10px;
+}
+
+.pair-actions .btn {
+  flex: 1 1 0;
+  min-height: var(--tap-min);
+  justify-content: center;
+}
+
+/* 도해와 문항은 화면을 넓게 쓴다. 관리자 화면과 달리 한 번에 하나만 본다. */
+.quiz-stage, .learn-stage { max-width: 560px; margin: 0 auto; }
+
+/* 진행 중에는 하단 탭을 눌러 나가기 쉽다. 나가도 기록은 남지만
+   "지금 뭘 하는 중"인지는 분명히 해 둔다. */
+.doing-now {
+  margin: 0 0 var(--gap);
+  font-size: .84em;
+  font-weight: 700;
+  color: var(--brand);
+}
