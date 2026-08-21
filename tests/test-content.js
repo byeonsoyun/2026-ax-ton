@@ -315,4 +315,145 @@ const checkAll = (win, root, name, values) => {
   ok('<img> 없음', !/<img/i.test(html));
 }
 
+/* =================================================================
+   N. 문항 번역 — 담당자가 넣고, 역번역으로 뒤집힘을 잡는다
+
+   문항이 한국어로만 나가면 기능4 는 기존 필기시험이 된다.
+   ================================================================= */
+{
+  const t = open();
+
+  // 1단계 — 설비와 언어를 고르면 번역 칸이 생긴다
+  t.$('draft-equip').value = 'e-panel';
+  change(t.win, t.$('draft-equip'));
+  input(t.win, t.$('draft-title'), '번역 검사용 교육');
+  checkAll(t.win, t.$('pick-lang'), 'lang', ['km', 'id']);
+
+  const box = t.$('q-i18n');
+  eq('고른 언어 수만큼 번역 칸', box.querySelectorAll('.i18n-box').length, 2);
+  has('언어 이름이 칸에 적힌다', text(box), '크메르어');
+  has('비워 두면 어떻게 되는지 적는다', text(box), '번역 준비 중');
+  eq('한국어 번역 칸은 만들지 않는다 — 원문이 한국어다', t.$('q-i18n-ko-prompt'), null);
+
+  // hotspot 문항에 크메르어 번역을 넣는다
+  const zones = t.$('q-hot-figure').querySelectorAll('.zone');
+  input(t.win, t.$('q-hot-prompt'), '손이 끼일 수 있는 곳을 누르세요');
+  click(t.win, zones[0]);
+  input(t.win, t.$('q-i18n-km-prompt'), 'សូមចុចកន្លែងដែលដៃអាចជាប់');
+  click(t.win, t.$('btn-add-q'));
+
+  eq('문항이 추가됐다', t.$('quiz-list').querySelectorAll('.item').length, 1);
+  eq('★ 번역을 넣은 칸은 비워진다', t.$('q-i18n-km-prompt').value, '');
+}
+
+/* --- 역번역이 뒤집히면 크게 경고한다 --- */
+{
+  const t = open();
+  t.$('draft-equip').value = 'e-panel';
+  change(t.win, t.$('draft-equip'));
+  input(t.win, t.$('draft-title'), '역번역 검사');
+  checkAll(t.win, t.$('pick-lang'), 'lang', ['km']);
+
+  input(t.win, t.$('q-hot-prompt'), '프레스에 손을 넣지 마십시오');
+  input(t.win, t.$('q-i18n-km-prompt'), 'កុំដាក់ដៃចូល');
+
+  // 뜻이 같게 돌아온 경우 — 낱말 차이만 알린다
+  input(t.win, t.$('q-i18n-km-back'), '프레스에 손을 넣지 마세요');
+  const mild = text(t.$('q-i18n-km-warn'));
+  ok('뜻이 같으면 크게 경고하지 않는다',
+    mild.indexOf('뜻이 뒤집혔을 수 있습니다') === -1, mild);
+
+  // ★ 부정이 사라진 경우 — 정반대 지시다
+  input(t.win, t.$('q-i18n-km-back'), '프레스에 손을 넣어도 됩니다');
+  const hard = t.$('q-i18n-km-warn');
+  has('★ 뒤집힘을 크게 경고한다', text(hard), '뜻이 뒤집혔을 수 있습니다');
+  ok('경고 상자로 보인다', hard.querySelector('.warnbox') !== null);
+  has('왜 위험한지 예를 든다', text(hard), '정반대 지시');
+}
+
+/* --- ★ 선택지 번역을 덜 채우면 저장하지 않는다 ---
+
+   answer 는 options 의 인덱스다. 한 칸이 비면 정답이 다른 선택지를 가리킨다. */
+{
+  const t = open();
+  t.$('draft-equip').value = 'e-panel';
+  change(t.win, t.$('draft-equip'));
+  input(t.win, t.$('draft-title'), '선택지 번역 검사');
+  checkAll(t.win, t.$('pick-lang'), 'lang', ['km']);
+
+  const typeRadios = t.$('pick-qtype').querySelectorAll('input[name="qtype"]');
+  [...typeRadios].find((r) => r.value === 'choice').checked = true;
+  change(t.win, t.$('pick-qtype'));
+
+  eq('choice 에는 선택지 번역 칸이 붙는다', t.$('q-i18n-km-opt-0') !== null, true);
+
+  input(t.win, t.$('q-ch-prompt'), '프레스가 멈췄습니다. 어떻게 합니까?');
+  t.$('q-ch-opt-0').value = '손을 넣어 꺼낸다';
+  t.$('q-ch-opt-1').value = '전원을 차단한다';
+  t.$('q-ch-answer-1').checked = true;
+
+  // 한국어는 2개인데 번역은 1개만 채운다
+  input(t.win, t.$('q-i18n-km-prompt'), 'ម៉ាស៊ីនបានឈប់');
+  input(t.win, t.$('q-i18n-km-opt-0'), 'ដាក់ដៃចូល');
+  click(t.win, t.$('btn-add-q'));
+
+  eq('★ 저장되지 않는다', t.$('quiz-list').querySelectorAll('.item').length, 0);
+  has('왜 막혔는지 말해 준다', text(t.$('toast')), '같은 개수로 채우거나 모두 비워');
+
+  // 나머지를 채우면 저장된다
+  input(t.win, t.$('q-i18n-km-opt-1'), 'កាត់ចរន្តអគ្គិសនី');
+  click(t.win, t.$('btn-add-q'));
+  eq('채우면 저장된다', t.$('quiz-list').querySelectorAll('.item').length, 1);
+}
+
+/* --- 발급하면 번역이 courses 에 그대로 들어가고, 노동자 화면이 읽는다 --- */
+{
+  const t = open();
+  t.$('draft-equip').value = 'e-panel';
+  change(t.win, t.$('draft-equip'));
+  input(t.win, t.$('draft-title'), '번역 발급 검사');
+  checkAll(t.win, t.$('pick-lang'), 'lang', ['km']);
+  checkAll(t.win, t.$('pick-phrase'), 'phrase', ['ph-1']);
+
+  const typeRadios = t.$('pick-qtype').querySelectorAll('input[name="qtype"]');
+  [...typeRadios].find((r) => r.value === 'choice').checked = true;
+  change(t.win, t.$('pick-qtype'));
+
+  input(t.win, t.$('q-ch-prompt'), '프레스가 멈췄습니다. 어떻게 합니까?');
+  t.$('q-ch-opt-0').value = '손을 넣어 꺼낸다';
+  t.$('q-ch-opt-1').value = '전원을 차단한다';
+  t.$('q-ch-answer-1').checked = true;
+  input(t.win, t.$('q-i18n-km-prompt'), 'ម៉ាស៊ីនបានឈប់');
+  input(t.win, t.$('q-i18n-km-opt-0'), 'ដាក់ដៃចូល');
+  input(t.win, t.$('q-i18n-km-opt-1'), 'កាត់ចរន្តអគ្គិសនី');
+  input(t.win, t.$('q-i18n-km-back'), '프레스가 멈추면 무엇을 합니까');
+  click(t.win, t.$('btn-add-q'));
+  click(t.win, t.$('btn-approve'));
+
+  const course = t.win.Store.courses.load().find((c) => c.title === '번역 발급 검사');
+  ok('교육이 발급됐다', !!course);
+  const q = course.quiz[0];
+  eq('★ 번역이 courses 에 들어간다', q.i18n.km.prompt, 'ម៉ាស៊ីនបានឈប់');
+  eq('선택지 번역 개수가 한국어와 같다', q.i18n.km.options.length, q.options.length);
+  eq('역번역도 함께 남는다', q.i18n.km.back.prompt, '프레스가 멈추면 무엇을 합니까');
+
+  // 노동자 화면이 쓰는 통로로 다시 읽어 본다
+  const S = t.win.Store;
+  eq('★ 노동자 화면이 같은 값을 읽는다', S.qtext(q, 'km', 'prompt'), 'ម៉ាស៊ីនបានឈប់');
+  eq('정답 자리가 어긋나지 않았다',
+    S.qtext(q, 'km', 'options')[q.answer], 'កាត់ចរន្តអគ្គិសនី');
+  eq('온전한 번역이다', S.qhas(q, 'km'), true);
+}
+
+/* --- 역번역 판정은 기능9 와 같은 함수를 쓴다 --- */
+{
+  const t = open();
+  const R = t.win.Review;
+  ok('Review 가 화면에 실려 있다', !!R);
+  eq('부정이 사라지면 뒤집힘',
+    R.negationFlipped('손을 넣지 마십시오', '손을 넣어도 됩니다'), true);
+  eq('말만 바꿔 쓴 것은 뒤집힘이 아니다',
+    R.negationFlipped('환기팬이 돌지 않으면 시작하지 마십시오', '팬이 꺼져 있으면 시작하지 마세요'), false);
+}
+
 report('기능2 교육 콘텐츠 생성 · 승인');

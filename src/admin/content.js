@@ -288,10 +288,197 @@
 
   function showTypeForm() {
     var type = currentType();
+    /* 번역 칸은 유형마다 다르다 — choice 만 선택지 번역이 붙는다.
+       유형을 바꾸면 다시 그린다. */
+    buildI18nInputs();
     $('q-hotspot').hidden = type !== 'hotspot';
     $('q-choice').hidden = type !== 'choice';
     $('q-match').hidden = type !== 'match';
     if (type === 'hotspot') renderHotspotFigure();
+  }
+
+  /* -----------------------------------------------------------------
+     3단계 곁 — 문항 번역
+
+     문항이 한국어로만 나가면 기능4 는 기존 필기시험이 된다.
+     안전 문구는 운영자 검수를 거치는데 문항 문구는 그 통로가 없으므로,
+     여기서 할 수 있는 것은 역번역 대조다 (assets/review.js).
+
+     ★ 부정이 뒤집힌 것만 크게 알린다. 낱말 차이와 같은 세기로 표시하면
+       담당자가 표시를 무시하게 되고, 정작 뜻이 뒤집힌 것이 지나간다.
+       기능9 가 같은 판정을 쓴다.
+
+     ★ 선택지 번역은 개수가 한국어와 같아야 저장한다. answer 는 인덱스라서
+       한 칸이라도 어긋나면 정답이 다른 선택지를 가리킨다. 노동자 화면의
+       Store.qtext 가 되돌려 주기는 하지만, 담당자가 번역을 넣었는데 조용히
+       한국어로 나가는 것이 더 나쁘다. 그래서 여기서 막는다.
+     ----------------------------------------------------------------- */
+
+  function i18nLangs() {
+    return draft.languages.filter(function (code) { return code !== 'ko'; });
+  }
+
+  function iid(code, name) { return 'q-i18n-' + code + '-' + name; }
+
+  function textInput(id, placeholder) {
+    var el = document.createElement('input');
+    el.type = 'text';
+    el.id = id;
+    el.placeholder = placeholder;
+    return el;
+  }
+
+  /* 역번역을 원문과 견줘 본 결과를 그 언어 칸 아래에 적는다 */
+  function renderBackCheck(code) {
+    var box = $(iid(code, 'warn'));
+    if (!box) return;
+    box.textContent = '';
+
+    var ko = $('q-' + shortType() + '-prompt');
+    var koText = ko ? ko.value.trim() : '';
+    var back = $(iid(code, 'back'));
+    var backText = back ? back.value.trim() : '';
+    if (!koText || !backText) return;
+
+    if (Review.negationFlipped(koText, backText)) {
+      var warn = UI.el('div', 'warnbox');
+      warn.appendChild(UI.el('strong', null, '⚠ 뜻이 뒤집혔을 수 있습니다'));
+      warn.appendChild(UI.el('p', null,
+        '한쪽에만 "않 · 마십시오 · 금지" 같은 부정 표현이 있습니다. ' +
+        '"손을 넣지 마십시오" 가 "손을 넣어도 됩니다" 로 바뀌면 정반대 지시가 됩니다. ' +
+        '번역을 다시 확인해 주세요.'));
+      box.appendChild(warn);
+      return;
+    }
+
+    var n = Review.newWordCount(koText, backText);
+    box.appendChild(UI.el('p', 'muted',
+      n ? '원문에 없던 낱말 ' + n + '개. 뜻이 같으면 그대로 두셔도 됩니다.'
+        : '역번역이 원문과 같은 낱말로 돌아왔습니다.'));
+  }
+
+  function shortType() {
+    var t = currentType();
+    return t === 'hotspot' ? 'hot' : (t === 'choice' ? 'ch' : 'ma');
+  }
+
+  function buildI18nInputs() {
+    var box = $('q-i18n');
+
+    /* 이미 적어 둔 값을 기억해 두고 다시 채운다.
+       화면 어디를 눌러도 render() 가 돌 수 있는데, 그때마다 타이핑이
+       사라지면 담당자는 번역을 넣기를 포기한다. */
+    var kept = {};
+    UI.$$('input', box).forEach(function (el) {
+      if (el.id && el.value) kept[el.id] = el.value;
+    });
+
+    box.textContent = '';
+
+    var langs = i18nLangs();
+    if (!langs.length) {
+      box.appendChild(UI.el('p', 'muted',
+        '1단계에서 언어를 고르면 여기에 문항 번역 칸이 생깁니다.'));
+      return;
+    }
+
+    box.appendChild(UI.el('h3', 'sub', '문항 번역'));
+    box.appendChild(UI.el('p', 'muted',
+      '비워 두면 그 언어 노동자는 한국어 문항과 "번역 준비 중" 배지를 봅니다. ' +
+      '역번역을 함께 적으면 뜻이 뒤집혔는지 대조해 드립니다.'));
+
+    var isChoice = currentType() === 'choice';
+
+    langs.forEach(function (code) {
+      var wrap = UI.el('div', 'i18n-box');
+      wrap.appendChild(UI.el('h4', null, langName(code)));
+
+      var f1 = UI.el('div', 'field');
+      var l1 = UI.el('label', null, '문항 (' + langName(code) + ')');
+      l1.setAttribute('for', iid(code, 'prompt'));
+      f1.appendChild(l1);
+      f1.appendChild(textInput(iid(code, 'prompt'), langName(code) + '로 쓴 문항'));
+      wrap.appendChild(f1);
+
+      if (isChoice) {
+        for (var i = 0; i < 3; i++) {
+          wrap.appendChild(textInput(iid(code, 'opt-' + i), (i + 1) + '번 선택지 번역'));
+        }
+        wrap.appendChild(UI.el('p', 'muted',
+          '선택지는 채운 개수가 한국어와 같아야 저장됩니다. ' +
+          '정답은 번호로 정해지므로 한 칸이 비면 정답이 어긋납니다.'));
+      }
+
+      var f2 = UI.el('div', 'field');
+      var l2 = UI.el('label', null, '역번역 — 위 번역을 다시 한국어로 (선택)');
+      l2.setAttribute('for', iid(code, 'back'));
+      f2.appendChild(l2);
+      var back = textInput(iid(code, 'back'), '예) 프레스가 멈추면 무엇을 합니까');
+      back.addEventListener('input', function () { renderBackCheck(code); });
+      f2.appendChild(back);
+      wrap.appendChild(f2);
+
+      wrap.appendChild(UI.el('div', 'i18n-warn', ''));
+      wrap.lastChild.id = iid(code, 'warn');
+
+      box.appendChild(wrap);
+    });
+
+    // 기억해 둔 값을 되돌린다
+    UI.$$('input', box).forEach(function (el) {
+      if (kept[el.id]) el.value = kept[el.id];
+    });
+  }
+
+  /* 폼에 적힌 번역을 모은다.
+     kept 는 choice 에서 실제로 저장되는 한국어 선택지의 줄 번호다.
+     같은 줄의 번역만 가져와야 정답 인덱스가 어긋나지 않는다. */
+  function collectI18n(type, kept) {
+    var out = {};
+    var blocked = [];
+
+    i18nLangs().forEach(function (code) {
+      var el = $(iid(code, 'prompt'));
+      var prompt = el ? el.value.trim() : '';
+      if (!prompt) return;              // 번역 없음 — 노동자 화면이 배지를 띄운다
+
+      var pack = { prompt: prompt };
+
+      if (type === 'choice' && kept) {
+        var opts = [];
+        var filled = 0;
+        kept.forEach(function (row) {
+          var o = $(iid(code, 'opt-' + row));
+          var v = o ? o.value.trim() : '';
+          if (v) filled++;
+          opts.push(v);
+        });
+        if (filled && filled !== kept.length) {
+          blocked.push(langName(code));
+        } else if (filled === kept.length) {
+          pack.options = opts;
+        }
+      }
+
+      var b = $(iid(code, 'back'));
+      var back = b ? b.value.trim() : '';
+      if (back) pack.back = { prompt: back };
+
+      out[code] = pack;
+    });
+
+    return { i18n: out, blocked: blocked };
+  }
+
+  function clearI18nInputs() {
+    i18nLangs().forEach(function (code) {
+      ['prompt', 'back', 'opt-0', 'opt-1', 'opt-2'].forEach(function (name) {
+        var el = $(iid(code, name));
+        if (el) el.value = '';
+      });
+      var warn = $(iid(code, 'warn'));
+      if (warn) warn.textContent = '';
+    });
   }
 
   function addQuestion() {
@@ -302,13 +489,17 @@
       if (!hp) { UI.toast('문항을 적어 주세요.'); $('q-hot-prompt').focus(); return; }
       if (!pickedZone) { UI.toast('그림에서 정답이 될 위험 구역을 골라 주세요.'); return; }
 
+      var hi = collectI18n('hotspot', null);
+
       draft.quiz.push({
         id: 'q' + (draft.quiz.length + 1),
         type: 'hotspot',
         prompt: hp,
-        answer: Diagrams.answerFor(pickedZone)
+        answer: Diagrams.answerFor(pickedZone),
+        i18n: hi.i18n
       });
       $('q-hot-prompt').value = '';
+      clearI18nInputs();
 
     } else if (type === 'choice') {
       var cp = $('q-ch-prompt').value.trim();
@@ -316,14 +507,24 @@
 
       var options = [];
       var results = [];
+      var kept = [];        // 실제로 저장되는 선택지의 줄 번호 — 번역도 같은 줄에서 가져온다
       for (var i = 0; i < 3; i++) {
         var v = $('q-ch-opt-' + i).value.trim();
-        if (v) { options.push(v); results.push($('q-ch-res-' + i).value.trim()); }
+        if (v) { options.push(v); results.push($('q-ch-res-' + i).value.trim()); kept.push(i); }
       }
       if (options.length < 2) { UI.toast('선택지를 두 개 이상 적어 주세요.'); return; }
 
       var answer = Number(UI.pickedValue('q-ch-answer') || '0');
       if (answer >= options.length) { UI.toast('정답으로 고른 번호의 선택지가 비어 있습니다.'); return; }
+
+      /* ★ 선택지 번역을 넣다 말면 저장하지 않는다.
+           정답은 번호로 정해지므로 한 칸이 비면 다른 선택지를 가리킨다. */
+      var ci = collectI18n('choice', kept);
+      if (ci.blocked.length) {
+        UI.toast(ci.blocked.join(' · ') + ' 선택지 번역이 덜 채워졌습니다. ' +
+          '한국어와 같은 개수로 채우거나 모두 비워 주세요.');
+        return;
+      }
 
       draft.quiz.push({
         id: 'q' + (draft.quiz.length + 1),
@@ -331,10 +532,12 @@
         prompt: cp,
         options: options,
         answer: answer,
-        results: results
+        results: results,
+        i18n: ci.i18n
       });
       $('q-ch-prompt').value = '';
       for (var k = 0; k < 3; k++) { $('q-ch-opt-' + k).value = ''; $('q-ch-res-' + k).value = ''; }
+      clearI18nInputs();
 
     } else {
       var mp = $('q-ma-prompt').value.trim();
@@ -348,13 +551,17 @@
       });
       if (pairs.length < 2) { UI.toast('짝을 두 개 이상 채워 주세요.'); return; }
 
+      var mi = collectI18n('match', null);
+
       draft.quiz.push({
         id: 'q' + (draft.quiz.length + 1),
         type: 'match',
         prompt: mp,
-        pairs: pairs
+        pairs: pairs,
+        i18n: mi.i18n
       });
       $('q-ma-prompt').value = '';
+      clearI18nInputs();
       $('q-ma-pairs').textContent = '';
       addPairRow();
       addPairRow();
@@ -584,6 +791,7 @@
       buildPhrasePicker();
       renderPhraseWarn();
       renderQuizList();
+      buildI18nInputs();     // 1단계에서 고른 언어가 바뀌면 번역 칸도 바뀐다
       renderCheck();
 
       badge($('b-step1'), !!(draft.equipmentId && draft.title && draft.languages.length),
@@ -630,6 +838,7 @@
 
   $('pick-lang').addEventListener('change', function () {
     draft.languages = UI.checkedValues('lang');
+    buildI18nInputs();          // 고른 언어마다 번역 칸이 하나씩
     renderPhraseWarn();
     renderCheck();
     badge($('b-step1'), !!(draft.equipmentId && draft.title && draft.languages.length),

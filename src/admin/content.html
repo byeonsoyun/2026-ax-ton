@@ -152,8 +152,14 @@
         </div>
       </div>
 
-      <div class="btn-row" style="margin-top:12px">
-        <button class="btn btn-ghost" type="button" id="btn-add-q">이 문항 추가</button>
+      <!-- 문항 번역 — 1단계에서 고른 언어마다 한 칸.
+           문항이 한국어로만 나가면 기능4 는 기존 필기시험이 된다.
+           비워 두면 그 언어 노동자는 한국어 문항과 "번역 준비 중" 배지를 본다 —
+           조용히 숨기지 않는다. -->
+      <div id="q-i18n"></div>
+
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn btn-ghost" type="button" id="btn-add-q">이 문항 추가</button>
       </div>
     </section>
 
@@ -229,6 +235,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="../assets/ui.js"></script>
+<script src="../assets/review.js"></script>
 <script src="../assets/diagrams.js"></script>
 <script src="content.js"></script>
 </body>

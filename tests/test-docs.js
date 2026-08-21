@@ -113,7 +113,7 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
     ['grade', 'src/admin/dashboard.js'],
     ['stuckTopics', 'src/admin/dashboard.js'],
     ['fileFlag', 'src/admin/library.js'],
-    ['negationFlipped', 'src/admin/library.js'],
+    ['negationFlipped', 'src/assets/review.js'],   // 기능2 와 함께 쓰려고 빼냈다
     ['setStatus', 'src/admin/library.js'],
     ['renderRows', 'src/admin/proof.js'],
     ['pickTodayPhrase', 'src/worker/home.js'],

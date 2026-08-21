@@ -59,6 +59,7 @@ function boot(pageRelPath, opts = {}) {
   if (opts.before) opts.before(win);
 
   run('assets/ui.js');
+  run('assets/review.js');
   run('assets/diagrams.js');
   if (opts.page) run(opts.page, { shimLocation: true });
 

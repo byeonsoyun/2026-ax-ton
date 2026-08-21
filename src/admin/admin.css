@@ -127,6 +127,31 @@ table.data td .chips { margin: 0; }
 .opt-head label { margin: 0; cursor: pointer; }
 
 /* 작업 → 보호구 짝 입력 */
+/* 문항 번역 한 덩어리 — 언어마다 하나.
+   문항이 한국어로만 나가면 기능4 는 기존 필기시험이 된다. */
+.i18n-box {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--brand);
+  border-radius: 12px;
+  background: #fbfcfd;
+}
+
+.i18n-box h4 {
+  margin: 0 0 8px;
+  font-size: .86em;
+  font-weight: 800;
+  color: var(--ink-2);
+}
+
+.i18n-box input { margin-bottom: 6px; }
+.i18n-box .field { margin-bottom: 6px; }
+.i18n-box p.muted { margin: 4px 0 0; font-size: .8em; }
+
+/* 역번역 대조 결과 자리. 뒤집힘은 .warnbox 로 크게, 낱말 차이는 한 줄로. */
+.i18n-warn:empty { display: none; }
+
 .pair-row {
   display: flex;
   align-items: center;
