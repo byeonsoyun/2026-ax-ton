@@ -245,4 +245,45 @@ function open(opts = {}) {
   has('배지가 흑백에서도 뜻이 남는다', css, 'border-color: #666 !important');
 }
 
+/* =================================================================
+   N. 문항이 어느 언어로 제공됐는지 증빙에 남는다
+
+   이 서식이 서명과 다른 이유는 "번역된 문항으로 이해를 확인했다" 는 것이다.
+   그리고 한국어로만 제공된 문항을 숨기지 않는다 —
+   숨길 수 있는 증빙은 증빙이 아니다.
+   ================================================================= */
+{
+  const t = open();
+  const quiz = t.$('proof-quiz');
+  const lines = [...quiz.querySelectorAll('li')];
+
+  eq('c-press 문항 3개', lines.length, 3);
+
+  // 문항 문구는 한국어 — 감독기관에 내는 한국어 문서다
+  has('문항 문구는 한국어로 적는다', text(lines[0]), '손이 끼일 수 있는 곳');
+
+  // q1, q2 는 크메르어·인도네시아어 번역이 있다
+  has('제공 언어를 적는다', text(lines[0]), '제공 언어');
+  has('한국어를 먼저 적는다', text(lines[0]), '한국어');
+  has('크메르어로도 제공됐다고 적는다', text(lines[0]), '크메르어');
+
+  /* ★ q3 은 번역이 없다. 그 사실이 그대로 적혀야 한다. */
+  has('★ 번역이 없는 문항은 그 사실을 적는다', text(lines[2]), '한국어로 제공');
+  has('어느 언어가 빠졌는지 적는다', text(lines[2]), '크메르어');
+
+  // 숨기는 통로가 없는지
+  const html = quiz.outerHTML;
+  ok('★ 문항을 걸러 보는 조작이 없다', !/hidden|display:\s*none/.test(html), html.slice(0, 120));
+}
+
+/* --- 인쇄에서도 옅게 만들지 않는다 --- */
+{
+  const fs = require('fs');
+  const css = fs.readFileSync('C:/Users/byeonsoyun/2026-ax-ton/2026-ax-ton/src/admin/admin.css', 'utf8');
+  const printBlock = css.slice(css.indexOf('@media print'));
+
+  ok('제공 언어 줄이 인쇄에서 검게 나온다', /\.proof-qlang\s*\{\s*color:\s*#000/.test(printBlock));
+  ok('제공 언어 줄을 인쇄에서 감추지 않는다', !/\.proof-qlang[^{]*\{[^}]*display:\s*none/.test(printBlock));
+}
+
 report('기능5 교육 증빙 생성');

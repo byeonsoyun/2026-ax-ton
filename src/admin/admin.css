@@ -313,6 +313,14 @@ table.data td .chips { margin: 0; }
 .proof-flag { color: var(--stop); font-weight: 700; font-size: .88em; }
 .proof-qtype { color: var(--ink-3); font-size: .88em; }
 
+/* 그 문항이 어느 언어로 제공됐는지. 인쇄에서도 옅게 만들지 않는다 —
+   한국어로만 제공된 문항을 숨기는 통로가 되면 증빙이 아니다. */
+.proof-qlang {
+  display: block;
+  font-size: .84em;
+  color: var(--ink-2);
+}
+
 .proof-note {
   margin: 0 0 10px;
   padding: 10px 12px;
@@ -387,6 +395,10 @@ table.data td .chips { margin: 0; }
   }
 
   .page { padding: 0; display: block; }
+
+  /* 제공 언어 줄도 종이에서 검게 나온다. 옅게 만들면 한국어로만 제공된
+     문항이 눈에 안 띄고, 그것이 숨기는 통로가 된다. */
+  .proof-qlang { color: #000; }
 
   .proof {
     border: 0;

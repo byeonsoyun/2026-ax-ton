@@ -235,10 +235,31 @@
       return;
     }
 
+    /* 문항 문구는 한국어를 적는다 — 이 서식은 감독기관에 내는 한국어 문서다.
+       대신 그 문항이 어느 언어로 제공됐는지를 함께 적는다.
+       "번역된 문항으로 이해를 확인했다" 가 이 증빙이 서명과 다른 이유다.
+
+       ★ 한국어로만 제공된 문항을 숨기지 않는다. 옅게 만들지도 않는다.
+         숨길 수 있는 증빙은 증빙이 아니다. */
+    var langs = (course.languages || []).filter(function (c) { return c !== 'ko'; });
+
     quiz.forEach(function (q) {
       var li = UI.el('li');
       li.appendChild(document.createTextNode(q.prompt));
       li.appendChild(UI.el('span', 'proof-qtype', ' (' + (QLABEL[q.type] || q.type) + ')'));
+
+      if (langs.length) {
+        var got = langs.filter(function (code) { return Store.qhas(q, code); });
+        var text = got.length
+          ? '제공 언어 — 한국어 · ' + got.map(langName).join(' · ')
+          : '제공 언어 — 한국어';
+        var missed = langs.filter(function (code) { return got.indexOf(code) === -1; });
+        if (missed.length) {
+          text += ' (' + missed.map(langName).join(' · ') + ' 는 한국어로 제공)';
+        }
+        li.appendChild(UI.el('span', 'proof-qlang', text));
+      }
+
       box.appendChild(li);
     });
   }
