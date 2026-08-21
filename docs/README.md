@@ -10,11 +10,13 @@
 
 | 상황 | 읽을 것 |
 |---|---|
+| **나 뭐 하면 되죠?** | [07-next-tasks.md](07-next-tasks.md) — 내 포지션의 다음 할 일 ★ |
 | **오늘 처음입니다** | [00-getting-started.md](00-getting-started.md) — 설치부터 첫 화면까지 |
 | **개발을 시작합니다** | [03-prompts.md](03-prompts.md) — 내 포지션 프롬프트를 복사해 Claude Code 에 붙여넣기 |
 | **내가 뭘 맡았죠?** | [02-positions.md](02-positions.md) — 포지션 카드 4장 |
 | **이 프로젝트가 뭐죠?** | [01-project-map.md](01-project-map.md) — 폴더 · 데이터 · 화면 전체 지도 |
 | **오늘 한 일을 남깁니다** | [04-devlog.md](04-devlog.md) — 개발일지 쓰는 법 |
+| **무엇이 먼저죠?** | [06-feature-priority.md](06-feature-priority.md) — 필수 / 사용성 / 향후 3층 |
 | **뭔가 막혔습니다** | [05-troubleshooting.md](05-troubleshooting.md) — 충돌 · push 실패 · 화면이 안 뜸 |
 | **화면을 새로 안 만들고 싶습니다** | [mockups/README.md](mockups/README.md) — 기획 시안 옮겨 오는 법 |
 
@@ -27,9 +29,14 @@
 ## 처음이라면 이 순서
 
 1. **[00-getting-started.md](00-getting-started.md)** 를 위에서부터 그대로 따라 합니다 (한 번만)
-2. **[02-positions.md](02-positions.md)** 에서 내 포지션 카드를 읽습니다 (5분)
-3. **[03-prompts.md](03-prompts.md)** 에서 내 블록을 복사해 Claude Code 에 붙여넣습니다
-4. 이제 개발하시면 됩니다
+2. Claude Code 를 열고 **"나 뭐 하면 되는지 알려줘"** 라고 씁니다
+
+끝입니다. 브랜치를 보고 내 포지션을 알아내서, 지금 상태와 다음 할 일을 알려 줍니다.
+문서를 미리 읽지 않아도 됩니다.
+
+더 알고 싶으면 — [02-positions.md](02-positions.md) 내 포지션 카드 ·
+[07-next-tasks.md](07-next-tasks.md) 내 할 일 목록 ·
+[03-prompts.md](03-prompts.md) 복붙 프롬프트
 
 ---
 
