@@ -79,3 +79,120 @@ table.data td .chips { margin: 0; }
   color: var(--ink-3);
   line-height: 1.6;
 }
+
+/* ===================================================================
+   [P3] 기능2 교육 콘텐츠 생성 · 기능6 담당자 대시보드
+   =================================================================== */
+
+/* 고른 언어에 번역이 없는 조합 — 막지는 않고 무엇이 빠졌는지만 남긴다 */
+.warnbox {
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  border: 1px solid #e6d3a6;
+  border-left: 5px solid var(--warn);
+  border-radius: 12px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: .84em;
+  line-height: 1.6;
+}
+
+.warnbox strong { display: block; font-weight: 800; margin-bottom: 6px; }
+.warnbox ul { margin: 0 0 6px; padding-left: 18px; }
+.warnbox li { margin: 2px 0; }
+.warnbox p { margin: 0; }
+
+/* 선택지 입력 한 덩어리 — 선택지와 "그러면 무슨 일이 생기는지" 를 같이 받는다 */
+.opt-row {
+  display: grid;
+  gap: 6px;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fbfcfd;
+}
+
+.opt-row + .opt-row { margin-top: 8px; }
+
+.opt-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .82em;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.opt-head input { width: 18px; height: 18px; }
+.opt-head label { margin: 0; cursor: pointer; }
+
+/* 작업 → 보호구 짝 입력 */
+.pair-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.pair-row input { flex: 1 1 0; min-width: 0; }
+.pair-arrow { flex: 0 0 auto; color: var(--ink-3); font-weight: 800; }
+
+@media (max-width: 520px) {
+  .pair-row { flex-wrap: wrap; }
+  .pair-row input { flex: 1 1 100%; }
+  .pair-arrow { display: none; }
+}
+
+/* 관리자 화면에서도 도해를 쓴다 — 담당자가 정답 구역을 고를 때.
+   노동자 화면(worker.css)의 .quiz-figure 와 같은 좌표계를 쓴다. */
+.quiz-figure {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  margin: 10px auto 0;
+  aspect-ratio: 1 / 1;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--ink-2);
+  touch-action: manipulation;
+}
+
+@supports not (aspect-ratio: 1 / 1) {
+  .quiz-figure { height: 0; padding-top: 100%; }
+  .quiz-figure > svg { position: absolute; top: 0; left: 0; }
+}
+
+.quiz-figure > svg { display: block; width: 100%; height: 100%; }
+
+/* 담당자는 마우스로 고른다 — 노동자 화면과 달리 40px 로 둔다 */
+.zone {
+  position: absolute;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: 2px dashed #c9d2db;
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+}
+
+.zone:hover, .zone:focus-visible {
+  border-color: #b98a00;
+  background: rgba(217, 164, 6, .14);
+}
+
+.zone[data-mark="ok"] {
+  border-style: solid;
+  border-color: var(--ok);
+  background: rgba(28, 107, 58, .16);
+}
+
+.zonehint {
+  margin: 8px 0 0;
+  font-size: .8em;
+  font-weight: 700;
+  color: var(--ink-2);
+  text-align: center;
+}
