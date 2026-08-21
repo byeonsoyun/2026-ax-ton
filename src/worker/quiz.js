@@ -13,6 +13,7 @@
 
    문항 세 유형 —
      hotspot  설비 도해에서 위험 지점을 짚는다   answer { x, y, r } 퍼센트 좌표
+              도해와 위험 구역은 assets/diagrams.js 에 있다 — 기능2 가 같은 것을 본다
      choice   올바른 작업을 고른다               options [] · answer 인덱스
      match    작업과 보호구를 연결한다           pairs [[작업, 보호구], ...]
 
@@ -49,60 +50,6 @@
     choice:  { ico: '☑',  label: '올바른 작업 고르기' },
     match:   { ico: '🔗', label: '보호구 연결하기' }
   };
-
-  /* -----------------------------------------------------------------
-     설비 도해와 그 위의 이름 붙은 구역
-
-     ★ 구역은 그림에 딸린 것이라 여기 둔다. courses 데이터가 아니다.
-       기능2(P3)는 문서대로 answer { x, y, r } 만 만들면 되고,
-       "그 원 안에 중심이 들어오는 구역"이 정답이 된다.
-
-     ★ 실제 설비 사진이 필요해지는 시점이 서버가 필요해지는 시점이다.
-       지금은 그림이므로 도해가 없는 설비는 구역도 주지 않는다(아래 generic).
-     ----------------------------------------------------------------- */
-  var DIAGRAMS = {
-    press: [
-      { x: 20, y: 18, w: 18, h: 18, label: '전원 스위치',
-        consequence: '전원 스위치는 작업 전에 차단하는 곳입니다. 손이 끼이는 자리는 아닙니다.' },
-      { x: 78, y: 18, w: 20, h: 20, label: '잔류 압력 게이지',
-        consequence: '게이지는 압력이 남아 있는지 확인하는 곳입니다. 손이 끼이는 자리는 아닙니다.' },
-      { x: 50, y: 51, w: 40, h: 24, label: '램과 금형 사이 작업 지점',
-        consequence: '램이 내려오는 자리입니다. 전원이 꺼져 있어도 남아 있는 압력으로 램이 떨어져 손이 끼입니다.' },
-      { x: 77, y: 79, w: 18, h: 16, label: '안전핀 삽입구',
-        consequence: '안전핀은 램이 떨어지지 않게 고정하는 곳입니다. 손이 끼이는 자리는 아닙니다.' }
-    ],
-    booth: [
-      { x: 78, y: 22, w: 22, h: 22, label: '환기팬',
-        consequence: '환기팬은 유증기를 빼내는 곳입니다. 팬이 멈추면 위험해지지만, 팬 자체를 만지는 작업은 아닙니다.' },
-      { x: 40, y: 62, w: 30, h: 26, label: '도장 작업 구역',
-        consequence: '분사한 도료의 유증기가 이곳에 모입니다. 방독마스크 없이 들어가면 질식하거나 중독됩니다.' },
-      { x: 16, y: 82, w: 20, h: 18, label: '출입구',
-        consequence: '출입구는 대피 통로입니다. 막아 두면 안 되지만, 마스크가 필요한 자리는 아닙니다.' },
-      { x: 80, y: 79, w: 20, h: 22, label: '도료 저장통',
-        consequence: '도료 저장통은 화기를 멀리해야 하는 곳입니다. 도장 작업을 하는 자리는 아닙니다.' }
-    ],
-    panel: [
-      { x: 50, y: 26, w: 52, h: 24, label: '노출된 단자대',
-        consequence: '전기가 흐르는 단자가 드러난 곳입니다. 차단하지 않고 만지면 감전됩니다.' },
-      { x: 40, y: 53, w: 24, h: 18, label: '주 차단기',
-        consequence: '주 차단기는 전원을 내리는 곳입니다. 여기를 먼저 내려야 나머지가 안전해집니다.' },
-      { x: 62, y: 60, w: 18, h: 18, label: '접지 단자',
-        consequence: '접지 단자는 새어 나온 전기를 땅으로 보내는 곳입니다.' },
-      { x: 78, y: 40, w: 14, h: 14, label: '문 손잡이',
-        consequence: '문 손잡이입니다. 전기가 흐르는 자리는 아닙니다.' },
-      { x: 50, y: 80, w: 40, h: 14, label: '케이블 인입구',
-        consequence: '케이블이 들어오는 곳입니다. 피복이 벗겨져 있으면 감전 위험이 있습니다.' }
-    ],
-    generic: []
-  };
-
-  function diagramNameFor(equipment) {
-    var h = (equipment && equipment.hazards) || [];
-    if (h.indexOf('pinch') !== -1) return 'press';
-    if (h.indexOf('fire') !== -1 || h.indexOf('chemical') !== -1 || h.indexOf('choke') !== -1) return 'booth';
-    if (h.indexOf('shock') !== -1) return 'panel';
-    return 'generic';
-  }
 
   /* -----------------------------------------------------------------
      내가 누구인지 · 무엇을 검증하는지
@@ -275,23 +222,16 @@
 
   /* --- hotspot — 설비 도해에서 위험 지점 짚기 --- */
 
-  function inAnswer(answer, x, y) {
-    var dx = x - answer.x;
-    var dy = y - answer.y;
-    return Math.sqrt(dx * dx + dy * dy) <= (answer.r || 12);
-  }
-
   function renderHotspot(body, q) {
-    var name = diagramNameFor(run.equipment);
-    var source = document.querySelector('#diagrams [data-diagram="' + name + '"]');
+    var name = Diagrams.nameFor(run.equipment);
 
     var figure = UI.el('div', 'quiz-figure');
-    if (source) figure.appendChild(source.cloneNode(true));
+    figure.appendChild(Diagrams.svg(name));
 
     /* 이 도해의 구역 중 정답 원 안에 들어오는 것이 있는지.
        없으면 구역을 쓰지 않는다 — 아무 구역도 정답이 아니면 통과할 길이 없다. */
-    var zones = DIAGRAMS[name] || [];
-    var hasCorrect = zones.some(function (z) { return inAnswer(q.answer, z.x, z.y); });
+    var zones = Diagrams.zones(name);
+    var hasCorrect = zones.some(function (z) { return Diagrams.inAnswer(q.answer, z.x, z.y); });
 
     if (zones.length && hasCorrect) renderZones(figure, q, zones);
     else renderFreeTap(figure, q);
@@ -312,7 +252,7 @@
       btn.style.top = z.y + '%';
       btn.style.width = z.w + '%';
       btn.style.height = z.h + '%';
-      buttons.push({ btn: btn, zone: z, correct: inAnswer(q.answer, z.x, z.y) });
+      buttons.push({ btn: btn, zone: z, correct: Diagrams.inAnswer(q.answer, z.x, z.y) });
 
       btn.addEventListener('click', function () {
         if (run.locked) return;
@@ -349,7 +289,7 @@
       mark.style.top = y + '%';
       figure.appendChild(mark);
 
-      var correct = inAnswer(q.answer, x, y);
+      var correct = Diagrams.inAnswer(q.answer, x, y);
       answered(correct, q.why || (correct
         ? '맞습니다. 이곳이 이 설비에서 다치기 쉬운 자리입니다.'
         : '이곳이 아닙니다. 교육을 다시 듣고 위험한 자리를 확인해 주세요.'));

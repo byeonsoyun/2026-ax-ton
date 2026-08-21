@@ -12,3 +12,70 @@
      · 문해력 비전제 규칙은 적용하지 않습니다 — 노동자 화면 전용 규칙입니다
      · 색상만으로 구분 금지, "면책" 표현 금지는 여기서도 지킵니다
    =================================================================== */
+
+
+/* ===================================================================
+   [P4] 기능9 안전 문구 라이브러리 · 기능5 교육 증빙
+   =================================================================== */
+
+/* 판정 한 덩어리 — 문구 하나에 언어별 역번역 대조가 여러 줄 붙는다 */
+.review-block {
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fbfcfd;
+}
+
+.review-block + .review-block { margin-top: 10px; }
+
+.review-block .queue-top { margin-bottom: 8px; }
+
+.review-block .meta {
+  margin: 10px 0 6px;
+  font-size: .78em;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+
+/* 좁은 화면에서는 원문과 역번역을 위아래로 놓는다.
+   나란히 두려고 글자를 줄이면 정작 뒤집힌 곳이 안 보인다 */
+@media (max-width: 560px) {
+  .diff { grid-template-columns: 1fr; }
+}
+
+/* 목록 걸러 보기 버튼 — 지금 어느 것을 보고 있는지 표시 */
+.btn-sm[aria-pressed="true"] {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--brand-ink);
+}
+
+/* 표 안에서도 문구가 길면 줄바꿈한다. 가로 스크롤만으로는 읽기 어렵다 */
+table.data td { overflow-wrap: anywhere; }
+table.data td .chips { margin: 0; }
+
+/* 부정이 뒤집힌 경우 — 이것만 크게 경고한다.
+   낱말이 다른 것과 같은 세기로 표시하면 운영자가 표시를 무시하게 되고,
+   그러면 정작 뜻이 뒤집힌 문구가 그냥 지나간다. */
+.flip-warn {
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border: 1px solid #edbdb8;
+  border-left: 5px solid var(--stop);
+  border-radius: 10px;
+  background: var(--stop-soft);
+  color: var(--stop);
+  font-size: .84em;
+  line-height: 1.6;
+}
+
+.flip-warn strong { font-weight: 800; }
+
+.diff.danger .diff-cell { border-color: #edbdb8; }
+
+.diff-note {
+  margin: 6px 0 0;
+  font-size: .76em;
+  color: var(--ink-3);
+  line-height: 1.6;
+}
