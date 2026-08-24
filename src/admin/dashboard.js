@@ -414,14 +414,8 @@
         ].join(' · '));
 
       var tags = UI.el('div', 'tags');
-      if (course.dueAt) {
-        // courses 에 dueAt 이 들어오면 바로 D-day 를 쓴다 (기능2 에서 받는다)
-        var days = Math.ceil((new Date(course.dueAt) - new Date()) / 86400000);
-        tags.appendChild(days < 0 ? UI.stopBadge('기한 ' + (-days) + '일 지남')
-          : days <= 7 ? UI.waitBadge('D-' + days) : UI.neutralBadge('D-' + days));
-      } else {
-        tags.appendChild(UI.neutralBadge('기한 미정'));
-      }
+      // 기한 판정은 UI.dueBadge 한 곳에 있다 — 기능2 의 발급 목록이 같은 것을 쓴다
+      tags.appendChild(UI.dueBadge(course.dueAt));
       if (done < mine.length) tags.appendChild(UI.waitBadge('남은 대상 ' + (mine.length - done) + '명'));
       li.querySelector('.body').appendChild(tags);
 

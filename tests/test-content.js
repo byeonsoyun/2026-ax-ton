@@ -464,4 +464,92 @@ const checkAll = (win, root, name, values) => {
     R.negationFlipped('환기팬이 돌지 않으면 시작하지 마십시오', '팬이 꺼져 있으면 시작하지 마세요'), false);
 }
 
+/* =================================================================
+   기한(dueAt) — 담당자가 넣은 것이 기능6 이 읽는 자리에 그대로 들어간다
+   ================================================================= */
+{
+  /* 발급 목록의 기한 열은 대시보드와 같은 UI.dueBadge 를 쓴다.
+     예시 데이터는 프레스만 기한이 있고 도장 부스는 없다. */
+  const t = open();
+  const rows = [...t.$('course-rows').querySelectorAll('tr')];
+  const press = rows.find((r) => text(r).includes('프레스 3호기'));
+  const paint = rows.find((r) => text(r).includes('도장 부스'));
+  ok('기한 있는 교육은 미정이 아니다',
+    text(press).indexOf('기한 미정') === -1, text(press));
+  has('기한 없는 교육은 미정이라고 적는다', text(paint), '기한 미정');
+
+  // 열 개수가 헤더와 맞는가 — 어긋나면 표가 한 칸씩 밀린다
+  const cols = t.win.document.querySelectorAll('table.data thead th').length;
+  eq('머리글 8칸', cols, 8);
+  eq('본문도 8칸', press.querySelectorAll('td').length, cols);
+}
+
+{
+  /* 기한을 넣고 발급하면 courses 에 저장된다 — 기능6 이 이 값으로 D-day 를 그린다 */
+  const t = open();
+  t.$('draft-equip').value = 'e-panel';
+  change(t.win, t.$('draft-equip'));
+  input(t.win, t.$('draft-title'), '기한 검사용 교육');
+  checkAll(t.win, t.$('pick-lang'), 'lang', ['km']);
+  checkAll(t.win, t.$('pick-phrase'), 'phrase', ['ph-2']);
+
+  const typeRadios = t.$('pick-qtype').querySelectorAll('input[name="qtype"]');
+  [...typeRadios].find((r) => r.value === 'choice').checked = true;
+  change(t.win, t.$('pick-qtype'));
+  input(t.win, t.$('q-ch-prompt'), '점검 전에 무엇을 합니까?');
+  t.$('q-ch-opt-0').value = '바로 문을 연다';
+  t.$('q-ch-res-0').value = '감전됩니다.';
+  t.$('q-ch-opt-1').value = '주 차단기를 내린다';
+  t.$('q-ch-res-1').value = '맞습니다.';
+  t.$('q-ch-answer-1').checked = true;
+  click(t.win, t.$('btn-add-q'));
+
+  // 기한을 넣는다. 타이핑만 하고 칸을 벗어나지 않아도 잡혀야 한다
+  t.$('draft-due').value = '2026-12-31';
+  input(t.win, t.$('draft-due'), '2026-12-31');
+
+  eq('기한은 발급 조건이 아니다 — 이미 열려 있다', t.$('btn-approve').disabled, false);
+  click(t.win, t.$('btn-approve'));
+
+  const made = t.win.Store.courses.load().slice(-1)[0];
+  eq('★ 넣은 기한이 그대로 저장된다', made.dueAt, '2026-12-31');
+  eq('발급 뒤 기한 칸이 비워진다', t.$('draft-due').value, '');
+
+  const row = [...t.$('course-rows').querySelectorAll('tr')]
+    .find((r) => text(r).includes('기한 검사용 교육'));
+  ok('발급 목록에 기한이 보인다', text(row).indexOf('기한 미정') === -1, text(row));
+}
+
+{
+  /* ★ 기한을 비워 둬도 발급된다 — 급한 교육을 기한 때문에 못 내보내면 안 된다 */
+  const t = open();
+  t.$('draft-equip').value = 'e-panel';
+  change(t.win, t.$('draft-equip'));
+  input(t.win, t.$('draft-title'), '기한 없는 교육');
+  checkAll(t.win, t.$('pick-lang'), 'lang', ['km']);
+  checkAll(t.win, t.$('pick-phrase'), 'phrase', ['ph-2']);
+
+  const typeRadios = t.$('pick-qtype').querySelectorAll('input[name="qtype"]');
+  [...typeRadios].find((r) => r.value === 'choice').checked = true;
+  change(t.win, t.$('pick-qtype'));
+  input(t.win, t.$('q-ch-prompt'), '무엇을 먼저 합니까?');
+  t.$('q-ch-opt-0').value = '바로 만진다';
+  t.$('q-ch-res-0').value = '감전됩니다.';
+  t.$('q-ch-opt-1').value = '전원을 내린다';
+  t.$('q-ch-res-1').value = '맞습니다.';
+  t.$('q-ch-answer-1').checked = true;
+  click(t.win, t.$('btn-add-q'));
+
+  eq('기한 없이도 발급 버튼이 열린다', t.$('btn-approve').disabled, false);
+  click(t.win, t.$('btn-approve'));
+
+  const made = t.win.Store.courses.load().slice(-1)[0];
+  eq('교육이 발급된다', made.title, '기한 없는 교육');
+  eq('기한은 빈 값으로 남는다', made.dueAt, '');
+
+  const row = [...t.$('course-rows').querySelectorAll('tr')]
+    .find((r) => text(r).includes('기한 없는 교육'));
+  has('목록에 미정이라고 적는다', text(row), '기한 미정');
+}
+
 report('기능2 교육 콘텐츠 생성 · 승인');

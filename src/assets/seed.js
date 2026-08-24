@@ -129,6 +129,9 @@ var Seed = (function () {
     { id: 'c-press', title: '프레스 3호기 안전교육', equipmentId: 'e-press3',
       languages: ['km', 'id', 'vi'], phraseIds: ['ph-1', 'ph-2', 'ph-3', 'ph-6'],
       approved: true, createdAt: '2026-08-01T02:00:00.000Z',
+      /* 프레스만 기한이 있고 도장 부스는 없다 — 대시보드 한 화면에서
+         D-day 와 "기한 미정" 이 함께 보여야 기한이 선택이라는 것이 드러난다. */
+      dueAt: '2026-10-15',
       quiz: [
         { id: 'q1', type: 'hotspot', hazard: 'pinch',
           prompt: '이 설비에서 손이 끼일 수 있는 곳을 누르세요',

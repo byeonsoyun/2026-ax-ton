@@ -180,7 +180,12 @@ function open(opts = {}) {
   eq('교육 2개', items.length, 2);
   has('이수 현황', text(items[0]), '이수 1 / 1명');
   has('마지막 실시일', text(items[0]), '마지막 실시');
-  has('기한이 없으면 미정', text(items[0]), '기한 미정');
+  /* 예시 데이터에서 기한을 가진 것은 c-press 하나뿐이다 —
+     기한이 선택이라는 것이 대시보드 한 화면에서 보여야 한다.
+     "D-" 를 기대하지 않는다: 예시 날짜가 지나면 "지남" 이 되고 그것도 맞는 표시다. */
+  ok('기한이 있으면 미정이 아니다',
+    text(items[0]).indexOf('기한 미정') === -1, text(items[0]));
+  has('기한이 없으면 미정', text(items[1]), '기한 미정');
 
   // courses 에 dueAt 이 들어오면 D-day 를 쓴다
   const t2 = open({
