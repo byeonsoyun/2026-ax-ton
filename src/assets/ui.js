@@ -43,6 +43,22 @@ var UI = (function () {
   function stopBadge(text)    { return badge('badge-stop', '!', text); }
   function neutralBadge(text) { return badge('badge-neutral', '○', text); }
 
+  /* 교육 기한 배지 — courses[].dueAt 을 기능2(발급 목록)와 기능6(대시보드)이
+     같은 판정으로 읽는다. 이 계산을 화면마다 두면 한쪽만 고쳐져서
+     두 화면이 서로 다른 날짜를 말하게 된다.
+
+     ★ 기한은 선택이다. 없을 때 배지를 그리지 않고 넘기지 않는다 —
+       "미정" 도 담당자가 알아야 하는 상태다. */
+  function dueBadge(dueAt) {
+    if (!dueAt) return neutralBadge('기한 미정');
+    var due = new Date(dueAt);
+    if (isNaN(due.getTime())) return neutralBadge('기한 미정');
+
+    var days = Math.ceil((due - new Date()) / 86400000);
+    if (days < 0) return stopBadge('기한 ' + (-days) + '일 지남');
+    return days <= 7 ? waitBadge('D-' + days) : neutralBadge('D-' + days);
+  }
+
   /* 검수 상태 배지 — library 의 status 를 그대로 받는다 */
   function phraseBadge(status) {
     var s = Store.PHRASE_STATUS[status] || Store.PHRASE_STATUS.waiting;
@@ -296,6 +312,7 @@ var UI = (function () {
     $: $, $$: $$, el: el,
     badge: badge, okBadge: okBadge, waitBadge: waitBadge,
     stopBadge: stopBadge, neutralBadge: neutralBadge, phraseBadge: phraseBadge,
+    dueBadge: dueBadge,
     chip: chip, checkedValues: checkedValues, pickedValue: pickedValue,
     fillSelect: fillSelect, toast: toast,
     emptyRow: emptyRow, itemRow: itemRow,

@@ -49,7 +49,7 @@
   var draft = newDraft();
 
   function newDraft() {
-    return { title: '', equipmentId: '', languages: [], phraseIds: [], quiz: [] };
+    return { title: '', equipmentId: '', languages: [], phraseIds: [], quiz: [], dueAt: '' };
   }
 
   /* -----------------------------------------------------------------
@@ -673,6 +673,7 @@
       languages: draft.languages.slice(),
       phraseIds: draft.phraseIds.slice(),
       quiz: draft.quiz.slice(),
+      dueAt: draft.dueAt || '',      // 비어 있어도 넣는다. 기능6 이 "미정" 으로 읽는다
       approved: true,
       createdAt: new Date().toISOString()
     };
@@ -703,7 +704,7 @@
     if (!list.length) {
       var tr = UI.el('tr');
       var cell = UI.el('td');
-      cell.colSpan = 7;
+      cell.colSpan = 8;
       cell.appendChild(UI.el('p', 'empty', '아직 발급한 교육이 없습니다.'));
       tr.appendChild(cell);
       body.appendChild(tr);
@@ -749,6 +750,12 @@
       tr.appendChild(countCell);
 
       tr.appendChild(UI.el('td', 'num', audienceOf(c) + '명'));
+
+      /* 대시보드와 같은 UI.dueBadge 를 쓴다. 발급한 자리에서 바로 보여야
+         담당자가 대시보드까지 가서야 기한이 빈 것을 알게 되지 않는다. */
+      var dueCell = UI.el('td');
+      dueCell.appendChild(UI.dueBadge(c.dueAt));
+      tr.appendChild(dueCell);
 
       var statusCell = UI.el('td');
       if (!(c.quiz || []).length) statusCell.appendChild(UI.stopBadge('문항 없음'));
@@ -848,6 +855,7 @@
 
   function resetForms() {
     $('draft-title').value = '';
+    $('draft-due').value = '';
     $('q-hot-prompt').value = '';
     $('q-ch-prompt').value = '';
     $('q-ma-prompt').value = '';
@@ -878,6 +886,12 @@
     draft.title = $('draft-title').value.trim();
     renderCheck();
   });
+
+  /* 기한은 발급 조건이 아니다. 넣지 않아도 발급되고 "미정" 으로 남는다 —
+     기한이 없다고 교육 자체를 막으면 급한 교육을 못 내보낸다. */
+  function readDue() { draft.dueAt = $('draft-due').value; }
+  $('draft-due').addEventListener('change', readDue);
+  $('draft-due').addEventListener('input', readDue);
 
   $('pick-lang').addEventListener('change', function () {
     draft.languages = UI.checkedValues('lang');
