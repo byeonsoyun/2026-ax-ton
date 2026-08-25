@@ -217,6 +217,17 @@ var UI = (function () {
        크메르어 음성이 깔린 안드로이드는 흔하지 않다. 소리가 안 났는데
        난 줄 알고 넘어가면, 글자를 못 읽는 사람은 아무것도 못 받은 채 통과한다.
        그래서 한국어로 읽고, 그 사실을 화면에 적는다 (voiceNote).
+
+     ★★ "있다고 대답해 놓고 소리를 안 내는 브라우저" 도 조용히 실패하지 않는다.
+       카카오톡 안에서 열리는 브라우저가 그렇다. speechSynthesis 가 있다고
+       대답하고, 목소리 목록도 주고, speak() 도 받아 놓고, 아무 소리도 안 난다.
+       그런데 현장에서 교육 링크를 보내는 가장 흔한 방법이 카톡이다.
+
+       그래서 브라우저 이름을 넘겨짚지 않고 실제 결과를 본다 — 읽으라고 시킨 뒤
+       소리가 시작됐다는 신호가 안 오면 소리가 안 나는 것으로 본다 (markVoiceDead).
+       그러면 카톡이든 나중에 나올 무엇이든 같은 방법으로 걸린다.
+       걸리면 화면에 적고(voiceNote), 버튼 그림도 🔇 로 바꾼다 —
+       글자를 못 읽는 사람에게 문장은 닿지 않고 그림이 닿는다.
      ------------------------------------------------------------------- */
 
   var VOICE_TAG = {
@@ -227,6 +238,46 @@ var UI = (function () {
   function speechReady() {
     return typeof window !== 'undefined' && 'speechSynthesis' in window;
   }
+
+  var voiceWatchers = [];   // 음성 사정이 바뀌면 다시 그릴 화면 함수들
+  var audioButtons = [];    // 만들어 둔 🔊 버튼들 — 상태가 바뀌면 그림을 바꾼다
+  var voiceDead = false;    // 시켰는데 소리가 안 난 것이 확인됐다
+  var userTapped = false;   // 사람이 화면을 한 번이라도 눌렀다
+  var voiceWaitMs = 2000;   // 이만큼 기다려도 안 나면 안 나는 것으로 본다
+
+  /* 저절로 읽는 것은 멀쩡한 브라우저도 막는다. 그것까지 "고장" 이라고 적으면
+     거짓말이 되므로, 사람이 눌러서 시킨 것만 판정에 쓴다. */
+  if (typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('click', function () { userTapped = true; }, true);
+  }
+
+  /* 검사에서 기다리는 시간을 줄이려고 열어 둔다. 인자 없이 부르면 지금 값. */
+  function voiceWait(ms) {
+    if (typeof ms === 'number' && ms >= 0) voiceWaitMs = ms;
+    return voiceWaitMs;
+  }
+
+  function notifyVoice() {
+    paintAudioButtons();
+    for (var i = 0; i < voiceWatchers.length; i++) {
+      try { voiceWatchers[i](); } catch (e) {}
+    }
+  }
+
+  function markVoiceDead() {
+    if (voiceDead) return;
+    voiceDead = true;
+    notifyVoice();
+  }
+
+  function markVoiceAlive() {
+    if (!voiceDead) return;
+    voiceDead = false;
+    notifyVoice();
+  }
+
+  /* 이 브라우저가 소리를 못 내는 것이 확인됐는가 */
+  function voiceBlocked() { return voiceDead; }
 
   /* 이 기기에 그 언어 음성이 실제로 있는지.
      getVoices() 는 첫 호출에서 빈 배열을 주는 브라우저가 있다(목록을 비동기로 읽는다).
@@ -243,8 +294,12 @@ var UI = (function () {
     return false;
   }
 
-  /* 음성 목록이 준비되면 한 번 부른다. 화면이 안내 문구를 다시 그릴 기회다. */
+  /* 음성 사정이 바뀌면 부른다. 화면이 안내 문구를 다시 그릴 기회다.
+     ★ 목록이 준비된 때뿐 아니라 "소리가 안 나는 것이 확인된 때" 도 부른다.
+       그래서 화면 쪽은 손대지 않아도 안내가 저절로 따라온다. */
   function onVoicesReady(fn) {
+    if (typeof fn !== 'function') return;
+    voiceWatchers.push(fn);
     if (!speechReady()) return;
     if (window.speechSynthesis.getVoices().length) { fn(); return; }
     if (typeof window.speechSynthesis.addEventListener !== 'function') return;
@@ -279,6 +334,22 @@ var UI = (function () {
     var u = new SpeechSynthesisUtterance(String(text));
     u.lang = VOICE_TAG[lang] || lang;
     u.rate = 0.9;      // 모국어가 아닌 사람이 듣는다. 기본 속도는 빠르다
+
+    /* 소리가 났는지 지켜본다 (위 ★★). 시작 신호나 끝 신호가 하나라도 오면
+       살아 있는 것으로 본다. */
+    var heard = false;
+    u.onstart = function () { heard = true; markVoiceAlive(); };
+    u.onend = function () { if (!heard) { heard = true; markVoiceAlive(); } };
+    u.onerror = function (e) {
+      var kind = (e && e.error) || '';
+      // 우리가 cancel() 해서 끊긴 것은 브라우저 잘못이 아니다
+      if (kind === 'interrupted' || kind === 'canceled') return;
+      if (userTapped) markVoiceDead();
+    };
+    if (userTapped) {
+      setTimeout(function () { if (!heard) markVoiceDead(); }, voiceWaitMs);
+    }
+
     window.speechSynthesis.speak(u);
     return lang;
   }
@@ -295,12 +366,37 @@ var UI = (function () {
     btn.addEventListener('click', function () {
       speak(typeof getSpeech === 'function' ? getSpeech() : getSpeech);
     });
+
+    audioButtons.push({ btn: btn, ico: ico, label: label || '소리로 듣기' });
+    paintAudioButtons();
     return btn;
+  }
+
+  /* 소리가 안 나는 것이 확인되면 버튼도 그렇게 보여야 한다.
+     ★ 색만 바꾸지 않는다 — 그림(🔊 → 🔇)이 함께 바뀌고, 옆 안내 줄에 이유가 글로 남는다.
+       흑백으로 봐도, 글자를 못 읽어도 뜻이 남아야 한다. */
+  function paintAudioButtons() {
+    for (var i = 0; i < audioButtons.length; i++) {
+      var a = audioButtons[i];
+      a.ico.textContent = voiceDead ? '🔇' : '🔊';
+      a.btn.setAttribute('aria-label',
+        voiceDead ? a.label + ' — 이 브라우저에서는 소리가 나지 않습니다' : a.label);
+      if (voiceDead) a.btn.classList.add('is-mute');
+      else a.btn.classList.remove('is-mute');
+    }
   }
 
   /* 화면에 적을 한 줄. 문제가 없으면 빈 문자열 — 아무 말도 하지 않는다. */
   function voiceNote(langCode) {
     if (!speechReady()) return '이 브라우저는 음성 읽기를 지원하지 않습니다. 글자로만 보입니다.';
+
+    /* ★ 언어가 없는 것보다 이쪽을 먼저 말한다. 언어를 바꿔도 해결되지 않고,
+       사람이 할 수 있는 일(다른 브라우저로 열기)이 따로 있기 때문이다. */
+    if (voiceDead) {
+      return '이 화면에서는 소리가 나지 않습니다. 카카오톡 같은 앱 안에서 열면 그렇습니다. ' +
+        '오른쪽 위 ⋮ 또는 ⋯ 를 눌러 "다른 브라우저로 열기" 를 골라 주세요.';
+    }
+
     if (hasVoice(langCode) === false) {
       var l = Store.language(langCode);
       return '이 기기에 ' + ((l && l.name) || langCode) + ' 음성이 없어 한국어로 읽어 드립니다.';
@@ -322,6 +418,7 @@ var UI = (function () {
 
     // 음성 — 노동자 화면 전부가 쓴다
     speak: speak, stopSpeak: stopSpeak, audioButton: audioButton,
-    hasVoice: hasVoice, onVoicesReady: onVoicesReady, voiceNote: voiceNote
+    hasVoice: hasVoice, onVoicesReady: onVoicesReady, voiceNote: voiceNote,
+    voiceBlocked: voiceBlocked, voiceWait: voiceWait
   };
 })();
