@@ -2,7 +2,7 @@
    login.js — 로그인 화면 (index.html)
 
    담당: 공용
-   쓰는 키: session
+   쓰는 키: session · (첫 방문이면 Seed 가 나머지 7개 키를 한 번 채운다)
    읽는 키: accounts
 
    여기서 역할이 갈리고, 그 뒤로는 두 팀의 화면이 서로 만나지 않는다.
@@ -22,6 +22,18 @@
   }
 
   UI.warnIfBlocked();
+
+  /* 처음 여는 브라우저면 예시 데이터를 채운다.
+     서버가 없어 계정도 이 브라우저 안에만 있다. 배포 주소에 QR 로 들어온 노동자에게
+     "예시 데이터 채우기를 누르세요" 라고 할 수는 없으므로, 빈 브라우저면 알아서 채운다.
+
+     ★ fillIfEmpty 는 계정이 하나라도 있으면 아무것도 하지 않는다.
+       fill() 로 바꾸면 담당자가 등록한 사업장이 새로고침마다 예시로 되돌아간다.
+     ★ 로그인 확인 뒤에 둔다. 앞에 두면 세션만 남고 계정이 지워진 상태에서
+       자동 채우기가 그 세션을 되살려, 로그인하지 않은 사람이 화면 안으로 들어간다.
+     ★ 저장이 막힌 브라우저에서는 부르지 않는다. fill() 은 아무것도 저장하지 못한 채
+       true 를 돌려주므로, "채웠습니다" 라고 적어 놓고 목록은 비는 화면이 된다. */
+  var seededNow = Store.available() && Seed.fillIfEmpty();
 
   function showError(msg) {
     var box = $('login-error');
@@ -95,8 +107,11 @@
     if (!window.confirm('이 브라우저에 저장된 내용을 전부 지웁니다.\n되돌릴 수 없습니다. 계속할까요?')) return;
     Store.resetAll();
     renderAccounts();
-    UI.toast('초기화했습니다.');
+    UI.toast('초기화했습니다. 새로고침하면 예시 데이터가 다시 채워집니다.');
   });
+
+  // 조용히 채우면 "내가 넣지도 않았는데 왜 있지" 가 된다. 채웠으면 채웠다고 적는다.
+  if (seededNow) $('seed-auto').hidden = false;
 
   renderAccounts();
 })();
