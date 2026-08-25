@@ -62,7 +62,11 @@ PAGES.forEach(([html, js, login]) => {
     UI.onVoicesReady(() => {});
   } catch (e) { threw = e.message; }
   ok('음성이 없는 환경에서도 예외를 던지지 않는다', threw === null, threw);
-  has('음성을 못 쓰면 그 사실을 말한다', UI.voiceNote('km'), '음성 읽기를 지원하지 않습니다');
+  /* ★ jsdom 에는 speechSynthesis 가 아예 없다 — "기능이 없는 브라우저" 와 같은 상태다.
+     문제만 알리고 끝내지 않는다. 빠져나갈 길을 함께 준다. */
+  has('음성을 못 쓰면 그 사실을 말한다', UI.voiceNote('km'), '소리가 나지 않습니다');
+  has('★ 빠져나갈 길까지 알려 준다', UI.voiceNote('km'), '다른 브라우저로 열기');
+  eq('음성을 못 쓰는 상태로 본다', UI.voiceBlocked(), true);
 }
 
 /* -------------------------------------------------------------------
@@ -234,6 +238,20 @@ function bootWithSpeech(mode) {
       win.SpeechSynthesisUtterance = function (text) { this.text = text; };
     },
   });
+}
+
+{
+  /* ★ speechSynthesis 가 아예 없는 브라우저.
+     "있다고 대답해 놓고 안 내는" 경우만 챙기고 이쪽을 빼면,
+     글자를 못 읽는 사람은 여기서 또 조용히 아무것도 못 받는다.
+     (아무것도 주입하지 않는다 — jsdom 이 그 상태다) */
+  const t = boot('worker/home.html', { login: 'W-4821-07', page: 'worker/home.js' });
+  eq('★ 음성 기능이 없으면 처음부터 못 쓰는 것으로 본다', t.win.UI.voiceBlocked(), true);
+  const btn = t.win.document.querySelector('.btn-audio');
+  ok('노동자 홈에 음성 버튼이 있다', !!btn);
+  eq('★ 버튼이 처음부터 음소거 그림이다', btn ? btn.textContent : '', '🔇');
+  ok('★ 색만으로 구분하지 않는다', btn ? btn.classList.contains('is-mute') : false);
+  has('★ 화면에도 빠져나갈 길을 적는다', t.win.UI.voiceNote('km'), '다른 브라우저로 열기');
 }
 
 {

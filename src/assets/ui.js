@@ -276,8 +276,14 @@ var UI = (function () {
     notifyVoice();
   }
 
-  /* 이 브라우저가 소리를 못 내는 것이 확인됐는가 */
-  function voiceBlocked() { return voiceDead; }
+  /* 이 화면에서 음성이 나가지 못하는가.
+     ★ 두 경우를 한 판정으로 모은다 —
+       ① speechSynthesis 가 아예 없다 (기능 자체가 없는 브라우저)
+       ② 있다고 대답해 놓고 소리를 안 낸다 (카카오톡 안 브라우저)
+     쓰는 사람 입장에서는 똑같이 "눌러도 아무 일이 없다" 이므로,
+     화면이 하는 말도 버튼 그림도 같아야 한다. 한쪽만 챙기면 나머지 한쪽에서
+     글자를 못 읽는 사람이 또 조용히 아무것도 못 받는다. */
+  function voiceBlocked() { return !speechReady() || voiceDead; }
 
   /* 이 기기에 그 언어 음성이 실제로 있는지.
      getVoices() 는 첫 호출에서 빈 배열을 주는 브라우저가 있다(목록을 비동기로 읽는다).
@@ -376,23 +382,25 @@ var UI = (function () {
      ★ 색만 바꾸지 않는다 — 그림(🔊 → 🔇)이 함께 바뀌고, 옆 안내 줄에 이유가 글로 남는다.
        흑백으로 봐도, 글자를 못 읽어도 뜻이 남아야 한다. */
   function paintAudioButtons() {
+    var off = voiceBlocked();
     for (var i = 0; i < audioButtons.length; i++) {
       var a = audioButtons[i];
-      a.ico.textContent = voiceDead ? '🔇' : '🔊';
+      a.ico.textContent = off ? '🔇' : '🔊';
       a.btn.setAttribute('aria-label',
-        voiceDead ? a.label + ' — 이 브라우저에서는 소리가 나지 않습니다' : a.label);
-      if (voiceDead) a.btn.classList.add('is-mute');
+        off ? a.label + ' — 이 브라우저에서는 소리가 나지 않습니다' : a.label);
+      if (off) a.btn.classList.add('is-mute');
       else a.btn.classList.remove('is-mute');
     }
   }
 
   /* 화면에 적을 한 줄. 문제가 없으면 빈 문자열 — 아무 말도 하지 않는다. */
   function voiceNote(langCode) {
-    if (!speechReady()) return '이 브라우저는 음성 읽기를 지원하지 않습니다. 글자로만 보입니다.';
-
     /* ★ 언어가 없는 것보다 이쪽을 먼저 말한다. 언어를 바꿔도 해결되지 않고,
-       사람이 할 수 있는 일(다른 브라우저로 열기)이 따로 있기 때문이다. */
-    if (voiceDead) {
+       사람이 할 수 있는 일(다른 브라우저로 열기)이 따로 있기 때문이다.
+
+       ★ 문제만 알려 주고 빠져나갈 길을 안 주면 알려 준 것이 아니다.
+         "지원하지 않습니다" 로 끝내면 글자를 못 읽는 사람은 거기서 끝난다. */
+    if (voiceBlocked()) {
       return '이 화면에서는 소리가 나지 않습니다. 카카오톡 같은 앱 안에서 열면 그렇습니다. ' +
         '오른쪽 위 ⋮ 또는 ⋯ 를 눌러 "다른 브라우저로 열기" 를 골라 주세요.';
     }
