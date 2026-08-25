@@ -23,6 +23,7 @@
 | 회귀 검사 | **9개 묶음 767건 전부 통과** (`tests/`) |
 | 작업대 | 비어 있음 (커밋 안 된 변경 없음) |
 | **배포 주소** | **https://2026-ax-ton.vercel.app** — 살아 있습니다 |
+| **팀원용 전체 설명** | [`08-overview.md`](08-overview.md) — 프로젝트를 처음 보는 사람에게 이것 하나만 주면 됩니다 |
 | **배포 방식** | GitHub 연결. **`main` 에 올라가면 자동 배포**됩니다 (아래 "배포한 뒤 달라진 것") |
 
 > **jsdom 은 기기마다 따로 깔아야 합니다.** 저장소 안에는 없습니다.
@@ -373,6 +374,14 @@ cd <저장소> && NODE_PATH=~/jsdom-box/node_modules node tests/run-all.js
   - **됐는지**: 버튼을 누르면 글자가 커지고 새로고침해도 유지된다
     (`localStorage` 를 직접 부르지 말고 `Store` 에 키를 하나 더하세요)
 
+- [ ] **B5. 화면 안 "여기부터 채우시면 됩니다" 칸 정리**
+  - **어디**: 골격 8화면의 `.todo` 구역 (`worker/home.html` 등)
+  - **무엇**: 이미 끝난 것을 지웁니다 — **문항 다국어(A1) · 언어별 판정(A2) ·
+    교육 기한(B1)** 이 아직 "할 일" 로 적혀 있습니다. 팀 시절의 `P1~P4` 표기도 남아 있습니다
+  - **왜**: 처음 보는 사람이 그 칸을 믿고 **이미 있는 기능을 또 만들려고** 합니다.
+    문서(`07`)와 화면이 서로 다른 말을 하면 화면 쪽을 믿게 됩니다
+  - **됐는지**: 여덟 화면의 그 칸에 남은 것이 `07-next-tasks.md` 의 미완료 항목과 어긋나지 않는다
+
 - [ ] **B4. 목업 3건 대조**
   - **어디**: `docs/mockups/02-home.html` ↔ `src/worker/home.html` ·
     `12-admin-dashboard.html` ↔ `admin/dashboard.html` ·
@@ -564,6 +573,7 @@ cd <저장소> && NODE_PATH=~/jsdom-box/node_modules node tests/run-all.js
 
 | 무엇 | 어디 |
 |---|---|
+| **프로젝트 전체 설명 (팀원에게 줄 것)** | [`08-overview.md`](08-overview.md) |
 | 무엇이 먼저이고 무엇을 빼도 되는지 | [`06-feature-priority.md`](06-feature-priority.md) |
 | 폴더 · 데이터 · 화면 전체 지도 | [`01-project-map.md`](01-project-map.md) |
 | 옮겨 오면 되는 기획 시안 | [`mockups/README.md`](mockups/README.md) |
