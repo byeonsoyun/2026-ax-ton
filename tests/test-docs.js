@@ -64,8 +64,10 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
   ok('P2·P3·P4 절이 사라졌다', !/\n# P[234] /.test(t));
 
   // 할 일마다 "어디" 와 "됐는지" 가 있는가 — 없으면 실행할 수 없다
+  // 남은 개수는 일을 끝낼수록 줄어드는 게 맞다. 여기서 보는 것은 개수가 아니라
+  // "할 일이 실행 가능한 목록으로 있는가" 다. V1·V2 를 끝내면서 15 → 8 로 낮췄다.
   const boxes = (t.match(/- \[ \]/g) || []).length;
-  ok('할 일이 체크박스로 있다 (' + boxes + '개)', boxes >= 15, String(boxes));
+  ok('할 일이 체크박스로 있다 (' + boxes + '개)', boxes >= 8, String(boxes));
 
   const wheres = (t.match(/\*\*어디\*\*:/g) || []).length;
   const dones = (t.match(/\*\*됐는지\*\*:/g) || []).length;
