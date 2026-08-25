@@ -10,7 +10,8 @@
 
 | 상황 | 읽을 것 |
 |---|---|
-| **나 뭐 하면 되죠?** | [07-next-tasks.md](07-next-tasks.md) — 내 포지션의 다음 할 일 ★ |
+| **이 프로젝트가 뭔지 처음부터 끝까지 알고 싶습니다** | [08-overview.md](08-overview.md) — **전체 설명 한 문서** ★ |
+| **나 뭐 하면 되죠?** | [07-next-tasks.md](07-next-tasks.md) — 다음 할 일 ★ |
 | **오늘 처음입니다** | [00-getting-started.md](00-getting-started.md) — 설치부터 첫 화면까지 |
 | **화면별 요구사항** | [02-positions.md](02-positions.md) — 팀 시절 기록이지만 내용은 유효 |
 | **이 프로젝트가 뭐죠?** | [01-project-map.md](01-project-map.md) — 폴더 · 데이터 · 화면 전체 지도 |
@@ -32,6 +33,10 @@
 
 끝입니다. 브랜치를 보고 내 포지션을 알아내서, 지금 상태와 다음 할 일을 알려 줍니다.
 문서를 미리 읽지 않아도 됩니다.
+
+**팀원에게 이 프로젝트를 설명해야 하면** → [08-overview.md](08-overview.md) 하나면 됩니다.
+무엇을 만들었고 · 무엇이 되고 안 되고 · 데이터와 배포가 어떻게 돌아가고 ·
+서버를 붙이면 어떻게 되는지까지 전부 들어 있습니다.
 
 더 알고 싶으면 — [07-next-tasks.md](07-next-tasks.md) 할 일 목록 ·
 [06-feature-priority.md](06-feature-priority.md) 우선순위 3층 ·
