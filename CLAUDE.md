@@ -248,6 +248,12 @@ Store.progress.update(function (list) {        // 읽기 → 고치기 → 저�
 - **배포하고 싶을 때만 `develop` → `main` 을 앞으로 감기(`--ff-only`)로 넘깁니다.**
   `main` 에 올라가는 순간 배포 주소가 그것으로 바뀝니다.
   `main` 에서 **직접 작업하거나 작업 커밋을 올리는 것은 여전히 금지**입니다
+- **★ push 순서는 `main` 이 먼저입니다.** `develop` 을 먼저 올리면 Vercel 이
+  그 커밋을 이미 빌드한 것으로 보고 **`main` 배포를 건너뜁니다.**
+  그러면 push 는 성공했는데 배포 주소만 옛날 것으로 남습니다 (2026-08-25 에 겪음).
+  `git push origin main` → `git push origin develop` → `git push origin feature/byeonsoyun` 순서로 하세요
+- **배포한 뒤에는 주소를 실제로 열어서 확인하세요.** push 가 됐다고 배포가 된 것이
+  아닙니다. `curl -s <주소>/assets/ui.js | grep <이번에 넣은 함수 이름>` 이면 충분합니다
 - `git push --force`, `git reset --hard` 는 사용자가 명시적으로 요청하지 않는 한 쓰지 마세요
 - `--no-verify` 로 훅을 건너뛰지 마세요
 
