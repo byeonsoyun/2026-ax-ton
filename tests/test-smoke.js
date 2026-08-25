@@ -112,6 +112,45 @@ PAGES.forEach(([html, js, login]) => {
 }
 
 /* -------------------------------------------------------------------
+   로그인 화면 — 첫 방문에 예시 데이터를 자동으로 채우는가 (V1)
+
+   배포 주소에 QR 로 들어온 사람은 "예시 데이터 채우기" 버튼을 누를 수 없다.
+   그렇다고 쓰던 데이터를 덮어쓰면 담당자가 등록한 사업장이 날아간다.
+   두 가지가 동시에 참이어야 해서 둘 다 본다.
+   ------------------------------------------------------------------- */
+{
+  // 빈 브라우저 — 저장된 것이 하나도 없는 상태로 연다
+  const t = boot('index.html', { seed: false, page: 'assets/login.js' });
+
+  ok('index.html 오류 0건', t.errors.length === 0, t.errors.join(' | '));
+  eq('★ 첫 방문이면 계정이 채워진다', t.win.Store.accounts.load().length, 4);
+  eq('시연 계정 목록에 4개가 그려진다',
+    t.$('demo-accounts').querySelectorAll('li.demo-account').length, 4);
+  eq('★ 채웠으면 채웠다고 화면에 적는다', t.$('seed-auto').hidden, false);
+  ok('아직 로그인 화면에 머문다 (자동으로 넘어가지 않는다)',
+    t.nav.length === 0, t.nav.join(' | '));
+
+  // 다른 키도 함께 채워졌는가 — 계정만 있고 사업장이 없으면 로그인 직후 빈 화면이다
+  eq('사업장도 함께 채워진다', t.win.Store.setup.load().site.name, '대성정밀');
+  eq('안전 문구도 함께 채워진다', t.win.Store.library.load().length, 6);
+}
+
+{
+  /* 이미 쓰던 브라우저 — 담당자가 사업장 이름을 고쳐 둔 상태.
+     ★ 여기서 덮어쓰면 새로고침할 때마다 담당자의 등록이 예시로 되돌아간다. */
+  const t = boot('index.html', {
+    page: 'assets/login.js',
+    before: (win) => {
+      win.Store.setup.update((s) => { s.site.name = '한빛금속'; });
+    },
+  });
+
+  eq('★ 쓰던 데이터를 덮어쓰지 않는다', t.win.Store.setup.load().site.name, '한빛금속');
+  eq('덮어쓰지 않았으면 채웠다고 말하지도 않는다', t.$('seed-auto').hidden, true);
+  eq('계정은 그대로 4개', t.win.Store.accounts.load().length, 4);
+}
+
+/* -------------------------------------------------------------------
    외부 요청 0건 — src 전체
    ------------------------------------------------------------------- */
 {
