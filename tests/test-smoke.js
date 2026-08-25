@@ -193,4 +193,108 @@ PAGES.forEach(([html, js, login]) => {
   ok('store.js 밖에서 localStorage 를 직접 부르지 않는다', direct.length === 0, direct.join(', '));
 }
 
-report('회귀 — 화면 11개 · 데이터 계약 · 코드 규칙');
+/* -------------------------------------------------------------------
+   ★ 음성이 조용히 실패하지 않는가
+
+   2026-08-25 폰 확인에서 나온 것 — 카카오톡 안에서 열리는 브라우저는
+   speechSynthesis 가 있다고 대답하고, 목소리 목록도 주고, speak() 도 받아 놓고
+   아무 소리도 내지 않는다. 그런데 현장에서 교육 링크를 보내는 가장 흔한 방법이
+   카톡이다. 조용히 실패하면 글자를 못 읽는 사람은 아무것도 못 받은 채
+   이해도 검증을 통과한다.
+
+   그래서 브라우저 이름을 넘겨짚지 않고 실제 결과를 본다. 여기서 그 세 가지
+   브라우저를 흉내 내서, 각각에 대해 화면이 무엇을 말하는지 본다.
+   ------------------------------------------------------------------- */
+
+/* mode: 'dead'  아무 신호도 안 준다 (카카오톡 안 브라우저)
+         'alive' 정상으로 읽는다 (삼성 인터넷·크롬)
+         'error' 못 읽겠다고 대답한다 */
+function fakeSpeech(mode) {
+  return {
+    spoken: [],
+    cancel() {},
+    getVoices() { return [{ lang: 'ko-KR' }, { lang: 'km-KH' }]; },
+    addEventListener() {},
+    removeEventListener() {},
+    speak(u) {
+      this.spoken.push(u);
+      if (mode === 'alive') { if (u.onstart) u.onstart(); if (u.onend) u.onend(); }
+      if (mode === 'error') { if (u.onerror) u.onerror({ error: 'synthesis-failed' }); }
+      // 'dead' 는 아무것도 하지 않는다 — 그게 이 검사의 핵심이다
+    },
+  };
+}
+
+function bootWithSpeech(mode) {
+  return boot('worker/home.html', {
+    login: 'W-4821-07',
+    page: 'worker/home.js',
+    before: (win) => {
+      win.speechSynthesis = fakeSpeech(mode);
+      win.SpeechSynthesisUtterance = function (text) { this.text = text; };
+    },
+  });
+}
+
+{
+  // 정상으로 읽는 브라우저에서는 아무 경고도 하지 않는다
+  const t = bootWithSpeech('alive');
+  t.win.UI.voiceWait(10);
+  t.win.document.body.click();
+  t.win.UI.speak({ text: '시험', lang: 'km' });
+  eq('정상 브라우저는 문제 없음으로 본다', t.win.UI.voiceBlocked(), false);
+  eq('정상 브라우저에서는 안내를 띄우지 않는다', t.win.UI.voiceNote('km'), '');
+}
+
+{
+  // 못 읽겠다고 대답하는 브라우저 — 바로 알아챈다
+  const t = bootWithSpeech('error');
+  t.win.UI.voiceWait(10);
+  t.win.document.body.click();
+  t.win.UI.speak({ text: '시험', lang: 'km' });
+  eq('★ 못 읽겠다고 하면 바로 알아챈다', t.win.UI.voiceBlocked(), true);
+  has('무엇을 하면 되는지 알려 준다', t.win.UI.voiceNote('km'), '다른 브라우저로 열기');
+}
+
+{
+  /* 저절로 읽는 것은 판정하지 않는다.
+     멀쩡한 브라우저도 화면이 뜨자마자 나는 소리는 막는다.
+     그것까지 "이 브라우저는 고장" 이라고 적으면 거짓말이 된다. */
+  const t = bootWithSpeech('dead');
+  t.win.UI.voiceWait(10);
+  t.win.UI.speak({ text: '시험', lang: 'km' });   // 아무도 누르지 않았다
+  eq('★ 누르지도 않았는데 고장이라고 하지 않는다', t.win.UI.voiceBlocked(), false);
+}
+
+/* 아무 신호도 안 주는 브라우저 — 기다려 봐야 알 수 있다.
+   기다림이 필요해서 이 묶음의 마무리(report)를 여기 안에서 한다. */
+{
+  const t = bootWithSpeech('dead');
+  t.win.UI.voiceWait(10);
+
+  const before = t.win.document.querySelector('.btn-audio');
+  ok('노동자 홈에 음성 버튼이 있다', !!before);
+  eq('처음에는 스피커 그림이다', before ? before.textContent : '', '🔊');
+  eq('누르기 전에는 고장이 아니다', t.win.UI.voiceBlocked(), false);
+
+  if (before) before.click();          // 사람이 손으로 눌렀다
+
+  setTimeout(() => {
+    eq('★ 소리가 안 나면 알아챈다 (카카오톡 안 브라우저)', t.win.UI.voiceBlocked(), true);
+    has('★ 조용히 넘어가지 않고 화면에 적는다', t.win.UI.voiceNote('km'), '소리가 나지 않습니다');
+    has('★ 무엇을 하면 되는지 알려 준다', t.win.UI.voiceNote('km'), '다른 브라우저로 열기');
+
+    /* ★ 글자를 못 읽는 사람에게 문장은 닿지 않는다. 그림이 바뀌어야 한다. */
+    const after = t.win.document.querySelector('.btn-audio');
+    eq('★ 버튼 그림이 음소거로 바뀐다', after ? after.textContent : '', '🔇');
+    ok('색만으로 구분하지 않는다 (표시용 class 도 붙는다)',
+      after ? after.classList.contains('is-mute') : false);
+
+    // 화면의 안내 줄이 실제로 채워졌는가 — 화면 코드를 손대지 않고도 따라와야 한다
+    const note = t.$('voicenote');
+    ok('★ 화면 안내 줄이 저절로 채워진다', note && !note.hidden && note.textContent !== '',
+      JSON.stringify(note && note.textContent));
+
+    report('회귀 — 화면 11개 · 데이터 계약 · 코드 규칙 · 음성 실패 감지');
+  }, 80);
+}
