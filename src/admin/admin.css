@@ -505,3 +505,22 @@ table.data td .chips { margin: 0; }
 /* 막힌 항목 배지가 표 안에서 줄바꿈되게 */
 table.data .chips { gap: 4px; }
 table.data .chips .badge { font-size: .68em; }
+
+/* -------------------------------------------------------------------
+   기간 걸러 보기 (C2)
+
+   ★ 무엇이 빠졌는지 적는 줄이다. 눈에 안 띄면 적은 뜻이 없다.
+   ------------------------------------------------------------------- */
+
+.range-note {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--line);
+  font-size: .88em;
+  line-height: 1.5;
+  color: var(--ink-2);
+  background: #fafbfc;
+  border-radius: 0 8px 8px 0;
+}
+
+.range-note:empty { display: none; }

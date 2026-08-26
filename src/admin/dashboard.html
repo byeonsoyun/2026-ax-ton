@@ -48,7 +48,16 @@
         <h2 id="t-status">이수 현황</h2>
         <p class="why">전체 그림입니다. 무엇을 고쳐야 하는지는 아래 취약 항목에서 나옵니다.</p>
       </div>
+      <div class="btn-row" role="group" aria-label="기간 걸러 보기">
+        <button class="btn-sm" type="button" id="range-quarter">이번 분기</button>
+        <button class="btn-sm" type="button" id="range-year">올해</button>
+        <button class="btn-sm" type="button" id="range-all">전체</button>
+      </div>
     </div>
+
+    <!-- ★ 무엇이 빠져 있는지 적는다. 조용히 줄이면 "전부 본 것" 으로 읽힌다. -->
+    <p class="range-note" id="range-note"></p>
+
     <dl class="kpi-row small" id="status-tiles"></dl>
   </section>
 

@@ -238,4 +238,148 @@ function open(opts = {}) {
     /if \(r\) r\.status = status;/.test(js), '신고 쓰기가 status 외의 것을 건드립니다');
 }
 
+
+/* =================================================================
+   기능6 대시보드 — 기간 걸러 보기 (C2)
+
+   ★ 날짜를 "지금" 기준으로 만든다. 예시 데이터의 2026-08 을 그대로 쓰면
+     해가 바뀌는 순간 검사가 깨진다 — 일을 안 해도 깨지는 검사가 된다.
+   ================================================================= */
+
+/* 이번 분기 안의 날짜 / 작년 날짜를 만든다 */
+function thisQuarterISO() {
+  const n = new Date();
+  return new Date(n.getFullYear(), Math.floor(n.getMonth() / 3) * 3, 1, 12).toISOString();
+}
+function lastYearISO() {
+  const n = new Date();
+  return new Date(n.getFullYear() - 1, 5, 1, 12).toISOString();
+}
+
+{
+  /* c-press 는 이번 분기, c-paint 는 작년으로 옮긴다 */
+  const t = open({
+    before(win) {
+      win.Store.courses.update((list) => {
+        list.forEach((c) => {
+          if (c.id === 'c-press') c.createdAt = thisQuarterISO();
+          if (c.id === 'c-paint') c.createdAt = lastYearISO();
+        });
+      });
+    },
+  });
+  ok('오류 없이 뜬다', t.errors.length === 0, t.errors.join(' | '));
+
+  const tiles = () => [...t.$('status-tiles').querySelectorAll('.kpi')]
+    .map((k) => text(k.querySelector('dt')) + '=' + text(k.querySelector('dd'))).join(' ');
+
+  /* --- 기본은 전체다 — 숨기지 않는 쪽 --- */
+  eq('★ 처음에는 전체를 본다', t.$('range-all').getAttribute('aria-pressed'), 'true');
+  has('전부 본다고 적는다', text(t.$('range-note')), '전부를 봅니다');
+  const allTiles = tiles();
+
+  /* --- 이번 분기 --- */
+  click(t.win, t.$('range-quarter'));
+  eq('고른 것이 눌린 상태로 보인다', t.$('range-quarter').getAttribute('aria-pressed'), 'true');
+  eq('전체는 눌리지 않은 상태', t.$('range-all').getAttribute('aria-pressed'), 'false');
+
+  const qTiles = tiles();
+  ok('★ 범위를 바꾸면 타일이 함께 바뀐다', qTiles !== allTiles, allTiles + '  vs  ' + qTiles);
+
+  /* ★ 조용히 줄이지 않는다 */
+  has('★ 무엇이 빠졌는지 적는다', text(t.$('range-note')), '빠져 있습니다');
+  has('빠진 건수를 적는다', text(t.$('range-note')), '1건');
+
+  /* --- 올해 --- */
+  click(t.win, t.$('range-year'));
+  has('올해도 작년 것은 빠진다', text(t.$('range-note')), '빠져 있습니다');
+
+  /* --- 전체로 돌아오면 원래대로 --- */
+  click(t.win, t.$('range-all'));
+  eq('★ 전체로 돌아오면 원래 숫자다', tiles(), allTiles);
+
+  /* ★ 요구사항은 "타일과 정답률 막대가 함께 바뀐다" 다.
+       타일만 보고 넘어가면 막대가 옛 범위에 머물러 있어도 모른다 —
+       담당자는 지난 분기 취약 항목을 이번 분기 것으로 읽게 된다. */
+  const bars = () => [...t.$('weak-bars').querySelectorAll('.bar-item')]
+    .map((b) => text(b));
+
+  click(t.win, t.$('range-all'));
+  const allBars = bars();
+  ok('전체에서는 두 교육의 항목이 다 나온다', allBars.length >= 3, JSON.stringify(allBars));
+  ok('작년 교육(도장·인도네시아어) 항목이 보인다',
+    allBars.join(' ').includes('인도네시아어'), JSON.stringify(allBars));
+
+  click(t.win, t.$('range-quarter'));
+  const qBars = bars();
+  ok('★ 범위를 바꾸면 막대도 함께 바뀐다',
+    qBars.length < allBars.length, JSON.stringify(allBars) + ' → ' + JSON.stringify(qBars));
+  ok('★ 범위 밖 교육의 항목은 막대에서 빠진다',
+    !qBars.join(' ').includes('인도네시아어'), JSON.stringify(qBars));
+}
+
+{
+  /* ★ 미수강자가 사라지면 안 된다.
+       발급일이 아니라 "수강한 날" 로 걸렀으면 아무것도 안 한 사람은
+       날짜가 없어서 통째로 빠지고, 이수율이 저절로 올라간다. */
+  const t = open({
+    before(win) {
+      win.Store.courses.update((list) => {
+        list.forEach((c) => { c.createdAt = thisQuarterISO(); });
+      });
+      // 기록을 전부 지운다 — 아무도 수강하지 않은 상태
+      win.Store.progress.save([]);
+    },
+  });
+
+  click(t.win, t.$('range-quarter'));
+  const tiles = [...t.$('status-tiles').querySelectorAll('.kpi')]
+    .map((k) => text(k.querySelector('dt')) + '=' + text(k.querySelector('dd'))).join(' ');
+  ok('★ 아무도 수강 안 해도 미수강자가 그대로 잡힌다', /미수강=[1-9]/.test(tiles), tiles);
+  ok('★ 이수는 0 이다 (숨겨서 100% 가 되지 않는다)', /이수=0/.test(tiles), tiles);
+}
+
+{
+  /* 날짜가 없는 교육은 숨기지 않는다 —
+     기록이 부실할수록 화면이 깨끗해지면 안 된다 */
+  const t = open({
+    before(win) {
+      win.Store.courses.update((list) => {
+        list.forEach((c) => { delete c.createdAt; });
+      });
+    },
+  });
+  click(t.win, t.$('range-quarter'));
+  has('★ 날짜 없는 교육도 그대로 본다', text(t.$('range-note')), '전부를 봅니다');
+}
+
+{
+  /* ★ 위험요소 신고는 기간을 따르지 않는다.
+       조치가 안 끝난 신고는 언제 들어온 것이든 계속 보여야 한다.
+       지난 분기 긴급 신고가 범위 밖이라고 사라지면 그게 사고다.
+
+     ★ 예시 신고는 마침 이번 분기 안에 있다. 그대로 두면 걸러도 티가 안 나서
+       검사가 아무것도 지키지 못한다 — 하나를 작년으로 옮겨 둔다. */
+  const t = open({
+    before(win) {
+      win.Store.courses.update((list) => {
+        list.forEach((c) => { c.createdAt = lastYearISO(); });
+      });
+      win.Store.reports.update((list) => {
+        if (list[0]) {
+          list[0].createdAt = lastYearISO();
+          list[0].status = 'urgent';       // 오래됐고 아직 긴급인 신고
+        }
+      });
+    },
+  });
+
+  const before = text(t.$('report-queue'));
+  ok('작년 긴급 신고가 목록에 있다', before.includes('긴급'), before.slice(0, 120));
+
+  click(t.win, t.$('range-quarter'));
+  eq('★ 기간을 좁혀도 신고 목록은 그대로다', text(t.$('report-queue')), before);
+  ok('★ 작년 긴급 신고가 사라지지 않는다',
+    text(t.$('report-queue')).includes('긴급'), text(t.$('report-queue')).slice(0, 120));
+}
 report('기능6 담당자 대시보드');
