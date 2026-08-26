@@ -70,7 +70,7 @@ PAGES.forEach(([html, js, login]) => {
 }
 
 /* -------------------------------------------------------------------
-   seed.js 데이터 계약 — 8개 키의 모양이 유지되는지
+   seed.js 데이터 계약 — 키의 모양이 유지되는지
    ------------------------------------------------------------------- */
 {
   const t = boot('worker/learn.html', { login: 'W-4821-07' });
@@ -83,6 +83,28 @@ PAGES.forEach(([html, js, login]) => {
   eq('수강 이력 3건', S.progress.load().length, 3);
   eq('신고 2건', S.reports.load().length, 2);
   eq('게시글 2건', S.posts.load().length, 2);
+
+  /* 9·10번째 키 (덩어리 2에서 늘렸다) */
+  eq('재교육 지시 1건', S.orders.load().length, 1);
+  const order = S.orders.load()[0];
+  ok('지시가 사람과 교육을 가리킨다',
+    !!order.workerId && !!order.courseId, JSON.stringify(order));
+  ok('★ 지시에 "완료" 필드가 없다 — 해소는 progress 로 판정한다',
+    !('doneAt' in order) && !('done' in order), JSON.stringify(order));
+
+  /* ★ prefs 는 기기 설정이라 예시 데이터가 건드리지 않는다.
+       채운다고 저시력 사용자가 키워 놓은 글자가 되돌아가면 안 된다. */
+  eq('글자 크기 기본값', S.prefs.load().fontScale, 'normal');
+  ok('글자 크기 후보가 셋', S.FONT_SCALES.length === 3, JSON.stringify(S.FONT_SCALES));
+
+  S.prefs.save({ fontScale: 'large' });
+  S.prefs.save({ fontScale: 'large' });
+  t.win.Seed.fill();
+  eq('★ 예시 데이터를 채워도 글자 크기는 그대로다', S.prefs.load().fontScale, 'large');
+
+  ok('★ 이상한 값은 기본값으로 되돌린다',
+    (S.prefs.save({ fontScale: 'huge' }), S.prefs.load().fontScale === 'normal'),
+    S.prefs.load().fontScale);
 
   // progress 의 기존 필드가 그대로인지 (P3·P4 가 읽는 모양)
   const rows = S.progress.load();

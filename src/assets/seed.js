@@ -256,6 +256,18 @@ var Seed = (function () {
       status: 'received', createdAt: '2026-08-13T07:15:00.000Z' }
   ];
 
+
+  /* 재교육 지시 (D2) — W-4821-11 은 도장 교육을 50점으로 통과하지 못했다.
+
+     ★ 지시는 "이 사람이 못했다" 가 아니라 "이 교육을 다시 듣게 한다" 는 뜻이다.
+       그래서 note 도 사람이 아니라 내용을 가리킨다.
+     ★ 해소 여부는 여기 적지 않는다 — 지시를 내린 뒤 그 교육을 통과했는지를
+       progress 로 판정한다. 진실이 두 곳이면 언젠가 어긋난다. */
+  var ORDERS = [
+    { id: 'or-1', workerId: 'W-4821-11', courseId: 'c-paint',
+      note: '환기팬이 멈췄을 때 무엇을 하는지 부분을 다시 들어 주세요.',
+      at: '2026-08-12T00:30:00.000Z', by: 'kim@daesung.co.kr', canceledAt: null }
+  ];
   var POSTS = [
     { id: 'po-1', title: '프레스 교대 시간 바뀐 것 맞나요?', body: '오늘부터 30분 당겨진다고 들었습니다.',
       author: 'W-4821-07', anonymous: false, createdAt: '2026-08-14T02:00:00.000Z',
@@ -274,6 +286,11 @@ var Seed = (function () {
     Store.progress.save(PROGRESS);
     Store.reports.save(REPORTS);
     Store.posts.save(POSTS);
+    Store.orders.save(ORDERS);
+
+    /* ★ prefs(글자 크기)는 건드리지 않는다.
+       예시 데이터를 채운다고 저시력 사용자가 키워 놓은 글자가 원래대로
+       돌아가면, 그 사람은 화면을 다시 못 읽는다. 기기 설정은 예시가 아니다. */
     return true;
   }
 

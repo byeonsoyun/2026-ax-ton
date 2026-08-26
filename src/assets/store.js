@@ -241,7 +241,44 @@ var Store = (function () {
         { id, title, body, author, anonymous, createdAt, comments: [] } */
   var posts = listStore('posts');
 
-  var ALL = [accounts, session, setup, library, courses, progress, reports, posts];
+  /* 9. prefs — 이 브라우저의 보기 설정 (B3 글자 크기)
+
+        { fontScale: 'small' | 'normal' | 'large' }
+
+        ★ 계정이 아니라 기기에 딸린다. 현장에서는 한 대의 폰을 여러 사람이
+          돌려 쓰기도 하고, 글자 크기는 "이 화면이 지금 잘 보이는가" 의 문제다.
+          accounts 에 넣으면 로그인해야 글자가 커지는데, 로그인 화면 글자가
+          안 보이는 사람은 거기서 막힌다.
+
+        ★ 목록이 아니라 값 하나다. 늘어날 설정이 생기면 여기 필드를 더한다. */
+  var FONT_SCALES = ['small', 'normal', 'large'];
+
+  var prefs = makeStore('prefs',
+    function () { return { fontScale: 'normal' }; },
+    function (d) {
+      d = obj(d);
+      return {
+        fontScale: FONT_SCALES.indexOf(d.fontScale) === -1 ? 'normal' : d.fontScale
+      };
+    });
+
+  /* 10. orders — 담당자가 내린 재교육 지시 (D2)
+
+        [ { id, workerId, courseId, note, at, by, canceledAt } ]
+
+        ★ 해소됐는지는 여기 적지 않는다. progress 를 보고 판정한다 —
+          지시를 내린 뒤(at) 그 교육을 통과했으면 해소된 것이다.
+          "완료" 를 따로 저장하면 진실이 두 곳이 되고, 언젠가 어긋난다.
+
+        ★ 이 기록으로 사람을 세지 않는다.
+          "이 사람 재교육 3회" 는 인사 평가 자료다. 대시보드가 개인별 점수를
+          인사·평가 목적으로 내보내지 않는다는 원칙과 같은 이유로,
+          누적 횟수를 세거나 사람을 줄 세우는 화면을 만들지 않는다.
+          지시는 "이 교육을 다시 듣게 한다" 는 뜻이지 "이 사람이 못했다" 가 아니다. */
+  var orders = listStore('orders');
+
+  var ALL = [accounts, session, setup, library, courses, progress, reports, posts,
+             prefs, orders];
 
   /* -----------------------------------------------------------------
      전체 내보내기 / 불러오기 / 초기화
@@ -449,6 +486,7 @@ var Store = (function () {
     // 저장소 8개
     accounts: accounts, session: session, setup: setup, library: library,
     courses: courses, progress: progress, reports: reports, posts: posts,
+    prefs: prefs, orders: orders, FONT_SCALES: FONT_SCALES,
 
     // 공통
     uid: uid, available: available,
