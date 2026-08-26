@@ -1145,3 +1145,65 @@
 
   a[href]::after { content: ""; }
 }
+
+/* -------------------------------------------------------------------
+   문항별 복기 (C4) — 미통과한 교육 카드 안에 붙는다
+
+   ★ 성적표처럼 보이면 안 된다. 빨간 테두리로 가두지 않고,
+     왼쪽 선 하나로 "이 교육에 딸린 것" 이라는 것만 표시한다.
+   ------------------------------------------------------------------- */
+
+.stuck {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-left: 4px solid var(--stop);
+  border-radius: 0 10px 10px 0;
+  background: var(--stop-soft);
+}
+
+.stuck-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.stuck-title { font-size: .95em; font-weight: 800; color: var(--ink); }
+
+/* 장갑 낀 손으로 누른다 — 노동자 화면의 누르는 곳은 전부 60px */
+.stuck .say {
+  min-height: var(--tap-min);
+  padding: 0 14px;
+  background: var(--surface);
+}
+
+.stuck-list { list-style: none; margin: 0; padding: 0; }
+
+.stuck-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.stuck-list li + li { border-top: 1px solid #f0d6d2; }
+
+.stuck-list .ico { font-size: 1.6em; flex: 0 0 auto; }
+.stuck-list .body { flex: 1 1 auto; min-width: 0; }
+.stuck-list .body strong { display: block; font-size: .98em; }
+
+.stuck-list .body .meta {
+  margin: 2px 0 0;
+  font-size: .88em;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.stuck-why {
+  margin: 8px 0 0;
+  font-size: .85em;
+  line-height: 1.5;
+  color: var(--ink-2);
+}

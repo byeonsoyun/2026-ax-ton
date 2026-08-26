@@ -279,12 +279,25 @@ function open(page, opts = {}) {
   t.win.print = () => { printed++; };
   click(t.win, t.$('btn-print'));
   eq('브라우저 인쇄를 부른다', printed, 1);
+  /* 쓰는 키 — 증빙에 손댈 수 있는 경로가 없어야 한다
 
-  // 쓰는 키가 없다
+     ★ 원래 이 검사는 "아무것도 쓰지 않는다" 였다. 지키려던 것은 그게 아니라
+       "증빙 사본을 만들지 않는다" 다 — 사본이 없으니 고칠 경로도 없다.
+       C8(내 언어 바꾸기)이 accounts 에 쓰게 되면서 원칙 쪽으로 좁혔다.
+       내 언어는 앞으로 받을 교육의 언어이지 이미 받은 기록이 아니다. */
   const fs = require('fs');
   const code = fs.readFileSync('C:/Users/byeonsoyun/2026-ax-ton/2026-ax-ton/src/worker/my.js', 'utf8')
     .replace(/\/\*[\s\S]*?\*\//g, '');
-  ok('★ 마이페이지는 아무것도 쓰지 않는다', !/\.(save|update)\s*\(/.test(code));
+
+  const writes = [...new Set((code.match(/Store\.(\w+)\.(?:save|update)\s*\(/g) || [])
+    .map((s) => s.split('.')[1]))];
+  eq('★ 마이페이지가 쓰는 키는 accounts 하나뿐이다', writes.join(','), 'accounts');
+
+  ok('★ 기록에 쓰는 경로가 없다 (progress · courses · reports · setup)',
+    !/Store\.(progress|courses|reports|setup)\.(?:save|update)\s*\(/.test(code));
+
+  ok('★ accounts 는 lang 값만 고친다 — 모양은 넓히지 않는다',
+    !/\bacc\.(userId|pw|role|name|title|siteName|processId)\s*=/.test(code));
 }
 
 /* =================================================================
@@ -317,4 +330,90 @@ function open(page, opts = {}) {
     !/user\.|me\.id|userId|workerId|author/.test(writeBlock), writeBlock.slice(0, 300));
 }
 
+
+/* =================================================================
+   마이페이지 — 문항별 복기 (C4)
+   ================================================================= */
+{
+  /* c-press 를 33점으로 떨어뜨린다. answers [1,0,0] — 2·3번 문항이 틀렸다.
+     seed 의 c-press 문항은 q1 pinch(끼임) · q2 pinch · q3 shock(감전) 이다. */
+  const t = open('my', {
+    before(win) {
+      win.Store.progress.update((list) => {
+        const r = list.find((x) => x.workerId === 'W-4821-07' && x.courseId === 'c-press');
+        r.quiz = { score: 33, passed: false, answers: [1, 0, 0], at: '2026-08-20T00:00:00.000Z',
+          attempt: 1, firstPassed: false };
+      });
+    },
+  });
+
+  const stuck = t.$('history-list').querySelector('.stuck');
+  ok('★ 미통과한 교육에 복기가 붙는다', !!stuck);
+  has('여기서 막혔다고 적는다', text(stuck), '여기서 막혔습니다');
+
+  const items = [...stuck.querySelectorAll('.stuck-list li')];
+  /* q1 과 q2 는 둘 다 끼임이다. 맞힌 q1 까지 들어가면 끼임이 두 번 나온다. */
+  eq('★ 맞힌 1번 문항은 나오지 않는다',
+    items.filter((li) => text(li).includes('끼임')).length, 1);
+
+  const all = items.map((li) => text(li)).join(' | ');
+  has('★ 위험유형이 글자로 보인다', all, '감전');
+  ok('★ 픽토그램이 함께 보인다 (색·글자만으로 구분하지 않는다)',
+    items.every((li) => !!li.querySelector('.ico') && li.querySelector('.ico').textContent.trim()),
+    all);
+  ok('★ 틀렸다는 것을 배지로도 적는다', all.includes('틀림'), all);
+
+  has('★ 노동자의 실패가 아니라고 적는다', text(stuck), '교육의 실패로 기록됩니다');
+
+  /* 문항 문구는 내 언어로 나온다 — Store.qtext 를 거친다.
+     seed 의 c-press q2 는 크메르어 번역이 있다. */
+  has('★ 문항 문구가 크메르어로 나온다', text(stuck), 'ម៉ាស៊ីន');
+
+  /* ★ q3 은 seed 에 번역이 일부러 없다. 없으면 한국어로 내려간다 (A1 규칙).
+       조용히 비우면 무엇을 틀렸는지 알 수 없는 빈 줄이 된다. */
+  has('★ 번역 없는 문항은 한국어로 내려간다', text(stuck), '보호구를 연결하세요');
+
+  // 통과한 교육에는 붙지 않는다 — 복기가 성적표가 되면 안 된다
+  const passed = open('my');
+  ok('★ 통과한 교육에는 복기가 없다', !passed.$('history-list').querySelector('.stuck'));
+}
+
+/* =================================================================
+   마이페이지 — 내 언어 바꾸기 (C8)
+   ================================================================= */
+{
+  const t = open('my');
+  const box = t.$('pick-mylang');
+  ok('언어 고르는 칸이 있다', !!box);
+
+  const chips = [...box.querySelectorAll('input[name="mylang"]')];
+  eq('언어 6개가 다 나온다', chips.length, 6);
+  eq('★ 지금 내 언어가 골라져 있다',
+    chips.filter((c) => c.checked).map((c) => c.value).join(','), 'km');
+
+  /* ★ 한국어를 못 읽는 사람이 자기 언어를 찾을 수 있어야 한다.
+       모국어 글자가 앞에 온다. */
+  has('★ 모국어 글자로 적혀 있다', text(box), 'Tiếng Việt');
+  has('한국어 이름도 거든다', text(box), '베트남어');
+
+  // 베트남어로 바꾼다
+  const vi = chips.find((c) => c.value === 'vi');
+  vi.checked = true;
+  vi.dispatchEvent(new t.win.Event('change', { bubbles: true }));
+
+  const acc = t.win.Store.findBy(t.win.Store.accounts.load(), 'userId', 'W-4821-07');
+  eq('★ accounts 에 저장된다', acc.lang, 'vi');
+  eq('★ 다른 필드는 그대로다 — 모양을 넓히지 않는다', acc.processId, 'p-press');
+  eq('비밀번호도 그대로', acc.pw, '1234');
+  has('바뀌었다고 알린다', text(t.$('toast')), '베트남어');
+  has('★ 화면의 내 언어도 함께 바뀐다', text(t.$('me-list')), '베트남어');
+
+  /* ★ 언어를 바꿔도 이미 받은 교육의 기록은 그대로다.
+       progress 는 그때 들은 언어를 스스로 갖고 있다 (learn.js 가 row.lang 을 적는다).
+       여기가 무너지면 언어를 바꾸는 것으로 증빙을 고칠 수 있게 된다. */
+  const row = t.win.Store.progress.load()
+    .find((x) => x.workerId === 'W-4821-07' && x.courseId === 'c-press');
+  eq('★ 지난 기록의 언어는 안 바뀐다', row.lang, 'km');
+  has('★ 증빙도 그때 언어로 남는다', text(t.$('proof-rows')), '크메르어');
+}
 report('노동자 화면 4개 — 홈 · 신고 · 소통 · 마이');
