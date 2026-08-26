@@ -1207,3 +1207,51 @@
   line-height: 1.5;
   color: var(--ink-2);
 }
+
+/* -------------------------------------------------------------------
+   내 글 수정·삭제 (C3)
+
+   ★ 감춘 글에 뜨는 안내는 경고가 아니다. 못 하는 이유를 말해 주는 것이다.
+     빨갛게 칠하면 뭔가 잘못한 것처럼 읽힌다 — 익명은 잘못이 아니다.
+   ------------------------------------------------------------------- */
+
+.mine-actions:empty { display: none; }
+.mine-actions { margin: 10px 0 0; }
+
+.mine-actions .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* 장갑 낀 손으로 누른다 */
+.mine-actions .btn-sm {
+  min-height: var(--tap-min);
+  padding: 0 16px;
+}
+
+.anon-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f7f9fb;
+  font-size: .9em;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.anon-note .ico { font-size: 1.2em; flex: 0 0 auto; }
+
+/* 되돌릴 수 없는 것이라 이쪽은 경고가 맞다 */
+.anon-warn {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-left: 4px solid var(--stop);
+  border-radius: 0 10px 10px 0;
+  background: var(--stop-soft);
+  font-size: .9em;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.anon-warn[hidden] { display: none; }

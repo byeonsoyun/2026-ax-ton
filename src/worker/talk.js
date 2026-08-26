@@ -18,6 +18,15 @@
      검수를 지난 문구만 안전 지시로 쓴다는 규칙은 그대로다.
      이 화면의 글은 사람들끼리 하는 이야기다.
 
+   ★ 감춘 글은 본인도 고치거나 지울 수 없다 (C3).
+     누가 썼는지를 저장하지 않으니 "내 글" 이라는 것을 증명할 방법이 없다.
+     증명할 방법을 만들면 그것이 곧 익명을 푸는 열쇠가 된다.
+     그래서 못 한다고 화면에 적는다 — 조용히 버튼만 없으면 고장으로 보인다.
+
+   ★ 고치면서 이름을 감추는 것은 되돌릴 수 없다.
+     감추는 순간 author 를 지우므로 그 뒤로는 본인도 손댈 수 없다.
+     되돌릴 수 없는 일은 먼저 물어본다.
+
    -------------------------------------------------------------------
    골격입니다. 남은 것은 화면 아래 "여기부터 채우시면 됩니다" 에 적혀 있습니다.
    =================================================================== */
@@ -40,6 +49,7 @@
 
   var me = whoAmI();
   var openId = null;      // 지금 보고 있는 글
+  var editingId = null;   // 고치는 중인 글. null 이면 새로 쓰는 것이다
 
   /* -----------------------------------------------------------------
      읽기
@@ -85,6 +95,11 @@
         icon: '🕶', label: '이름 감추기', sub: '아이디를 저장하지 않습니다'
       }));
     });
+
+    /* 이름 감추기를 켜고 끌 때마다 되돌릴 수 없다는 안내를 갱신한다 (C3).
+       ★ 칸에 건다 — 칩은 다시 만들어질 수 있지만 칸은 그대로다.
+         change 는 입력칸에서 칸으로 올라온다. */
+    $('pick-anon').addEventListener('change', renderAnonWarn);
   }
 
   function isAnon(name) {
@@ -155,9 +170,13 @@
 
     $('p-title').textContent = item.title;
     $('p-meta').textContent = [
-      writerName(item), UI.formatDate(item.createdAt), '조회 ' + (item.views || 0)
-    ].join(' · ');
+      writerName(item), UI.formatDate(item.createdAt), '조회 ' + (item.views || 0),
+      item.editedAt ? '고침 ' + UI.formatDate(item.editedAt) : null
+    ].filter(Boolean).join(' · ');
     $('p-body').textContent = item.body || '';
+
+    // 내 글이면 고치기·지우기, 감춘 글이면 왜 못 하는지 (C3)
+    renderMineActions(item);
 
     // 글자를 못 읽어도 내용을 들을 수 있게
     var listen = $('p-listen');
@@ -190,6 +209,116 @@
     }
   }
 
+
+  /* -----------------------------------------------------------------
+     내 글 수정·삭제 (C3)
+
+     ★ 감춘 글은 손댈 수 없다. author 를 저장하지 않으니 "내 글" 임을
+       증명할 방법이 없고, 증명할 방법을 만드는 순간 그것이 익명을 푸는
+       열쇠가 된다. 못 하는 이유를 화면에 적는다 — 버튼만 조용히 없으면
+       글을 못 읽는 사람에게는 그냥 고장이다.
+     ----------------------------------------------------------------- */
+
+  function isMine(item) {
+    return !!item && !item.anonymous && !!item.author && item.author === me.id;
+  }
+
+  function renderMineActions(item) {
+    var box = $('p-mine');
+    if (!box) return;
+    box.textContent = '';
+
+    /* 감춘 글 — 누구의 글이든 여기서는 손댈 수 없다.
+       "내 것인지" 를 따지지 않는다. 따질 수 있으면 익명이 아니다. */
+    if (item.anonymous || !item.author) {
+      var note = UI.el('p', 'anon-note');
+      note.appendChild(UI.el('span', 'ico', '🕶'));
+      note.appendChild(document.createTextNode(
+        ' 이름을 감추고 쓴 글입니다. 누가 썼는지 저장하지 않으므로 ' +
+        '글쓴이 본인도 고치거나 지울 수 없습니다.'));
+      box.appendChild(note);
+      return;
+    }
+
+    if (!isMine(item)) return;      // 남의 글 — 아무 말도 하지 않는다
+
+    var row = UI.el('div', 'btn-row');
+
+    var edit = UI.el('button', 'btn-sm', '✏ 고치기');
+    edit.type = 'button';
+    edit.addEventListener('click', function () { startEdit(item.id); });
+    row.appendChild(edit);
+
+    var del = UI.el('button', 'btn-sm danger', '🗑 지우기');
+    del.type = 'button';
+    del.addEventListener('click', function () { removePost(item.id); });
+    row.appendChild(del);
+
+    box.appendChild(row);
+  }
+
+  /* 글쓰기 화면을 그대로 다시 쓴다. 화면을 하나 더 만들면 이름 감추기 칩과
+     저장 경로가 두 벌이 되고, 한쪽만 고쳐지는 날이 온다. */
+  function startEdit(id) {
+    var item = postOf(id);
+    if (!isMine(item)) return;
+
+    editingId = id;
+    $('w-title').value = item.title || '';
+    $('w-body').value = item.body || '';
+    UI.$$('input[name="anon"]').forEach(function (n) { n.checked = false; });
+
+    $('t-write').textContent = '글 고치기';
+    $('btn-write-save').textContent = '고친 것 올리기';
+    renderAnonWarn();
+    show('write');
+  }
+
+  function endEdit() {
+    editingId = null;
+    $('t-write').textContent = '새로 쓰기';
+    $('btn-write-save').textContent = '올리기';
+    $('w-title').value = '';
+    $('w-body').value = '';
+    UI.$$('input[name="anon"]').forEach(function (n) { n.checked = false; });
+    renderAnonWarn();
+  }
+
+  /* 고치면서 이름을 감추면 author 가 지워진다 — 그 뒤로는 본인도 못 고친다.
+     되돌릴 수 없는 일이라 누르기 전에 적어 둔다. */
+  function renderAnonWarn() {
+    var box = $('w-anonwarn');
+    if (!box) return;
+    var on = editingId && isAnon('anon');
+    box.textContent = on
+      ? '⚠ 이름을 감추면 누가 썼는지가 지워집니다. 되돌릴 수 없고, 그 뒤로는 이 글을 고치거나 지울 수 없습니다.'
+      : '';
+    box.hidden = !on;
+  }
+
+  function removePost(id) {
+    var item = postOf(id);
+    if (!isMine(item)) return;
+
+    if (!window.confirm('이 글을 지웁니다. 달린 댓글도 함께 사라집니다.\n되돌릴 수 없습니다.')) return;
+
+    var result = Store.posts.update(function (list) {
+      var at = -1;
+      list.forEach(function (p, i) { if (p.id === id) at = i; });
+      if (at !== -1) list.splice(at, 1);
+    });
+
+    if (!result.ok) {
+      UI.toast('지우지 못했습니다. 이 브라우저의 저장소가 막혀 있습니다.');
+      return;
+    }
+
+    UI.stopSpeak();
+    openId = null;
+    renderList();
+    show('list');
+    UI.toast('지웠습니다.');
+  }
   /* -----------------------------------------------------------------
      쓰기
      ----------------------------------------------------------------- */
@@ -199,12 +328,55 @@
     if (!title) { UI.toast('제목을 적어 주세요.'); $('w-title').focus(); return; }
 
     var anon = isAnon('anon');
+    var body = $('w-body').value.trim();
+
+    /* 고치는 중 — 그 글만 바꾼다 (C3) */
+    if (editingId) {
+      var target = postOf(editingId);
+      if (!isMine(target)) {          // 그 사이에 사라졌거나 남의 글이 됐다
+        UI.toast('이 글은 고칠 수 없습니다.');
+        endEdit();
+        renderList();
+        show('list');
+        return;
+      }
+
+      /* ★ 되돌릴 수 없다. 감추는 순간 author 가 지워져 본인도 못 고친다. */
+      if (anon && !window.confirm(
+        '이름을 감추면 누가 썼는지가 지워집니다.\n' +
+        '되돌릴 수 없고, 그 뒤로는 이 글을 고치거나 지울 수 없습니다.\n\n' +
+        '그래도 감출까요?')) return;
+
+      var edited = Store.posts.update(function (list) {
+        var item = Store.findBy(list, 'id', editingId);
+        if (!item) return;
+        item.title = title;
+        item.body = body;
+        // 감추면 아이디를 지운다. 표시만 감추는 것이 아니다.
+        if (anon) { item.author = ''; item.anonymous = true; }
+        item.editedAt = new Date().toISOString();
+      });
+
+      if (!edited.ok) {
+        UI.toast('고치지 못했습니다. 이 브라우저의 저장소가 막혀 있습니다.');
+        return;
+      }
+
+      var wasId = editingId;
+      endEdit();
+      openId = wasId;
+      renderPost();
+      renderList();
+      show('post');
+      UI.toast('고쳤습니다.');
+      return;
+    }
 
     var result = Store.posts.update(function (list) {
       list.push({
         id: Store.uid(),
         title: title,
-        body: $('w-body').value.trim(),
+        body: body,
         // ★ 감추면 아이디를 담지 않는다. 표시만 감추는 것이 아니다.
         author: anon ? '' : me.id,
         anonymous: anon,
@@ -219,10 +391,7 @@
       return;
     }
 
-    $('w-title').value = '';
-    $('w-body').value = '';
-    UI.$$('input[name="anon"]').forEach(function (n) { n.checked = false; });
-
+    endEdit();
     renderList();
     show('list');
     UI.toast('올렸습니다.');
@@ -262,8 +431,10 @@
      이벤트 연결
      ----------------------------------------------------------------- */
 
-  $('btn-new').addEventListener('click', function () { show('write'); });
-  $('btn-write-cancel').addEventListener('click', function () { show('list'); });
+  /* ★ 새로 쓰기로 들어올 때 고치던 상태를 반드시 푼다.
+     안 풀면 고치다 말고 나갔다 온 사람이 "새 글" 을 쓴 줄 알고 옛 글을 덮어쓴다. */
+  $('btn-new').addEventListener('click', function () { endEdit(); show('write'); });
+  $('btn-write-cancel').addEventListener('click', function () { endEdit(); show('list'); });
   $('btn-write-save').addEventListener('click', savePost);
   $('btn-post-back').addEventListener('click', function () {
     UI.stopSpeak();
@@ -272,7 +443,6 @@
     show('list');
   });
   $('btn-comment').addEventListener('click', saveComment);
-
   window.addEventListener('pagehide', UI.stopSpeak);
   UI.onVoicesReady(renderVoiceNote);
 

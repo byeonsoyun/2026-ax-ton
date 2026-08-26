@@ -416,4 +416,156 @@ function open(page, opts = {}) {
   eq('★ 지난 기록의 언어는 안 바뀐다', row.lang, 'km');
   has('★ 증빙도 그때 언어로 남는다', text(t.$('proof-rows')), '크메르어');
 }
+
+/* =================================================================
+   기능7 소통 — 내 글 수정·삭제 (C3)
+
+   ★ 여기서 지켜야 하는 것은 "고칠 수 있는가" 가 아니라
+     "감춘 글은 아무도 — 본인도 — 손댈 수 없는가" 다.
+   ================================================================= */
+
+/* 글 목록에서 제목으로 찾아 연다 */
+function openPostByTitle(t, title) {
+  const item = [...t.$('post-list').querySelectorAll('.post-item')]
+    .find((li) => text(li).includes(title));
+  if (item) click(t.win, item.querySelector('.post-open'));
+  return item;
+}
+
+{
+  /* seed: po-1 은 W-4821-07 이 이름을 밝히고 쓴 글, po-2 는 익명 글 */
+  const t = open('talk');
+
+  /* --- 내 글 --- */
+  openPostByTitle(t, '프레스 교대');
+  const mine = t.$('p-mine');
+  has('★ 내 글에 고치기가 있다', text(mine), '고치기');
+  has('★ 내 글에 지우기가 있다', text(mine), '지우기');
+
+  /* --- 익명 글 — 본인도 손댈 수 없다 --- */
+  click(t.win, t.$('btn-post-back'));
+  openPostByTitle(t, '도장실 마스크');
+  const anon = t.$('p-mine');
+  ok('★ 감춘 글에는 고치기·지우기가 없다',
+    !text(anon).includes('고치기') && !text(anon).includes('지우기'), text(anon));
+  has('★ 왜 못 하는지 적는다', text(anon),
+    '누가 썼는지 저장하지 않으므로');
+  has('★ 본인도 못 한다고 적는다', text(anon), '본인도 고치거나 지울 수 없습니다');
+}
+
+{
+  /* --- 남의 글에는 아무것도 안 붙는다 --- */
+  const t = open('talk', {
+    before(win) {
+      win.Store.posts.update((list) => {
+        const p = list.find((x) => x.id === 'po-1');
+        p.author = 'W-4821-11';        // 다른 사람 글로 바꾼다
+      });
+    },
+  });
+  openPostByTitle(t, '프레스 교대');
+  eq('★ 남의 글에는 버튼도 안내도 없다', text(t.$('p-mine')), '');
+}
+
+{
+  /* --- 고치기 --- */
+  const t = open('talk');
+  openPostByTitle(t, '프레스 교대');
+  click(t.win, [...t.$('p-mine').querySelectorAll('button')]
+    .find((b) => text(b).includes('고치기')));
+
+  eq('쓰기 화면으로 간다', t.$('view-write').hidden, false);
+  has('★ 새로 쓰는 것이 아니라고 적는다', text(t.$('t-write')), '고치기');
+  eq('원래 제목이 채워져 있다', t.$('w-title').value, '프레스 교대 시간 바뀐 것 맞나요?');
+  ok('원래 내용도 채워져 있다', t.$('w-body').value.length > 0);
+
+  t.$('w-title').value = '프레스 교대 시간 (확인했습니다)';
+  click(t.win, t.$('btn-write-save'));
+
+  const all = t.win.Store.posts.load();
+  eq('★ 글이 늘지 않는다 — 고친 것이지 새로 쓴 것이 아니다', all.length, 2);
+
+  const edited = all.find((p) => p.id === 'po-1');
+  eq('제목이 바뀐다', edited.title, '프레스 교대 시간 (확인했습니다)');
+  eq('★ 글쓴이는 그대로다', edited.author, 'W-4821-07');
+  ok('고친 시각이 남는다', !!edited.editedAt);
+  eq('★ 댓글은 그대로 남는다', edited.comments.length, 1);
+  eq('★ 조회수도 그대로다', edited.views, all.find((p) => p.id === 'po-1').views);
+
+  eq('고친 글 화면으로 돌아온다', t.$('view-post').hidden, false);
+  has('고쳤다는 표시가 보인다', text(t.$('p-meta')), '고침');
+}
+
+{
+  /* --- 고치다 그만두고 새로 쓰면 새 글이어야 한다
+       ★ 옛 글을 덮어쓰면 남의 눈에는 글이 사라진 것으로 보인다.
+         endEdit() 이 그만두기와 새로 쓰기 두 곳에 다 있다 — 한쪽만 남아도
+         결과는 지켜진다. 검사는 방식이 아니라 그 결과를 본다. --- */
+  const t = open('talk');
+  openPostByTitle(t, '프레스 교대');
+  click(t.win, [...t.$('p-mine').querySelectorAll('button')]
+    .find((b) => text(b).includes('고치기')));
+  click(t.win, t.$('btn-write-cancel'));
+
+  click(t.win, t.$('btn-new'));
+  eq('★ 그만두면 칸이 비워진다', t.$('w-title').value, '');
+  has('★ 다시 새로 쓰기가 된다', text(t.$('t-write')), '새로 쓰기');
+
+  t.$('w-title').value = '완전히 새 글';
+  click(t.win, t.$('btn-write-save'));
+
+  const all = t.win.Store.posts.load();
+  eq('★ 새 글로 늘어난다 — 옛 글을 덮어쓰지 않는다', all.length, 3);
+  ok('옛 글이 그대로 있다',
+    !!all.find((p) => p.title === '프레스 교대 시간 바뀐 것 맞나요?'));
+}
+
+{
+  /* --- 지우기 --- */
+  const t = open('talk');
+  t.win.confirm = () => true;
+  openPostByTitle(t, '프레스 교대');
+  click(t.win, [...t.$('p-mine').querySelectorAll('button')]
+    .find((b) => text(b).includes('지우기')));
+
+  const all = t.win.Store.posts.load();
+  eq('글이 지워진다', all.length, 1);
+  ok('그 글만 지워진다', !all.find((p) => p.id === 'po-1'));
+  eq('목록으로 돌아간다', t.$('view-list').hidden, false);
+
+  /* 되돌릴 수 없는 일이라 먼저 물어본다 */
+  const t2 = open('talk');
+  let asked = '';
+  t2.win.confirm = (m) => { asked = m; return false; };
+  openPostByTitle(t2, '프레스 교대');
+  click(t2.win, [...t2.$('p-mine').querySelectorAll('button')]
+    .find((b) => text(b).includes('지우기')));
+  has('★ 먼저 물어본다', asked, '되돌릴 수 없습니다');
+  has('★ 댓글도 사라진다고 알린다', asked, '댓글도 함께 사라집니다');
+  eq('★ 아니라고 하면 안 지운다', t2.win.Store.posts.load().length, 2);
+}
+
+{
+  /* --- 고치면서 이름을 감추면 되돌릴 수 없다 --- */
+  const t = open('talk');
+  openPostByTitle(t, '프레스 교대');
+  click(t.win, [...t.$('p-mine').querySelectorAll('button')]
+    .find((b) => text(b).includes('고치기')));
+
+  pick(t.win, t.$('pick-anon'), 'anon', 'yes');
+  has('★ 누르기 전에 되돌릴 수 없다고 적는다', text(t.$('w-anonwarn')), '되돌릴 수 없고');
+
+  let asked = '';
+  t.win.confirm = (m) => { asked = m; return true; };
+  click(t.win, t.$('btn-write-save'));
+  has('★ 저장할 때 한 번 더 물어본다', asked, '되돌릴 수 없고');
+
+  const edited = t.win.Store.posts.load().find((p) => p.id === 'po-1');
+  eq('★ 아이디가 지워진다 — 표시만 감추는 것이 아니다', edited.author, '');
+  eq('감춘 글이 된다', edited.anonymous, true);
+
+  /* 이제는 본인도 못 고친다 */
+  has('★ 그 뒤로는 손댈 수 없다', text(t.$('p-mine')), '본인도 고치거나 지울 수 없습니다');
+  ok('고치기 버튼이 사라진다', !text(t.$('p-mine')).includes('고치기'), text(t.$('p-mine')));
+}
 report('노동자 화면 4개 — 홈 · 신고 · 소통 · 마이');
