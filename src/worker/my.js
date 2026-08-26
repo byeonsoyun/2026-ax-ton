@@ -398,6 +398,60 @@
     render();
     UI.toast(langName(code) + ' 로 바꿨습니다. 교육과 이해도 검증이 이 언어로 나옵니다.');
   }
+
+  /* -----------------------------------------------------------------
+     글자 크기 (B3 · PRD §9.4)
+
+     ★ prefs 는 기기에 딸린다. 계정이 아니다.
+       한 대의 폰을 여러 사람이 돌려 쓰기도 하고, 무엇보다 로그인 화면
+       글자가 안 보이는 사람은 계정 설정에 닿지도 못한다.
+
+     ★ 칸에 적힌 글자를 실제 그 크기로 보여 준다.
+       "작게 / 보통 / 크게" 라는 글자를 읽어야 고를 수 있으면,
+       글자가 안 보여서 여기 온 사람에게는 아무 도움이 안 된다.
+     ----------------------------------------------------------------- */
+
+  var FONT_LABEL = { small: '작게', normal: '보통', large: '크게' };
+
+  function renderFontPick() {
+    var box = $('pick-myfont');
+    if (!box) return;
+    box.textContent = '';
+
+    var now = Store.prefs.load().fontScale;
+
+    Store.FONT_SCALES.forEach(function (code) {
+      var node = UI.chip({
+        type: 'radio', name: 'myfont', value: code,
+        label: '가', sub: FONT_LABEL[code],
+        checked: code === now
+      });
+      // 칩이 그 크기로 보인다 — 글자를 못 읽어도 눈으로 고를 수 있다
+      node.querySelector('.chip').classList.add('font-demo', 'font-demo-' + code);
+      box.appendChild(node);
+    });
+  }
+
+  function saveFontScale(code) {
+    var result = Store.prefs.update(function (data) {
+      data.fontScale = code;
+    });
+
+    if (!result.ok) {
+      UI.toast('저장하지 못했습니다. 이 브라우저의 저장소가 막혀 있습니다.');
+      renderFontPick();
+      return;
+    }
+
+    /* store.js 는 화면이 처음 뜰 때만 붙인다. 지금 고른 것은 여기서 바로 붙인다 —
+       새로고침해야 바뀌면 고른 사람은 안 바뀐 줄 안다. */
+    var root = document.documentElement;
+    if (code === 'normal') root.removeAttribute('data-font');
+    else root.setAttribute('data-font', code);
+
+    renderFontPick();
+    UI.toast('글자를 ' + FONT_LABEL[code] + ' 로 바꿨습니다. 이 기기에서 계속 유지됩니다.');
+  }
   /* -----------------------------------------------------------------
      4. 인쇄되는 증빙
 
@@ -477,11 +531,17 @@
     renderVoiceNote();
     renderMe();
     renderLangPick();
+    renderFontPick();
     renderHistory();
     renderReports();
     renderProof();
   }
 
+
+  /* 칸에 건다 — 칩은 다시 만들어지지만 칸은 그대로다 (talk.js 와 같은 이유) */
+  $('pick-myfont').addEventListener('change', function (e) {
+    if (e.target && e.target.value) saveFontScale(e.target.value);
+  });
   $('btn-print').addEventListener('click', function () {
     renderProof();     // 발급 시각을 누르는 순간으로
     window.print();

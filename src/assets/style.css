@@ -336,3 +336,14 @@ body {
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* -------------------------------------------------------------------
+   글자 크기 조절 (B3 · PRD §9.4 접근성)
+
+   ★ store.js 가 <head> 에서 :root 에 data-font 를 붙인다.
+     화면이 그려지기 전에 붙어야 작게 그려졌다가 커지는 것이 안 보인다.
+   ★ px 하나만 바꾼다 — 나머지 크기가 전부 em 으로 따라오게 돼 있다.
+   ------------------------------------------------------------------- */
+
+:root[data-font="small"] { --font-base: 14px; }
+:root[data-font="large"] { --font-base: 20px; }

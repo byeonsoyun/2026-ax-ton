@@ -277,6 +277,23 @@ var Store = (function () {
           지시는 "이 교육을 다시 듣게 한다" 는 뜻이지 "이 사람이 못했다" 가 아니다. */
   var orders = listStore('orders');
 
+
+  /* -----------------------------------------------------------------
+     글자 크기를 화면이 그려지기 전에 적용한다 (B3)
+
+     ★ store.js 는 모든 화면의 <head> 에서 읽힌다. ui.js(문서 끝)에서 하면
+       기본 크기로 한 번 그려졌다가 커지는 것이 눈에 보인다.
+       저시력 사용자에게는 그 한 번이 "안 보이는 화면" 이다.
+
+     ★ 저장소가 막힌 브라우저에서는 조용히 기본 크기로 간다.
+       여기서 던지면 store.js 가 통째로 멈추고 화면이 아예 안 뜬다.
+     ----------------------------------------------------------------- */
+  try {
+    var bootScale = prefs.load().fontScale;
+    if (bootScale && bootScale !== 'normal' && document.documentElement) {
+      document.documentElement.setAttribute('data-font', bootScale);
+    }
+  } catch (e) { /* 기본 크기로 간다 */ }
   var ALL = [accounts, session, setup, library, courses, progress, reports, posts,
              prefs, orders];
 

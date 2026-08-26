@@ -290,8 +290,8 @@ function open(page, opts = {}) {
     .replace(/\/\*[\s\S]*?\*\//g, '');
 
   const writes = [...new Set((code.match(/Store\.(\w+)\.(?:save|update)\s*\(/g) || [])
-    .map((s) => s.split('.')[1]))];
-  eq('★ 마이페이지가 쓰는 키는 accounts 하나뿐이다', writes.join(','), 'accounts');
+    .map((s) => s.split('.')[1]))].sort();
+  eq('★ 마이페이지가 쓰는 키는 accounts 와 prefs 뿐이다', writes.join(','), 'accounts,prefs');
 
   ok('★ 기록에 쓰는 경로가 없다 (progress · courses · reports · setup)',
     !/Store\.(progress|courses|reports|setup)\.(?:save|update)\s*\(/.test(code));
@@ -664,4 +664,83 @@ function openPostByTitle(t, title) {
   const badges = t.win.document.querySelectorAll('#today .badge-wait');
   eq('★ 여러 번 넘겨도 배지는 하나뿐이다', badges.length, 1);
 }
+
+/* =================================================================
+   마이페이지 — 글자 크기 (B3 · PRD §9.4)
+
+   ★ 여기서 지켜야 하는 것은 "바뀌는가" 가 아니라
+     "글자가 안 보이는 사람이 스스로 키울 수 있는가" 다.
+
+   ★ 고를 때마다 칩을 다시 그린다. 그래서 매번 다시 찾아야 한다 —
+     옛 요소를 붙잡고 있으면 화면에서 떨어져 나간 것에 대고 누르는 셈이다.
+   ================================================================= */
+
+function fontChip(t, code) {
+  return [...t.$('pick-myfont').querySelectorAll('input[name="myfont"]')]
+    .find((c) => c.value === code);
+}
+function pickFont(t, code) {
+  const c = fontChip(t, code);
+  c.checked = true;
+  c.dispatchEvent(new t.win.Event('change', { bubbles: true }));
+}
+
+{
+  const t = open('my');
+  const box = t.$('pick-myfont');
+  ok('글자 크기 고르는 칸이 있다', !!box);
+
+  eq('세 가지를 고를 수 있다',
+    box.querySelectorAll('input[name="myfont"]').length, 3);
+  eq('★ 지금 크기가 골라져 있다', fontChip(t, 'normal').checked, true);
+
+  /* ★ 칸에 적힌 글자가 실제로 그 크기다.
+       "작게 / 보통 / 크게" 를 읽어야 고를 수 있으면,
+       글자가 안 보여서 여기 온 사람에게는 아무 도움이 안 된다. */
+  const demos = [...box.querySelectorAll('.font-demo')];
+  eq('칩마다 미리보기가 붙는다', demos.length, 3);
+  ok('★ 칩마다 크기가 다르게 표시된다',
+    new Set(demos.map((d) => d.className)).size === 3,
+    demos.map((d) => d.className).join(' | '));
+  has('글자로도 적는다', text(box), '크게');
+
+  pickFont(t, 'large');
+  eq('★ 저장된다', t.win.Store.prefs.load().fontScale, 'large');
+  eq('★ 새로고침을 기다리지 않고 지금 바로 커진다',
+    t.win.document.documentElement.getAttribute('data-font'), 'large');
+  has('바뀌었다고 알린다', text(t.$('toast')), '크게');
+  has('이 기기에서 유지된다고 알린다', text(t.$('toast')), '기기');
+  eq('다시 그려도 고른 것이 남는다', fontChip(t, 'large').checked, true);
+
+  pickFont(t, 'normal');
+  eq('보통으로 되돌아간다', t.win.Store.prefs.load().fontScale, 'normal');
+  eq('★ 보통이면 표시를 뗀다',
+    t.win.document.documentElement.getAttribute('data-font'), null);
+}
+
+{
+  /* ★ 화면이 그려지기 전에 적용된다.
+       ui.js(문서 끝)에서 하면 기본 크기로 한 번 그려졌다가 커진다 —
+       저시력 사용자에게는 그 한 번이 "안 보이는 화면" 이다.
+       store.js 가 <head> 에서 붙이므로, 저장된 값이 있는 채로 store.js 가
+       읽히면 화면 스크립트 없이도 붙어 있어야 한다.
+
+     하네스는 store.js 를 먼저 돌리고 나서 before() 를 부르므로,
+     값을 넣은 뒤 store.js 를 한 번 더 돌려서 "그 상황" 을 만든다. */
+  const t = open('my');
+  t.win.Store.prefs.save({ fontScale: 'large' });
+  t.win.document.documentElement.removeAttribute('data-font');
+
+  t.run('assets/store.js');
+  eq('★ store.js 를 읽는 것만으로 크기가 붙는다',
+    t.win.document.documentElement.getAttribute('data-font'), 'large');
+}
+
+{
+  /* 저장소가 막힌 브라우저에서도 화면은 떠야 한다 —
+     여기서 던지면 store.js 가 통째로 멈추고 아무것도 안 뜬다 */
+  const t = open('my');
+  ok('오류 없이 뜬다', t.errors.length === 0, t.errors.join(' | '));
+}
+
 report('노동자 화면 4개 — 홈 · 신고 · 소통 · 마이');

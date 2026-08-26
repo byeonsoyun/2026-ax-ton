@@ -1299,3 +1299,21 @@
   font-weight: 700;
   color: var(--ink-2);
 }
+
+/* -------------------------------------------------------------------
+   글자 크기 고르는 칸 (B3)
+
+   ★ 칸에 적힌 "가" 가 실제로 그 크기다.
+     "작게 / 보통 / 크게" 라는 글자를 읽어야 고를 수 있으면,
+     글자가 안 보여서 여기 온 사람에게는 아무 도움이 안 된다.
+   ★ em 이 아니라 px 을 쓴다 — 지금 고른 크기에 따라 미리보기가 같이
+     커지면 세 칸의 차이가 안 보인다.
+   ------------------------------------------------------------------- */
+
+.font-demo > span:not(.sub):not(.mark) { line-height: 1.1; }
+
+.font-demo-small  > span:not(.sub):not(.mark) { font-size: 14px; }
+.font-demo-normal > span:not(.sub):not(.mark) { font-size: 18px; }
+.font-demo-large  > span:not(.sub):not(.mark) { font-size: 26px; }
+
+.font-demo .sub { font-size: 13px; }
