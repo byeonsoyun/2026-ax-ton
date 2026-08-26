@@ -10,18 +10,27 @@ function open(opts = {}) {
     Object.assign({ login: 'kim@daesung.co.kr', role: 'admin', page: 'admin/proof.js' }, opts));
 }
 
+/* ★ 문서 구조가 바뀌었다 (C1). 교육 하나가 .proof-course 덩어리 하나이고,
+     기간 단위로 묶으면 그 덩어리가 여러 개 들어온다.
+     아래 헬퍼는 "몇 번째 교육 덩어리 안에서" 를 뜻한다. */
+const blocks = (t) => [...t.win.document.querySelectorAll('#proof-courses .proof-course')];
+const block = (t, i) => blocks(t)[i || 0];
+const inBlock = (t, sel, i) => block(t, i).querySelector(sel);
+
 /* =================================================================
    1. 교육일지가 실제 기록으로 채워진다
    ================================================================= */
 {
   const t = open();
   ok('오류 없이 뜬다', t.errors.length === 0, t.errors.join(' | '));
-
   // 기본은 첫 교육 (c-press · 프레스 3호기)
-  const meta = text(t.$('proof-meta-rows'));
-  has('사업장', meta, '대성정밀');
-  has('규모', meta, '10~49인');
-  has('교육명', meta, '프레스 3호기 안전교육');
+  // ★ 사업장·규모는 표지로, 교육명은 덩어리 제목으로 옮겼다 (C1)
+  const cover = text(t.$('proof-cover-rows'));
+  has('사업장', cover, '대성정밀');
+  has('규모', cover, '10~49인');
+
+  const meta = text(inBlock(t, '.proof-meta tbody'));
+  has('교육명', text(inBlock(t, '.proof-course-title')), '프레스 3호기 안전교육');
   has('공정과 설비', meta, '프레스 · 프레스 3호기');
   has('교육 언어', meta, '크메르어 · 인도네시아어 · 베트남어');
   has('실시 기간이 기록에서 나온다', meta, '2026');
@@ -32,20 +41,20 @@ function open(opts = {}) {
   eq('교육 실시자 서명란에 이름', text(t.$('sign-admin')), '김현수');
 
   // 전달한 안전 문구 4개 (ph-1, ph-2, ph-3, ph-6)
-  eq('안전 문구 4줄', t.$('proof-phrases').children.length, 4);
-  has('문구 내용이 그대로', text(t.$('proof-phrases')), '프레스가 멈춰도 손을 넣지 마십시오');
+  eq('안전 문구 4줄', inBlock(t, '.proof-phrases').children.length, 4);
+  has('문구 내용이 그대로', text(inBlock(t, '.proof-phrases')), '프레스가 멈춰도 손을 넣지 마십시오');
 
   /* ★ ph-3 은 인도네시아어 번역이 중지돼 그 언어 노동자에게는 전달되지 않았다.
        증빙에 그 사실을 적는다 — 무엇이 전달되지 않았는지가 이 문서의 내용이다. */
   has('어느 언어에 전달되지 않았는지 적는다',
-    text(t.$('proof-phrases')), '인도네시아어 노동자에게는 전달되지 않았습니다');
+    text(inBlock(t, '.proof-phrases')), '인도네시아어 노동자에게는 전달되지 않았습니다');
 
   // 문항 3개
-  eq('문항 3줄', t.$('proof-quiz').children.length, 3);
-  has('문항 유형도 적는다', text(t.$('proof-quiz')), '위험 지점 짚기');
+  eq('문항 3줄', inBlock(t, '.proof-quiz').children.length, 3);
+  has('문항 유형도 적는다', text(inBlock(t, '.proof-quiz')), '위험 지점 짚기');
 
   // 대상자 표
-  const rows = t.$('proof-rows').querySelectorAll('tr');
+  const rows = inBlock(t, '.proof-rows').querySelectorAll('tr');
   eq('대상자 1명 (프레스 공정)', rows.length, 1);
   has('식별번호', text(rows[0]), 'W-4821-07');
   has('언어', text(rows[0]), '크메르어');
@@ -87,7 +96,7 @@ function open(opts = {}) {
   t.$('pick-course').value = 'c-paint';
   change(t.win, t.$('pick-course'));
 
-  const rows = [...t.$('proof-rows').querySelectorAll('tr')];
+  const rows = [...inBlock(t, '.proof-rows').querySelectorAll('tr')];
   eq('★ 대상자 3명 전원이 표에 있다', rows.length, 3);
 
   const idOf = (r) => text(r.querySelector('td'));
@@ -139,7 +148,7 @@ function open(opts = {}) {
   has('이수는 1명', tiles.join(' '), '이수=1명');
   has('★ 최초 통과율은 0%', tiles.join(' '), '최초 통과율=0%');
 
-  const row = t.$('proof-rows').querySelectorAll('tr')[0];
+  const row = inBlock(t, '.proof-rows').querySelectorAll('tr')[0];
   has('몇 회차인지 표에 적는다', text(row), '2회차');
 }
 
@@ -168,7 +177,7 @@ function open(opts = {}) {
     },
   });
   has('★ 이후 중지됐다는 사실을 적는다',
-    text(t.$('proof-phrases')), '교육 이후 사용 중지된 문구입니다');
+    text(inBlock(t, '.proof-phrases')), '교육 이후 사용 중지된 문구입니다');
 }
 
 /* =================================================================
@@ -181,7 +190,7 @@ function open(opts = {}) {
     },
   });
   has('문항이 없으면 이수가 아니라고 적는다',
-    text(t.$('proof-quiz')), '문항이 없는 교육은 이수로 기록되지 않습니다');
+    text(inBlock(t, '.proof-quiz')), '문항이 없는 교육은 이수로 기록되지 않습니다');
 }
 
 /* =================================================================
@@ -259,7 +268,7 @@ function open(opts = {}) {
    ================================================================= */
 {
   const t = open();
-  const quiz = t.$('proof-quiz');
+  const quiz = inBlock(t, '.proof-quiz');
   const lines = [...quiz.querySelectorAll('li')];
 
   eq('c-press 문항 3개', lines.length, 3);
@@ -291,4 +300,160 @@ function open(opts = {}) {
   ok('제공 언어 줄을 인쇄에서 감추지 않는다', !/\.proof-qlang[^{]*\{[^}]*display:\s*none/.test(printBlock));
 }
 
+
+/* =================================================================
+   기능5 — 기간별 증빙 묶음 (C1)
+
+   ★ 여기서 지켜야 하는 것은 "묶이는가" 가 아니라
+     "묶어도 사람이 빠지지 않는가" 다.
+   ================================================================= */
+
+/* 검사가 해가 바뀌어도 안 깨지게 날짜를 지금 기준으로 만든다 */
+function qISO(offsetQuarters) {
+  const n = new Date();
+  const q = Math.floor(n.getMonth() / 3) + (offsetQuarters || 0);
+  return new Date(n.getFullYear(), q * 3, 1, 12).toISOString();
+}
+function yISO(offsetYears) {
+  const n = new Date();
+  return new Date(n.getFullYear() + (offsetYears || 0), 5, 1, 12).toISOString();
+}
+
+/* 두 교육을 같은 분기에 놓는다 */
+function sameQuarter(win) {
+  win.Store.courses.update((list) => {
+    list.forEach((c) => { c.createdAt = qISO(0); });
+  });
+}
+
+{
+  /* --- 기본은 교육 하나. 지금까지 하던 대로다 --- */
+  const t = open();
+  eq('★ 기본은 교육 하나다', t.$('pick-scope').value, 'course');
+  eq('교육 고르는 칸이 보인다', t.$('field-course').hidden, false);
+  eq('기간 고르는 칸은 숨어 있다', t.$('field-period').hidden, true);
+  eq('교육 덩어리가 하나', blocks(t).length, 1);
+  has('표지에 담은 범위를 적는다', text(t.$('proof-cover-rows')), '교육 1건');
+}
+
+{
+  /* --- 분기로 묶으면 그 분기 교육이 다 들어온다 --- */
+  const t = open({ before: sameQuarter });
+
+  t.$('pick-scope').value = 'quarter';
+  change(t.win, t.$('pick-scope'));
+
+  eq('기간 고르는 칸이 나온다', t.$('field-period').hidden, false);
+  eq('교육 고르는 칸은 숨는다', t.$('field-course').hidden, true);
+
+  eq('★ 그 분기 교육이 한 문서에 다 들어온다', blocks(t).length, 2);
+  const all = text(t.$('proof-courses'));
+  has('첫 교육이 있다', all, '프레스 3호기 안전교육');
+  has('둘째 교육도 있다', all, '도장 부스 1 안전교육');
+
+  has('★ 표지에 담은 범위를 적는다', text(t.$('proof-cover-rows')), '분기');
+  has('담은 교육 건수도 적는다', text(t.$('proof-cover-rows')), '2건');
+
+  /* 교육마다 문구·문항·대상자 표가 따로 있다 */
+  eq('교육마다 안전 문구 목록이 있다',
+    t.win.document.querySelectorAll('#proof-courses .proof-phrases').length, 2);
+  eq('교육마다 문항 목록이 있다',
+    t.win.document.querySelectorAll('#proof-courses .proof-quiz').length, 2);
+  eq('교육마다 대상자 표가 있다',
+    t.win.document.querySelectorAll('#proof-courses .proof-rows').length, 2);
+
+  /* 서명란과 꼬리말은 문서에 하나뿐이다 */
+  eq('서명란은 하나', t.win.document.querySelectorAll('.proof-sign').length, 1);
+  has('법적 책임을 대신하지 않는다', text(t.$('proof-foot')), '법적 책임을 대신하지 않습니다');
+  ok('★ "면책" 이라고 쓰지 않는다', !text(t.$('proof')).includes('면책'));
+}
+
+{
+  /* ★ 묶어도 사람을 빼지 않는다.
+       이 화면의 전제다 — 미수강·미통과가 그대로 남아야 한다. */
+  const t = open({
+    before(win) {
+      sameQuarter(win);
+      win.Store.progress.save([]);      // 아무도 수강하지 않은 상태
+    },
+  });
+
+  t.$('pick-scope').value = 'quarter';
+  change(t.win, t.$('pick-scope'));
+
+  const tiles = [...t.$('summary').querySelectorAll('.kpi')]
+    .map((k) => text(k.querySelector('dt')) + '=' + text(k.querySelector('dd'))).join(' ');
+  ok('★ 대상자가 그대로 잡힌다', /대상=[1-9]/.test(tiles), tiles);
+  ok('★ 미수강이 그대로 잡힌다', /미수강=[1-9]/.test(tiles), tiles);
+  ok('★ 이수는 0 이다 (묶어서 100% 가 되지 않는다)', /이수=0/.test(tiles), tiles);
+
+  const rows = [...t.win.document.querySelectorAll('#proof-courses .proof-rows tr')];
+  ok('표에도 사람이 그대로 남는다', rows.length >= 2, String(rows.length));
+  has('미수강이라고 적는다', text(t.$('proof-courses')), '미수강');
+}
+
+{
+  /* ★ 무엇이 이 문서에 없는지 적는다.
+       범위를 골라 뽑을 수 있게 된 이상, 받는 쪽이 "이게 전부가 아니다" 를
+       알 수 있어야 한다. */
+  const t = open({
+    before(win) {
+      win.Store.courses.update((list) => {
+        list.forEach((c, i) => { c.createdAt = i === 0 ? qISO(0) : yISO(-1); });
+      });
+    },
+  });
+
+  t.$('pick-scope').value = 'quarter';
+  change(t.win, t.$('pick-scope'));
+
+  eq('이 분기 교육만 들어온다', blocks(t).length, 1);
+  has('★ 빠진 것이 있다고 적는다', text(t.$('proof-scope')), '이 문서에 없습니다');
+  has('몇 건이 빠졌는지 적는다', text(t.$('proof-scope')), '1건');
+}
+
+{
+  /* 발급일이 없는 교육은 어느 기간에도 넣을 수 없다 — 그 사실을 적는다 */
+  const t = open({
+    before(win) {
+      win.Store.courses.update((list) => {
+        list.forEach((c, i) => { if (i === 0) c.createdAt = qISO(0); else delete c.createdAt; });
+      });
+    },
+  });
+
+  t.$('pick-scope').value = 'quarter';
+  change(t.win, t.$('pick-scope'));
+  has('★ 날짜 없는 교육이 빠졌다고 적는다', text(t.$('proof-scope')), '발급일이 없는 교육');
+}
+
+{
+  /* 연도로도 묶인다 */
+  const t = open({ before: sameQuarter });
+  t.$('pick-scope').value = 'year';
+  change(t.win, t.$('pick-scope'));
+  eq('★ 연도로 묶으면 그 해 교육이 다 들어온다', blocks(t).length, 2);
+  has('표지에 연도를 적는다', text(t.$('proof-cover-rows')), '년');
+}
+
+{
+  /* 그 기간에 교육이 없으면 빈 문서를 만들지 않는다 */
+  const t = open({
+    before(win) {
+      win.Store.courses.update((list) => {
+        list.forEach((c) => { c.createdAt = yISO(-1); });
+      });
+    },
+  });
+
+  t.$('pick-scope').value = 'quarter';
+  change(t.win, t.$('pick-scope'));
+
+  /* 고를 수 있는 기간은 실제로 교육이 있는 기간뿐이다 —
+     없는 기간을 고를 수 있으면 빈 문서가 나온다 */
+  const periods = [...t.$('pick-period').options].map((o) => o.value);
+  ok('★ 교육이 있는 기간만 고를 수 있다', periods.length > 0, JSON.stringify(periods));
+  ok('작년 분기가 후보에 있다', periods.some((p) => p.includes('-Q')), JSON.stringify(periods));
+  eq('그 기간을 고르면 교육이 들어온다', blocks(t).length, 2);
+}
 report('기능5 교육 증빙 생성');

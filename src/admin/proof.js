@@ -20,6 +20,16 @@
      걸러 보기 기능도, 정렬로 아래로 밀어내는 것도 두지 않는다.
      숨길 수 있는 증빙은 증빙이 아니다.
 
+   ★ 기간 단위로 묶을 수 있다 (C1). 그래도 거르는 것은 "사람" 이 아니라
+     "무엇을 한 문서에 담을지" 다.
+
+     고른 범위 안의 모든 교육이 들어가고, 그 교육의 대상자는 전원 들어간다.
+     미이수·미통과를 빼는 경로는 여전히 없다.
+
+     ★ 대신 문서에 범위를 적고, 그 범위 밖 교육이 몇 건인지도 적는다.
+       범위를 골라 뽑을 수 있게 된 이상, 받는 쪽이 "이게 전부가 아니다" 를
+       알 수 있어야 한다. 조용히 줄이면 그것이 곧 숨기는 것이 된다.
+
    ★ "면책" 이라고 쓰지 않는다.
      이 문서는 교육을 실시했다는 기록이고, 법적 책임을 대신하지 않는다.
 
@@ -92,17 +102,92 @@
     };
   }
 
+
   /* -----------------------------------------------------------------
-     요약 타일
+     묶는 단위 (C1)
+
+     ★ 거르는 것은 사람이 아니라 "무엇을 한 문서에 담을지" 다.
+       고른 범위 안의 모든 교육이 들어가고 대상자는 전원 들어간다.
+
+     ★ 기준은 교육을 발급한 날(course.createdAt) 이다.
+       수강한 날로 묶으면 아직 아무것도 안 한 교육이 어느 기간에도 안 들어가고,
+       그 교육의 미수강자가 통째로 사라진다.
      ----------------------------------------------------------------- */
 
-  function renderSummary(course) {
+  var scope = 'course';       // 'course' · 'quarter' · 'year'
+
+  function courseTime(c) {
+    var at = c && c.createdAt ? new Date(c.createdAt).getTime() : NaN;
+    return isNaN(at) ? null : at;
+  }
+
+  /* 발급일이 있는 교육들이 실제로 걸쳐 있는 기간만 고를 수 있게 만든다.
+     없는 기간을 고를 수 있으면 빈 문서가 나온다. */
+  function periodsFor(kind) {
+    var seen = {};
+    var out = [];
+
+    Store.courses.load().forEach(function (c) {
+      var at = courseTime(c);
+      if (at === null) return;              // 날짜 없는 교육은 아래에서 따로 알린다
+      var d = new Date(at);
+      var key = kind === 'year'
+        ? String(d.getFullYear())
+        : d.getFullYear() + '-Q' + (Math.floor(d.getMonth() / 3) + 1);
+      if (seen[key]) return;
+      seen[key] = true;
+      out.push({
+        key: key,
+        label: kind === 'year' ? d.getFullYear() + '년'
+          : d.getFullYear() + '년 ' + (Math.floor(d.getMonth() / 3) + 1) + '분기'
+      });
+    });
+
+    return out.sort(function (a, b) { return b.key.localeCompare(a.key); });  // 최신이 위로
+  }
+
+  function periodKeyOf(course, kind) {
+    var at = courseTime(course);
+    if (at === null) return null;
+    var d = new Date(at);
+    return kind === 'year'
+      ? String(d.getFullYear())
+      : d.getFullYear() + '-Q' + (Math.floor(d.getMonth() / 3) + 1);
+  }
+
+  /* 이 문서에 들어갈 교육들 */
+  function pickedCourses() {
+    var all = Store.courses.load();
+
+    if (scope === 'course') {
+      var one = courseOf($('pick-course').value) || all[0];
+      return one ? [one] : [];
+    }
+
+    var key = $('pick-period').value;
+    return all.filter(function (c) { return periodKeyOf(c, scope) === key; });
+  }
+
+  /* 지금 문서가 담는 범위를 사람 말로 */
+  function scopeLabel() {
+    if (scope === 'course') return '교육 1건';
+    var sel = $('pick-period');
+    var opt = sel && sel.options[sel.selectedIndex];
+    return opt ? opt.textContent : '';
+  }
+  /* -----------------------------------------------------------------
+     요약 타일 — 고른 범위 전체를 합쳐서 센다
+     ----------------------------------------------------------------- */
+
+  function renderSummary(courses) {
     var box = $('summary');
     box.textContent = '';
-    if (!course) return;
+    if (!courses.length) return;
 
-    var people = audienceOf(course);
-    var results = people.map(function (w) { return resultOf(w, course); });
+    var results = [];
+    courses.forEach(function (course) {
+      audienceOf(course).forEach(function (w) { results.push(resultOf(w, course)); });
+    });
 
     var count = function (state) {
       return results.filter(function (r) { return r.state === state; }).length;
@@ -117,7 +202,8 @@
     var rate = tried.length ? Math.round((firstPass / tried.length) * 100) : null;
 
     var tiles = [
-      { label: '대상', value: people.length, unit: '명', hint: '이 공정 노동자 전원' },
+      { label: '교육', value: courses.length, unit: '건', hint: '이 문서가 담는 교육' },
+      { label: '대상', value: results.length, unit: '명', hint: '교육별 대상자 전원의 합' },
       { label: '이수', value: count('pass'), unit: '명', hint: '이해도 검증 통과' },
       { label: '미통과', value: count('fail'), unit: '명', hint: '교육을 다시 만들 신호', alert: count('fail') > 0 },
       { label: '미수강', value: count('none') + count('noquiz'), unit: '명',
@@ -150,60 +236,18 @@
     return tr;
   }
 
-  function renderProof(course) {
-    var state = setup();
-    var eq = course ? Store.findBy(state.equipments, 'id', course.equipmentId) : null;
-    var proc = eq ? Store.findBy(state.processes, 'id', eq.processId) : null;
-
-    $('proof-issued-at').textContent = '발급 ' + UI.formatDate(new Date().toISOString());
-    $('proof-issued-by').textContent = [user.name, user.title].filter(Boolean).join(' · ') || user.userId;
-    $('sign-admin').textContent = user.name || user.userId;
-
-    var metas = $('proof-meta-rows');
-    metas.textContent = '';
-
-    if (!course) {
-      $('proof').hidden = true;
-      return;
-    }
-    $('proof').hidden = false;
-
-    var people = audienceOf(course);
-    var results = people.map(function (w) { return resultOf(w, course); });
-    var doneAt = results.map(function (r) { return r.quizAt || r.learnedAt; })
-      .filter(Boolean).sort();
-
-    metas.appendChild(metaRow('사업장', state.site.name || '(미등록)'));
-    metas.appendChild(metaRow('규모', state.site.sizeBand || '-'));
-    metas.appendChild(metaRow('교육명', course.title));
-    metas.appendChild(metaRow('대상 공정 · 설비',
-      [proc ? proc.name : '-', eq ? eq.name : '삭제된 설비'].join(' · ')));
-    metas.appendChild(metaRow('교육 언어', (course.languages || []).map(langName).join(' · ') || '-'));
-    metas.appendChild(metaRow('교육 방식',
-      '설비별 다국어 음성 · 픽토그램 자율 학습 후 이해도 검증'));
-    metas.appendChild(metaRow('실시 기간', doneAt.length
-      ? UI.formatDate(doneAt[0]) + ' ~ ' + UI.formatDate(doneAt[doneAt.length - 1])
-      : '실시 기록 없음'));
-    metas.appendChild(metaRow('대상 인원', people.length + '명'));
-
-    renderPhrases(course);
-    renderQuiz(course);
-    renderRows(people, results, course);
-  }
-
   /* 전달한 안전 문구.
      ★ 지금 검수 상태도 함께 적는다. 교육 당시에는 쓸 수 있었지만 그 뒤
        오역으로 중지된 문구가 있으면, 그 사실이 증빙에 남아야 한다. */
-  function renderPhrases(course) {
-    var box = $('proof-phrases');
-    box.textContent = '';
+  function phrasesList(course) {
+    var box = UI.el('ol', 'proof-phrases');
 
     var library = Store.library.load();
     var ids = course.phraseIds || [];
 
     if (!ids.length) {
       box.appendChild(UI.el('li', null, '기록된 안전 문구가 없습니다.'));
-      return;
+      return box;
     }
 
     ids.forEach(function (id) {
@@ -233,17 +277,18 @@
       }
       box.appendChild(li);
     });
+
+    return box;
   }
 
-  function renderQuiz(course) {
-    var box = $('proof-quiz');
-    box.textContent = '';
+  function quizList(course) {
+    var box = UI.el('ol', 'proof-quiz');
 
     var quiz = course.quiz || [];
     if (!quiz.length) {
       box.appendChild(UI.el('li', null,
         '이해도 검증 문항이 없습니다. 문항이 없는 교육은 이수로 기록되지 않습니다.'));
-      return;
+      return box;
     }
 
     /* 문항 문구는 한국어를 적는다 — 이 서식은 감독기관에 내는 한국어 문서다.
@@ -261,26 +306,40 @@
 
       if (langs.length) {
         var got = langs.filter(function (code) { return Store.qhas(q, code); });
-        var text = got.length
+        var line = got.length
           ? '제공 언어 — 한국어 · ' + got.map(langName).join(' · ')
           : '제공 언어 — 한국어';
         var missed = langs.filter(function (code) { return got.indexOf(code) === -1; });
         if (missed.length) {
-          text += ' (' + missed.map(langName).join(' · ') + ' 는 한국어로 제공)';
+          line += ' (' + missed.map(langName).join(' · ') + ' 는 한국어로 제공)';
         }
-        li.appendChild(UI.el('span', 'proof-qlang', text));
+        li.appendChild(UI.el('span', 'proof-qlang', line));
       }
 
       box.appendChild(li);
     });
+
+    return box;
   }
 
   /* 대상자별 기록.
      ★ 순서를 결과로 바꾸지 않는다. 식별번호 순 그대로 둔다 —
        정렬만 바꿔도 미통과자를 아래로 밀어내는 통로가 된다. */
-  function renderRows(people, results, course) {
-    var body = $('proof-rows');
-    body.textContent = '';
+  function rowsTable(people, results) {
+    var wrap = UI.el('div', 'tablewrap');
+    var table = UI.el('table', 'data proof-table');
+
+    var thead = UI.el('thead');
+    var htr = UI.el('tr');
+    ['식별번호', '언어', '수강 일시', '검증 일시', '점수', '결과'].forEach(function (h) {
+      var th = UI.el('th', null, h);
+      th.setAttribute('scope', 'col');
+      htr.appendChild(th);
+    });
+    thead.appendChild(htr);
+    table.appendChild(thead);
+
+    var body = UI.el('tbody', 'proof-rows');
 
     if (!people.length) {
       var tr = UI.el('tr');
@@ -290,7 +349,6 @@
         '이 공정에 등록된 노동자가 없습니다. 사업장 등록에서 노동자를 추가해 주세요.'));
       tr.appendChild(cell);
       body.appendChild(tr);
-      return;
     }
 
     people.forEach(function (w, i) {
@@ -320,6 +378,106 @@
 
       body.appendChild(tr);
     });
+
+    table.appendChild(body);
+    wrap.appendChild(table);
+    return wrap;
+  }
+
+  /* 교육 하나가 문서에서 차지하는 덩어리.
+     ★ 교육 하나짜리 증빙도 이 함수를 쓴다 — 코드가 두 벌이 되면
+       한쪽만 고쳐지는 날이 온다. */
+  function courseBlock(course) {
+    var state = setup();
+    var eq = Store.findBy(state.equipments, 'id', course.equipmentId);
+    var proc = eq ? Store.findBy(state.processes, 'id', eq.processId) : null;
+
+    var people = audienceOf(course);
+    var results = people.map(function (w) { return resultOf(w, course); });
+    var doneAt = results.map(function (r) { return r.quizAt || r.learnedAt; })
+      .filter(Boolean).sort();
+
+    var sec = UI.el('section', 'proof-course');
+    sec.appendChild(UI.el('h3', 'proof-course-title', course.title));
+
+    var meta = UI.el('table', 'proof-meta');
+    var tb = UI.el('tbody');
+    tb.appendChild(metaRow('대상 공정 · 설비',
+      [proc ? proc.name : '-', eq ? eq.name : '삭제된 설비'].join(' · ')));
+    tb.appendChild(metaRow('교육 언어', (course.languages || []).map(langName).join(' · ') || '-'));
+    tb.appendChild(metaRow('교육 방식',
+      '설비별 다국어 음성 · 픽토그램 자율 학습 후 이해도 검증'));
+    tb.appendChild(metaRow('발급일', course.createdAt ? UI.formatDate(course.createdAt) : '기록 없음'));
+    tb.appendChild(metaRow('실시 기간', doneAt.length
+      ? UI.formatDate(doneAt[0]) + ' ~ ' + UI.formatDate(doneAt[doneAt.length - 1])
+      : '실시 기록 없음'));
+    tb.appendChild(metaRow('대상 인원', people.length + '명'));
+    meta.appendChild(tb);
+    sec.appendChild(meta);
+
+    sec.appendChild(UI.el('h4', null, '교육 내용 — 전달한 안전 문구'));
+    sec.appendChild(phrasesList(course));
+
+    sec.appendChild(UI.el('h4', null, '이해도 검증 — 문항'));
+    sec.appendChild(quizList(course));
+
+    sec.appendChild(UI.el('h4', null, '대상자별 기록'));
+    sec.appendChild(UI.el('p', 'proof-note',
+      '이 표의 결과는 서명이 아니라 이해도 검증 결과입니다. ' +
+      '서명은 참석의 증거일 뿐 이해의 증거가 아니라는 데서 이 서식이 출발했습니다. ' +
+      '미이수자와 미통과자도 그대로 적습니다.'));
+    sec.appendChild(rowsTable(people, results));
+
+    return sec;
+  }
+
+  /* 표지 — 사업장과 이 문서가 담는 범위 */
+  function renderCover(courses) {
+    var state = setup();
+
+    $('proof-issued-at').textContent = '발급 ' + UI.formatDate(new Date().toISOString());
+    $('proof-issued-by').textContent = [user.name, user.title].filter(Boolean).join(' · ') || user.userId;
+    $('sign-admin').textContent = user.name || user.userId;
+
+    var metas = $('proof-cover-rows');
+    metas.textContent = '';
+    metas.appendChild(metaRow('사업장', state.site.name || '(미등록)'));
+    metas.appendChild(metaRow('규모', state.site.sizeBand || '-'));
+    metas.appendChild(metaRow('담은 범위', scopeLabel()));
+    metas.appendChild(metaRow('담은 교육', courses.length + '건'));
+
+    /* ★ 무엇이 이 문서에 없는지 적는다.
+         범위를 골라 뽑을 수 있게 된 이상, 받는 쪽이 "이게 전부가 아니다" 를
+         알 수 있어야 한다. 조용히 줄이면 그것이 곧 숨기는 것이 된다. */
+    var all = Store.courses.load();
+    var outside = all.length - courses.length;
+    var undated = all.filter(function (c) { return courseTime(c) === null; }).length;
+
+    var parts = [];
+    if (outside > 0) {
+      parts.push('이 사업장에 발급된 교육 ' + all.length + '건 가운데 ' + courses.length +
+        '건을 담았습니다. 나머지 ' + outside + '건은 이 문서에 없습니다.');
+    } else {
+      parts.push('이 사업장에 발급된 교육 ' + all.length + '건 전부를 담았습니다.');
+    }
+    if (scope !== 'course' && undated > 0) {
+      parts.push('발급일이 없는 교육 ' + undated + '건은 어느 기간에도 넣을 수 없어 빠져 있습니다.');
+    }
+    $('proof-scope').textContent = parts.join(' ');
+  }
+
+  function renderProof(courses) {
+    var box = $('proof-courses');
+    box.textContent = '';
+
+    if (!courses.length) {
+      $('proof').hidden = true;
+      return;
+    }
+    $('proof').hidden = false;
+
+    renderCover(courses);
+    courses.forEach(function (course) { box.appendChild(courseBlock(course)); });
   }
 
   /* -----------------------------------------------------------------
@@ -327,33 +485,58 @@
      ----------------------------------------------------------------- */
 
   function render() {
-    var courses = Store.courses.load();
+    var all = Store.courses.load();
 
-    UI.fillSelect($('pick-course'), courses,
+    /* 고르는 칸을 지금 단위에 맞춘다 */
+    $('field-course').hidden = scope !== 'course';
+    $('field-period').hidden = scope === 'course';
+
+    UI.fillSelect($('pick-course'), all,
       function (c) { return c.id; },
       function (c) { return c.title; });
 
+    if (scope !== 'course') {
+      UI.fillSelect($('pick-period'), periodsFor(scope),
+        function (p) { return p.key; },
+        function (p) { return p.label; });
+    }
+
+    $('summary').textContent = '';
+
+    if (!all.length) {
+      $('proof').hidden = true;
+      $('btn-print').disabled = true;
+      $('summary').appendChild(UI.el('p', 'empty',
+        '발급된 교육이 없습니다. 교육 콘텐츠 생성(기능2)에서 교육을 먼저 만들어 주세요.'));
+      return;
+    }
+
+    var courses = pickedCourses();
+
     if (!courses.length) {
       $('proof').hidden = true;
-      $('summary').textContent = '';
       $('btn-print').disabled = true;
-      var note = UI.el('p', 'empty',
-        '발급된 교육이 없습니다. 교육 콘텐츠 생성(기능2)에서 교육을 먼저 만들어 주세요.');
-      $('summary').appendChild(note);
+      $('summary').appendChild(UI.el('p', 'empty',
+        '이 기간에 발급된 교육이 없습니다. 다른 기간을 골라 주세요.'));
       return;
     }
 
     $('btn-print').disabled = false;
-    var course = courseOf($('pick-course').value) || courses[0];
-    renderSummary(course);
-    renderProof(course);
+    renderSummary(courses);
+    renderProof(courses);
   }
 
   /* -----------------------------------------------------------------
      이벤트 연결
      ----------------------------------------------------------------- */
 
+  $('pick-scope').addEventListener('change', function () {
+    scope = $('pick-scope').value;
+    render();
+  });
+
   $('pick-course').addEventListener('change', render);
+  $('pick-period').addEventListener('change', render);
 
   $('btn-print').addEventListener('click', function () {
     // 발급 시각을 누르는 순간으로 다시 적는다

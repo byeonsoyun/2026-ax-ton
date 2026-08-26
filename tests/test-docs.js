@@ -128,7 +128,7 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
     ['fileFlag', 'src/admin/library.js'],
     ['negationFlipped', 'src/assets/review.js'],   // 기능2 와 함께 쓰려고 빼냈다
     ['setStatus', 'src/admin/library.js'],
-    ['renderRows', 'src/admin/proof.js'],
+    ['courseBlock', 'src/admin/proof.js'],       // C1 에서 renderRows 를 덩어리 단위로 바꿨다
     ['phrasePool', 'src/worker/home.js'],        // C5 에서 pickTodayPhrase 를 쪼갠 것
   ];
 
