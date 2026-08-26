@@ -247,6 +247,41 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
     'admin/dashboard', 'admin/content', 'admin/proof', 'admin/library']
     .filter((f) => !read('src/' + f + '.html').includes('여기부터 채우시면 됩니다'));
   ok('★ 여덟 화면에 "여기부터" 칸이 다 있다', todos.length === 0, todos.join(', '));
+
+  /* ★ 칸이 있는지만 보면 B5 가 고친 어긋남을 다시 놓친다.
+       칸 안에 "이미 끝난 것" 이 적혀 있어도 위 검사는 통과한다.
+       처음 보는 사람은 문서보다 화면을 믿어서 이미 있는 기능을 또 만든다. */
+  const SCREENS = ['worker/home', 'worker/report', 'worker/talk', 'worker/my',
+    'admin/dashboard', 'admin/content', 'admin/proof', 'admin/library'];
+
+  /* 그 화면의 "여기부터 채우시면 됩니다" 칸만 잘라 낸다 */
+  const todoBox = (f) => {
+    const html = read('src/' + f + '.html');
+    const from = html.indexOf('여기부터 채우시면 됩니다');
+    if (from === -1) return '';
+    const to = html.indexOf('</section>', from);
+    return html.slice(from, to === -1 ? html.length : to);
+  };
+
+  /* 끝낸 기능이 아직 할 일로 적혀 있으면 안 된다.
+     ★ 새 항목을 끝낼 때마다 여기에 한 줄 더하세요 — 그것이 화면도 함께
+       정리하라는 신호가 됩니다 (07-next-tasks.md 의 - [x] 와 짝입니다). */
+  const DONE = [
+    { label: '문항 다국어', why: 'A1 에서 끝남 — Store.qtext' },
+    { label: '언어별 판정', why: 'A2 에서 끝남 — Store.phraseStatus' },
+    { label: '교육 기한', why: 'B1 에서 끝남 — UI.dueBadge' },
+    { label: '문구 추가', why: 'B2 에서 끝남 — admin/library 의 #form-add' },
+  ];
+
+  DONE.forEach((d) => {
+    const stale = SCREENS.filter((f) => todoBox(f).includes('<dt>' + d.label));
+    ok('★ 끝난 "' + d.label + '" 이 할 일 칸에 없다 (' + d.why + ')',
+      stale.length === 0, stale.join(', '));
+  });
+
+  /* 팀 시절 표기. 지금은 혼자라 P1~P4 가 가리키는 사람이 없다. */
+  const withP = SCREENS.filter((f) => /—\s*P[1-4]\b|P[1-4]\s*가 채우/.test(read('src/' + f + '.html')));
+  ok('★ 화면에 P1~P4 표기가 남아 있지 않다', withP.length === 0, withP.join(', '));
 }
 
 report('문서 — 물어보기만 해도 다음 할 일을 찾을 수 있는가');
