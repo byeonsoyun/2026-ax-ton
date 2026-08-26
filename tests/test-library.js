@@ -375,4 +375,175 @@ function open(opts = {}) {
     fixed.flags.filter((f) => f.lang === 'km' && !f.resolvedAt).length, 0);
 }
 
+/* =================================================================
+   7. 문구 추가 폼 (B2)
+
+   ★ 이 폼이 지켜야 하는 것은 "저장이 되는가" 가 아니다.
+     새 문구가 검수를 건너뛰고 안전 지시가 되지 않는가이다.
+   ================================================================= */
+
+/* 폼을 채우고 접수한다. back 을 주지 않으면 역번역 없이 넣어 보는 것이다. */
+function addPhrase(t, { ko, category, lang, textIn, back }) {
+  if (ko != null) t.$('add-ko').value = ko;
+  if (category != null) t.$('add-category').value = category;
+  if (lang) {
+    if (textIn != null) {
+      t.$('add-' + lang + '-text').value = textIn;
+      t.$('add-' + lang + '-text').dispatchEvent(new t.win.Event('input', { bubbles: true }));
+    }
+    if (back != null) {
+      t.$('add-' + lang + '-back').value = back;
+      t.$('add-' + lang + '-back').dispatchEvent(new t.win.Event('input', { bubbles: true }));
+    }
+  }
+  t.$('form-add').dispatchEvent(new t.win.Event('submit', { bubbles: true, cancelable: true }));
+}
+
+{
+  const t = open();
+  const doc = t.win.document;
+
+  ok('문구 추가 폼이 있다', !!t.$('form-add'));
+
+  /* 언어 칸은 Store.LANGUAGES 에서 나온다 — 화면에 언어를 박아 두면
+     언어가 늘 때 한 곳을 빠뜨린다. 한국어는 원문 칸이 이미 받는다. */
+  eq('언어 칸이 5개 (한국어 제외)', doc.querySelectorAll('#add-i18n .i18n-box').length, 5);
+  ok('크메르어 칸이 있다', !!t.$('add-km-text') && !!t.$('add-km-back'));
+  ok('한국어 번역 칸은 없다', !t.$('add-ko-text'));
+
+  /* 분류 후보는 라이브러리에서 온다. Store.setup 의 공정 이름을 쓰면
+     운영자가 여러 사업장을 가로질러 볼 때 다른 사업장의 분류가 사라진다. */
+  const cats = [...t.$('add-category-list').querySelectorAll('option')].map((o) => o.value);
+  ok('분류 후보가 지금 문구들에서 온다', cats.includes('프레스') && cats.includes('도장'),
+    cats.join(' | '));
+}
+
+/* 원문 없이는 접수되지 않는다 */
+{
+  const t = open();
+  const before = t.win.Store.library.load().length;
+  addPhrase(t, { ko: '' });
+  eq('원문이 비면 저장되지 않는다', t.win.Store.library.load().length, before);
+  has('무엇이 빠졌는지 말한다', text(t.$('toast')), '원문');
+}
+
+/* ★ 역번역 없는 번역은 받지 않는다.
+     받아 버리면 판정 화면에 견줄 것이 없는 칸이 생기고, 검수자는 읽지도
+     못하는 문장을 눈감고 승인하게 된다. 그 승인이 곧 현장의 안전 지시다. */
+{
+  const t = open();
+  const before = t.win.Store.library.load().length;
+  addPhrase(t, { ko: '지게차 뒤에 서지 마십시오', lang: 'km', textIn: 'កុំឈរខាងក្រោយ' });
+  eq('★ 역번역이 없으면 저장되지 않는다', t.win.Store.library.load().length, before);
+  has('어느 언어인지 말한다', text(t.$('toast')), '크메르어');
+  has('왜 막았는지 말한다', text(t.$('toast')), '역번역');
+  has('그 언어 칸에도 적어 둔다', text(t.$('add-km-warn')), '역번역을 적어 주세요');
+}
+
+/* 적는 동안 대조해 준다 — 기능2 의 문항 번역 칸과 같은 판정 (assets/review.js) */
+{
+  const t = open();
+
+  /* ★ 경고는 접수하기 전에 본다.
+       접수에 성공하면 폼이 비워지고 경고 칸도 함께 지워진다. */
+  t.$('add-ko').value = '지게차 뒤에 서지 마십시오';
+  t.$('add-km-text').value = 'x';
+  t.$('add-km-back').value = '지게차 뒤에 서도 됩니다';
+  t.$('add-km-back').dispatchEvent(new t.win.Event('input', { bubbles: true }));
+
+  has('★ 부정이 뒤집히면 접수 전에 경고한다', text(t.$('add-km-warn')), '뒤집혔을 수 있습니다');
+
+  /* 경고는 AI 가 찾아 준 것이고 접수를 막지는 않는다 — 판정은 사람이 한다.
+     막아 버리면 말만 바꿔 쓴 번역까지 등록이 안 된다. */
+  t.$('form-add').dispatchEvent(new t.win.Event('submit', { bubbles: true, cancelable: true }));
+
+  const made = t.win.Store.library.load().find((p) => p.ko === '지게차 뒤에 서지 마십시오');
+  ok('경고가 떠도 접수는 된다', !!made);
+  eq('다만 검수 대기로 들어간다', made.status, 'waiting');
+}
+
+/* 원문을 나중에 고치면 대조가 따라온다 */
+{
+  const t = open();
+  t.$('add-km-text').value = 'x';
+  t.$('add-km-back').value = '손을 넣어도 됩니다';
+  t.$('add-km-back').dispatchEvent(new t.win.Event('input', { bubbles: true }));
+  t.$('add-ko').value = '손을 넣지 마십시오';
+  t.$('add-ko').dispatchEvent(new t.win.Event('input', { bubbles: true }));
+  has('★ 원문을 고치면 다시 견준다', text(t.$('add-km-warn')), '뒤집혔을 수 있습니다');
+}
+
+/* 접수 — 저장되는 모양과 검수 상태 */
+{
+  const t = open();
+  const before = t.win.Store.library.load().length;
+  addPhrase(t, {
+    ko: '지게차 뒤에 서지 마십시오', category: '지게차',
+    lang: 'km', textIn: 'កុំឈរខាងក្រោយ', back: '지게차 뒤에 서지 마십시오'
+  });
+
+  const list = t.win.Store.library.load();
+  eq('한 개 늘었다', list.length, before + 1);
+
+  const made = list[list.length - 1];
+  eq('원문이 저장된다', made.ko, '지게차 뒤에 서지 마십시오');
+  eq('분류가 저장된다', made.category, '지게차');
+  ok('id 가 붙는다', !!made.id);
+
+  /* ★ 이 한 줄이 이 폼의 전부다.
+       여기서 'reviewed' 가 나오면 검수를 지나지 않은 문구가 안전 지시가 된다. */
+  eq('★ 새 문구는 검수 대기로 들어간다', made.status, 'waiting');
+  eq('★ 그래서 아직 안전 지시로 쓰이지 않는다', t.win.Store.phraseOk(made, 'km'), false);
+
+  eq('넣은 언어만 저장된다', Object.keys(made.translations).join(','), 'km');
+  eq('역번역이 함께 저장된다', made.translations.km.back, '지게차 뒤에 서지 마십시오');
+
+  has('문구 목록에 나타난다', text(t.$('phrase-rows')), '지게차 뒤에 서지 마십시오');
+  has('검수 대기 배지가 붙는다', text(t.$('phrase-rows')), '검수 대기');
+  has('판정이 필요한 문구에도 올라온다', text(t.$('review-list')), '지게차 뒤에 서지 마십시오');
+
+  const cats = [...t.$('add-category-list').querySelectorAll('option')].map((o) => o.value);
+  ok('새 분류가 다음 후보가 된다', cats.includes('지게차'), cats.join(' | '));
+
+  eq('폼이 비워진다', t.$('add-ko').value + t.$('add-km-text').value, '');
+  eq('경고 칸도 비워진다', text(t.$('add-km-warn')), '');
+}
+
+/* 번역 없이도 쌓을 수 있다 — 다만 검수 완료로는 못 올라간다.
+   200개를 모으는 일이 번역을 기다리느라 멈추면 안 된다.
+   막는 것은 기존 setStatus 규칙이 이어서 한다. */
+{
+  const t = open();
+  addPhrase(t, { ko: '번역이 아직 없는 문구' });
+
+  const list = t.win.Store.library.load();
+  const bare = list[list.length - 1];
+  eq('번역 없이도 추가된다', bare.ko, '번역이 아직 없는 문구');
+  eq('번역은 비어 있다', Object.keys(bare.translations).length, 0);
+
+  const row = [...t.$('phrase-rows').querySelectorAll('tr')]
+    .find((tr) => text(tr).includes('번역이 아직 없는 문구'));
+  const up = [...row.querySelectorAll('button')].find((b) => text(b) === '검수 완료');
+
+  /* 버튼이 없으면 그것 자체가 실패다 — 검수 대기가 아니라는 뜻이니까.
+     여기서 그냥 누르면 검사가 스택 트레이스로 터지고, 무엇이 깨졌는지 안 보인다. */
+  ok('검수 대기라 검수 완료 버튼이 있다', !!up,
+    [...row.querySelectorAll('button')].map((b) => text(b)).join(' | '));
+  if (up) click(t.win, up);
+
+  const after = t.win.Store.library.load().find((p) => p.id === bare.id);
+  eq('★ 번역 없는 문구는 검수 완료로 못 올라간다', after.status, 'waiting');
+  has('왜 막혔는지 말한다', text(t.$('toast')), '번역이 하나도 없는');
+}
+
+/* 운영자가 넣은 글자가 그대로 태그가 되면 안 된다 (innerHTML 금지) */
+{
+  const t = open();
+  addPhrase(t, {
+    ko: '<img src=x onerror=alert(1)>조심', lang: 'km', textIn: 'x', back: '조심'
+  });
+  eq('태그로 해석되지 않는다', t.$('phrase-rows').querySelectorAll('img').length, 0);
+  has('글자 그대로 보인다', text(t.$('phrase-rows')), '<img src=x onerror=alert(1)>조심');
+}
+
 report('기능9 안전 문구 라이브러리');
