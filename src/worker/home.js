@@ -80,18 +80,16 @@
   }
 
   /* -----------------------------------------------------------------
-     1. 오늘의 안전 문구
+  /* 오늘 띄울 문구들. 검수를 지난 것만, 내 언어 기준으로 판정한다.
 
-     ★ 검수 완료된 것만. 내 설비 교육이 쓰는 문구를 먼저 고르고,
-       없으면 검수된 것 중 아무거나 하나 띄운다 — 빈 배너보다는 낫다.
-     ----------------------------------------------------------------- */
-
-  function pickTodayPhrase() {
+     ★ 내 설비 교육이 쓰는 문구를 앞에 둔다. 없으면 검수된 것 전부를 쓴다 —
+       빈 배너보다는 낫다. */
+  function phrasePool() {
     // 판정은 내 언어 기준이다 — 다른 언어의 오역으로 내 문구가 사라지지 않는다
     var library = Store.library.load().filter(function (p) {
       return Store.phraseOk(p, me.lang);
     });
-    if (!library.length) return null;
+    if (!library.length) return [];
 
     var mine = {};
     myCourses().forEach(function (c) {
@@ -99,25 +97,70 @@
     });
 
     var preferred = library.filter(function (p) { return mine[p.id]; });
-    var pool = preferred.length ? preferred : library;
+    return preferred.length ? preferred : library;
+  }
 
-    // 날짜로 돌린다. 새로고침할 때마다 바뀌면 "오늘의 문구" 가 아니다.
-    var day = Math.floor(Date.now() / 86400000);
-    return pool[day % pool.length];
+  /* 날짜로 돌린다. 새로고침할 때마다 바뀌면 "오늘의 문구" 가 아니다. */
+  function todayIndex(pool) {
+    if (!pool.length) return 0;
+    return Math.floor(Date.now() / 86400000) % pool.length;
+  }
+
+  /* 지금 보고 있는 자리. null 이면 아직 오늘 것을 보고 있다는 뜻이다 (C5). */
+  var phraseAt = null;
+
+  function currentPhrase() {
+    var pool = phrasePool();
+    if (!pool.length) return null;
+
+    /* 문구가 지워지거나 검수가 내려가면 목록이 짧아진다.
+       자리를 그대로 두면 없는 것을 가리키게 되므로 접어 준다. */
+    var at = (phraseAt === null) ? todayIndex(pool) : ((phraseAt % pool.length) + pool.length) % pool.length;
+    return { phrase: pool[at], at: at, total: pool.length };
+  }
+
+  /* 좌우로 넘긴다. 끝에서 다시 처음으로 돌아온다 —
+     막다른 끝이 있으면 글을 못 읽는 사람은 고장으로 여긴다. */
+  function stepPhrase(delta) {
+    var now = currentPhrase();
+    if (!now || now.total < 2) return;
+
+    phraseAt = ((now.at + delta) % now.total + now.total) % now.total;
+    renderToday();
+
+    /* ★ 넘기면 그 문구를 읽어 준다. 사람이 손으로 누른 뒤라
+       음성이 실제로 나는지도 여기서 판정된다 (UI.speak). */
+    var next = currentPhrase();
+    if (next) UI.speak(speechFor(next.phrase));
+  }
+
+  function speechFor(phrase) {
+    var t = translationOf(phrase);
+    return {
+      text: t ? t.text : phrase.ko,
+      lang: t ? me.lang : 'ko',
+      ko: phrase.ko               // 내 언어 음성이 기기에 없으면 이것을 읽는다
+    };
   }
 
   function renderToday() {
-    var phrase = pickTodayPhrase();
+    var now = currentPhrase();
     var box = $('today');
+    var nav = $('today-nav');
 
-    if (!phrase) {
+    if (!now) {
       box.className = 'today empty-today';
       $('today-pict').textContent = '📋';
       $('today-text').textContent = '아직 안전 문구가 준비되지 않았습니다.';
       $('today-ko').textContent = '';
+      $('today-note').textContent = '';
       $('today-listen').textContent = '';
+      nav.hidden = true;
       return;
     }
+
+    var phrase = now.phrase;
+    box.className = 'today';
 
     var eqIcon = '⚠';
     var state = Store.setup.load();
@@ -133,18 +176,22 @@
     $('today-text').textContent = t ? t.text : phrase.ko;
     $('today-ko').textContent = t ? phrase.ko : '';
 
+    /* ★ 배지는 정해진 자리에만 넣는다. 예전에는 다시 그릴 때마다
+         listen 옆에 새로 끼워 넣어서 배지가 쌓였다. */
+    var note = $('today-note');
+    note.textContent = '';
+    if (!t) note.appendChild(UI.waitBadge('내 언어 번역 준비 중'));
+
     var listen = $('today-listen');
     listen.textContent = '';
     listen.appendChild(UI.audioButton(function () {
-      return { text: t ? t.text : phrase.ko, lang: t ? me.lang : 'ko', ko: phrase.ko };
-    }, '오늘의 안전 문구 듣기'));
+      return speechFor(phrase);
+    }, '안전 문구 듣기'));
     listen.appendChild(UI.el('span', 'label', '들어 보기'));
 
-    if (!t) {
-      var note = UI.el('p', 'original');
-      note.appendChild(UI.waitBadge('내 언어 번역 준비 중'));
-      listen.parentNode.insertBefore(note, listen);
-    }
+    /* 넘겨 볼 것이 하나뿐이면 버튼을 아예 두지 않는다 (C5) */
+    nav.hidden = now.total < 2;
+    $('today-pos').textContent = now.total < 2 ? '' : (now.at + 1) + ' / ' + now.total;
   }
 
   /* -----------------------------------------------------------------
@@ -277,6 +324,11 @@
     renderMenu();
     renderBadTrans();
   }
+
+  /* 안전 문구 넘겨 보기 (C5).
+     교육에 들어가지 않아도 안전 지시가 여러 번 닿게 하는 것이 목적이다. */
+  $('today-prev').addEventListener('click', function () { stepPhrase(-1); });
+  $('today-next').addEventListener('click', function () { stepPhrase(1); });
 
   window.addEventListener('pagehide', UI.stopSpeak);
   UI.onVoicesReady(renderVoiceNote);

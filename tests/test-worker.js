@@ -568,4 +568,100 @@ function openPostByTitle(t, title) {
   has('★ 그 뒤로는 손댈 수 없다', text(t.$('p-mine')), '본인도 고치거나 지울 수 없습니다');
   ok('고치기 버튼이 사라진다', !text(t.$('p-mine')).includes('고치기'), text(t.$('p-mine')));
 }
+
+/* =================================================================
+   홈 — 오늘의 문구 넘겨 보기 (C5)
+   ================================================================= */
+{
+  /* 음성을 들어 보려면 가짜 speechSynthesis 가 필요하다 — jsdom 에는 없다.
+     test-smoke.js 의 fakeSpeech 와 같은 모양이고, 여기서는 "정상으로 읽는"
+     브라우저만 있으면 된다. */
+  const spoken = [];
+  const t = open('home', {
+    before(win) {
+      win.speechSynthesis = {
+        cancel() {},
+        getVoices() { return [{ lang: 'ko-KR' }, { lang: 'km-KH' }]; },
+        addEventListener() {}, removeEventListener() {},
+        speak(u) {
+          spoken.push(String(u.text));
+          if (u.onstart) u.onstart();
+          if (u.onend) u.onend();
+        },
+      };
+      win.SpeechSynthesisUtterance = function (text) { this.text = text; };
+    },
+  });
+
+  const nav = t.$('today-nav');
+  ok('★ 넘겨 볼 것이 있으면 버튼이 보인다', nav.hidden === false);
+  has('지금 자리를 알려 준다', text(t.$('today-pos')), '/');
+
+  const first = text(t.$('today-text'));
+  const pos1 = text(t.$('today-pos'));
+  spoken.length = 0;
+
+  click(t.win, t.$('today-next'));
+  const second = text(t.$('today-text'));
+  ok('★ 다음 문구로 바뀐다', second !== first, first + ' → ' + second);
+  ok('자리 표시도 바뀐다', text(t.$('today-pos')) !== pos1);
+  ok('★ 넘기면 그 문구를 읽어 준다', spoken.length > 0, JSON.stringify(spoken));
+  eq('★ 읽는 것이 지금 보이는 바로 그 문구다', spoken[spoken.length - 1], second);
+
+  click(t.win, t.$('today-prev'));
+  eq('★ 되돌아오면 원래 문구다', text(t.$('today-text')), first);
+
+  /* 끝에서 막히지 않는다 — 막다른 끝은 고장으로 보인다 */
+  const total = Number(text(t.$('today-pos')).split('/')[1].trim());
+  for (let i = 0; i < total; i++) click(t.win, t.$('today-next'));
+  eq('★ 한 바퀴 돌면 제자리로 온다', text(t.$('today-text')), first);
+}
+
+{
+  /* 볼 것이 하나뿐이면 버튼을 아예 두지 않는다 —
+     눌러도 아무 일이 없는 버튼은 글을 못 읽는 사람에게 고장이다.
+
+     ★ update 의 콜백에서 무엇을 return 하면 그 값이 저장소를 통째로 덮는다.
+       처음에 boolean 을 돌려줬다가 라이브러리가 통째로 날아갔고,
+       "문구 0개" 상태를 "문구 1개" 로 착각해서 검사가 엉뚱하게 통과했다. */
+  const t = open('home', {
+    before(win) {
+      win.Store.library.update((list) => {
+        list.forEach((p) => { if (p.id !== 'ph-1') p.status = 'waiting'; });
+      });
+    },
+  });
+
+  const okCount = t.win.Store.library.load()
+    .filter((p) => t.win.Store.phraseOk(p, 'km')).length;
+  eq('먼저 — 검수를 지난 문구가 정말 하나뿐인가', okCount, 1);
+
+  eq('★ 하나뿐이면 넘기기 버튼이 없다', t.$('today-nav').hidden, true);
+  eq('자리 표시도 비운다', text(t.$('today-pos')), '');
+  ok('★ 그래도 그 문구는 보인다 (빈 배너가 아니다)',
+    !text(t.$('today-text')).includes('준비되지 않았습니다'), text(t.$('today-text')));
+}
+
+{
+  /* ★ 다시 그려도 "번역 준비 중" 배지가 쌓이지 않는다.
+       예전에는 배지를 listen 옆에 새로 끼워 넣어서 render 할 때마다 늘었다. */
+  const t = open('home', {
+    before(win) {
+      // 크메르어 번역이 없는 문구만 남긴다 → 배지가 뜨는 상태
+      win.Store.library.update((list) => {
+        list.forEach((p) => {
+          if (p.translations) delete p.translations.km;
+        });
+      });
+    },
+  });
+  has('번역이 없으면 배지를 띄운다', text(t.$('today-note')), '번역 준비 중');
+
+  click(t.win, t.$('today-next'));
+  click(t.win, t.$('today-prev'));
+  click(t.win, t.$('today-next'));
+
+  const badges = t.win.document.querySelectorAll('#today .badge-wait');
+  eq('★ 여러 번 넘겨도 배지는 하나뿐이다', badges.length, 1);
+}
 report('노동자 화면 4개 — 홈 · 신고 · 소통 · 마이');

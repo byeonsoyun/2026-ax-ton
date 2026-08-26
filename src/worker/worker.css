@@ -1255,3 +1255,47 @@
 }
 
 .anon-warn[hidden] { display: none; }
+
+/* -------------------------------------------------------------------
+   오늘의 안전 문구 넘겨 보기 (C5)
+
+   ★ 장갑 낀 손으로 누른다. 좌우 버튼은 60px 정사각형이다.
+     볼 것이 하나뿐이면 JS 가 통째로 감춘다 — 반응 없는 버튼은 고장이다.
+   ------------------------------------------------------------------- */
+
+.today-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.today-nav[hidden] { display: none; }
+
+.btn-round {
+  width: var(--tap-min);
+  height: var(--tap-min);
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3em;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.btn-round:active { background: #eef2f6; }
+.btn-round:focus-visible { outline: 3px solid #7aa8d8; outline-offset: 2px; }
+
+.today-pos {
+  margin: 0;
+  min-width: 64px;
+  text-align: center;
+  font-size: .9em;
+  font-weight: 700;
+  color: var(--ink-2);
+}
