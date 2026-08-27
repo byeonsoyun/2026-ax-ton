@@ -13,11 +13,22 @@
 
   var $ = UI.$;
 
+  /* 설비 앞 QR 을 찍었는데 로그인이 안 돼 있으면 여기로 온다 (D1).
+     어디로 가려던 것인지가 ?next= 에 담겨 있다.
+     Auth.nextFor 가 그 값이 우리 화면인지, 그 역할이 갈 수 있는 자리인지 본다. */
+  function param(name) {
+    var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search || '');
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+
+  var wanted = param('next');
+
   /* 이미 로그인돼 있으면 자기 자리로 보낸다.
      로그인 화면을 다시 보여 주면 "로그아웃된 건가?" 하고 헷갈린다. */
   var already = Auth.current();
   if (already) {
-    location.replace(Store.role(already.role).landing);
+    location.replace(Auth.nextFor(already.role, wanted) ||
+      Store.role(already.role).landing);
     return;
   }
 
@@ -92,7 +103,8 @@
       $('login-pw').focus();
       return;
     }
-    location.href = result.landing;
+    /* 찍고 들어온 자리가 있으면 그리로. 없거나 남의 역할 화면이면 자기 첫 화면으로. */
+    location.href = Auth.nextFor(result.account.role, wanted) || result.landing;
   });
 
   $('btn-seed').addEventListener('click', function () {

@@ -227,9 +227,30 @@ var Store = (function () {
 
   /* 6. progress — 노동자 기능3·4 가 쓰고 관리자 기능5·6 이 읽는다
         { workerId, courseId, lang, learnedAt,
-          quiz: { score, passed, answers, at } }
+          quiz: { score, passed, answers, at, asked } }
+        asked 는 그때 실제로 낸 문항의 id 목록이다 (C6). answers 와 자리가 짝지어진다.
         통과하지 못하면 교육 완료로 기록되지 않는다 (SCREEN 기능4). */
   var progress = listStore('progress');
+
+  /* progress.quiz.answers[i] 가 가리키는 문항을 찾는다 (C6).
+
+     ★ answers 는 "그때 실제로 낸 문항" 의 순서다. course.quiz 의 자리와
+       같다는 보장이 없다 — 채점할 수 없는 문항이 섞여 있거나(quiz.js 의
+       questionsOf 가 걸러 낸다) 나중에 문항을 내리면(retired) 어긋난다.
+       어긋나면 대시보드의 취약 항목과 증빙이 **조용히 다른 문항을 가리킨다.**
+       틀린 곳을 틀렸다고 말하지 못하는 것보다, 엉뚱한 곳을 가리키는 쪽이 나쁘다.
+
+     ★ 그래서 새 기록에는 quiz.asked (문항 id 목록) 를 함께 남긴다.
+       asked 가 있으면 그것으로 찾는다.
+
+     ★ 없는 옛 기록은 지금까지처럼 자리로 찾는다.
+       자리로 찾는 길을 없애면 이미 쌓인 기록이 통째로 빈다. */
+  function askedQuestion(course, quizRow, i) {
+    var list = (course && Array.isArray(course.quiz)) ? course.quiz : [];
+    var asked = (quizRow && Array.isArray(quizRow.asked)) ? quizRow.asked : null;
+    if (!asked) return list[i] || null;
+    return asked[i] ? findBy(list, 'id', asked[i]) : null;
+  }
 
   /* 7. reports — 노동자 기능8 위험요소 신고. 관리자 기능6 이 처리한다
         { id, processId, equipmentId, hazard, memo, status, createdAt }
@@ -241,7 +262,83 @@ var Store = (function () {
         { id, title, body, author, anonymous, createdAt, comments: [] } */
   var posts = listStore('posts');
 
-  var ALL = [accounts, session, setup, library, courses, progress, reports, posts];
+  /* 9. prefs — 이 브라우저의 보기 설정 (B3 글자 크기)
+
+        { fontScale: 'small' | 'normal' | 'large' }
+
+        ★ 계정이 아니라 기기에 딸린다. 현장에서는 한 대의 폰을 여러 사람이
+          돌려 쓰기도 하고, 글자 크기는 "이 화면이 지금 잘 보이는가" 의 문제다.
+          accounts 에 넣으면 로그인해야 글자가 커지는데, 로그인 화면 글자가
+          안 보이는 사람은 거기서 막힌다.
+
+        ★ 목록이 아니라 값 하나다. 늘어날 설정이 생기면 여기 필드를 더한다. */
+  var FONT_SCALES = ['small', 'normal', 'large'];
+
+  var prefs = makeStore('prefs',
+    function () { return { fontScale: 'normal' }; },
+    function (d) {
+      d = obj(d);
+      return {
+        fontScale: FONT_SCALES.indexOf(d.fontScale) === -1 ? 'normal' : d.fontScale
+      };
+    });
+
+  /* 10. orders — 담당자가 내린 재교육 지시 (D2)
+
+        [ { id, workerId, courseId, note, at, by, canceledAt } ]
+
+        ★ 해소됐는지는 여기 적지 않는다. progress 를 보고 판정한다 —
+          지시를 내린 뒤(at) 그 교육을 통과했으면 해소된 것이다.
+          "완료" 를 따로 저장하면 진실이 두 곳이 되고, 언젠가 어긋난다.
+
+        ★ 이 기록으로 사람을 세지 않는다.
+          "이 사람 재교육 3회" 는 인사 평가 자료다. 대시보드가 개인별 점수를
+          인사·평가 목적으로 내보내지 않는다는 원칙과 같은 이유로,
+          누적 횟수를 세거나 사람을 줄 세우는 화면을 만들지 않는다.
+          지시는 "이 교육을 다시 듣게 한다" 는 뜻이지 "이 사람이 못했다" 가 아니다. */
+  var orders = listStore('orders');
+
+  /* 이 지시가 아직 살아 있는가 (D2).
+
+     ★ 판정을 여기 한 곳에 둔다. 담당자 대시보드와 노동자 홈이 같은 함수를
+       쓴다 — 계산을 화면마다 두면 한쪽만 고쳐져서, 담당자는 "보냈다" 고
+       보고 노동자 화면에는 아무것도 안 뜨는 일이 생긴다.
+
+     ★ 해소됐다는 것을 orders 에 적지 않는다. progress 를 보고 판정한다.
+       "완료" 를 따로 저장하면 진실이 두 곳이 되고 언젠가 어긋난다.
+
+     ★ 지시를 내린 뒤(at)에 통과했어야 해소다.
+       그전에 통과한 기록으로 지시가 저절로 사라지면, 담당자가 방금 보낸
+       지시가 보내자마자 없어진다. */
+  function orderOpen(order, progressRow) {
+    if (!order || order.canceledAt) return false;
+
+    var q = progressRow && progressRow.quiz;
+    if (!q || !q.passed) return true;
+    if (!q.at || !order.at) return true;      // 언제인지 모르면 살아 있는 것으로 둔다
+
+    return String(q.at) <= String(order.at);  // ISO 문자열이라 그대로 견줄 수 있다
+  }
+
+
+  /* -----------------------------------------------------------------
+     글자 크기를 화면이 그려지기 전에 적용한다 (B3)
+
+     ★ store.js 는 모든 화면의 <head> 에서 읽힌다. ui.js(문서 끝)에서 하면
+       기본 크기로 한 번 그려졌다가 커지는 것이 눈에 보인다.
+       저시력 사용자에게는 그 한 번이 "안 보이는 화면" 이다.
+
+     ★ 저장소가 막힌 브라우저에서는 조용히 기본 크기로 간다.
+       여기서 던지면 store.js 가 통째로 멈추고 화면이 아예 안 뜬다.
+     ----------------------------------------------------------------- */
+  try {
+    var bootScale = prefs.load().fontScale;
+    if (bootScale && bootScale !== 'normal' && document.documentElement) {
+      document.documentElement.setAttribute('data-font', bootScale);
+    }
+  } catch (e) { /* 기본 크기로 간다 */ }
+  var ALL = [accounts, session, setup, library, courses, progress, reports, posts,
+             prefs, orders];
 
   /* -----------------------------------------------------------------
      전체 내보내기 / 불러오기 / 초기화
@@ -449,6 +546,8 @@ var Store = (function () {
     // 저장소 8개
     accounts: accounts, session: session, setup: setup, library: library,
     courses: courses, progress: progress, reports: reports, posts: posts,
+    prefs: prefs, orders: orders, FONT_SCALES: FONT_SCALES,
+    orderOpen: orderOpen, askedQuestion: askedQuestion,
 
     // 공통
     uid: uid, available: available,

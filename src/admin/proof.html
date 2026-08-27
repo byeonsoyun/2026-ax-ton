@@ -46,13 +46,31 @@
     <div class="sec-head">
       <div>
         <h2 id="t-pick">무엇에 대한 증빙인가</h2>
-        <p class="why">교육을 고르면 그 교육 대상자 전원이 아래 일지에 들어갑니다.</p>
+        <p class="why">
+          고른 범위 안의 <b>모든 교육</b>과 그 <b>대상자 전원</b>이 아래 일지에 들어갑니다.
+          사람을 골라 빼는 기능은 없습니다.
+        </p>
       </div>
     </div>
 
     <div class="field">
+      <label for="pick-scope">묶는 단위</label>
+      <select id="pick-scope">
+        <option value="course">교육 하나</option>
+        <option value="quarter">분기 전체</option>
+        <option value="year">연도 전체</option>
+      </select>
+    </div>
+
+    <div class="field" id="field-course">
       <label for="pick-course">교육</label>
       <select id="pick-course"></select>
+    </div>
+
+    <div class="field" id="field-period" hidden>
+      <label for="pick-period">기간</label>
+      <select id="pick-period"></select>
+      <p class="why">감독기관에 내는 것은 보통 기간 단위입니다.</p>
     </div>
 
     <dl class="kpi-row" id="summary"></dl>
@@ -82,37 +100,18 @@
       </div>
     </header>
 
+    <!-- 표지 — 사업장과 이 문서가 담는 범위 -->
     <table class="proof-meta">
-      <tbody id="proof-meta-rows"></tbody>
+      <tbody id="proof-cover-rows"></tbody>
     </table>
 
-    <h3>교육 내용 — 전달한 안전 문구</h3>
-    <ol class="proof-phrases" id="proof-phrases"></ol>
+    <!-- ★ 이 문서가 무엇을 담고 무엇을 안 담는지 적는다.
+         범위를 골라 뽑을 수 있게 된 이상, 받는 쪽이 "이게 전부가 아니다" 를
+         알 수 있어야 한다. 조용히 줄이면 그것이 곧 숨기는 것이 된다. -->
+    <p class="proof-scope" id="proof-scope"></p>
 
-    <h3>이해도 검증 — 문항</h3>
-    <ol class="proof-quiz" id="proof-quiz"></ol>
-
-    <h3>대상자별 기록</h3>
-    <p class="proof-note">
-      이 표의 결과는 <b>서명이 아니라 이해도 검증 결과</b>입니다.
-      서명은 참석의 증거일 뿐 이해의 증거가 아니라는 데서 이 서식이 출발했습니다.
-      미이수자와 미통과자도 그대로 적습니다.
-    </p>
-    <div class="tablewrap">
-      <table class="data proof-table">
-        <thead>
-          <tr>
-            <th scope="col">식별번호</th>
-            <th scope="col">언어</th>
-            <th scope="col">수강 일시</th>
-            <th scope="col">검증 일시</th>
-            <th scope="col">점수</th>
-            <th scope="col">결과</th>
-          </tr>
-        </thead>
-        <tbody id="proof-rows"></tbody>
-      </table>
-    </div>
+    <!-- 교육마다 한 덩어리. JS 가 만든다 (교육 하나든 기간 전체든 같은 코드다) -->
+    <div id="proof-courses"></div>
 
     <div class="proof-sign">
       <div class="sign-box">
@@ -133,9 +132,9 @@
 
   </article>
 
-  <!-- 여기부터 P4 가 채우면 됩니다 -->
+  <!-- 여기부터 채우면 됩니다 -->
   <section class="todo noprint">
-    <h2>여기부터 채우시면 됩니다 — P4</h2>
+    <h2>여기부터 채우시면 됩니다</h2>
     <p class="why">아래는 골격에 넣지 않은 것들입니다. 지금 상태로도 인쇄까지 됩니다.</p>
     <dl>
       <dt>기간별 묶음</dt><dd>지금은 교육 하나씩입니다. 분기·연도 단위로 여러 교육을 한 문서에 넣는 화면</dd>

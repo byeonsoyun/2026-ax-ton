@@ -26,7 +26,7 @@
 - **코드 규칙 전부** — 외부 요청 0건 · `innerHTML` 금지 · ES 모듈 금지 · 터치 타깃 60px
   · 색상만으로 상태 구분 금지
 - **데이터 계약** — `localStorage` 를 직접 부르지 않고 `Store` 를 거칩니다.
-  8개 키의 모양을 바꿀 때는 그 키를 읽는 화면을 전부 확인합니다
+  10개 키의 모양을 바꿀 때는 그 키를 읽는 화면을 전부 확인합니다
 - **제품 원칙** — 검수된 문구만 안전 지시로 · 신고는 익명 · 미이수를 숨기지 않음
   · "면책" 표현 금지 · 미통과는 교육의 실패
 - **git 규칙** — `main` 직접 push 금지 · `--force` 와 `reset --hard` 금지 · 훅 건너뛰기 금지
@@ -121,7 +121,7 @@
 |---|---|
 | 노동자 | `src/worker/home.* learn.* quiz.* report.* talk.* my.*` + `worker.css` |
 | 관리자·운영자 | `src/admin/setup.* dashboard.* content.* proof.* library.*` + `admin.css` |
-| 공용 | `src/assets/store.js auth.js ui.js seed.js diagrams.js review.js` + `app.css style*.css` |
+| 공용 | `src/assets/store.js auth.js login.js ui.js seed.js diagrams.js review.js qr.js` + `app.css style*.css` |
 | 검사 | `tests/harness.js run-all.js test-*.js` — 저장소 안, 의존성은 저장소 밖 |
 
 `worker.css` 와 `admin.css` 안에는 `[P1]` `[P2]` 같은 구역 주석이 남아 있습니다.
@@ -131,7 +131,7 @@
 
 `src/assets/` 를 고치면 **여러 화면이 함께 영향을 받습니다.** 혼자여도 이건 그대로입니다.
 
-- `store.js` 의 8개 키 **모양**을 바꾸면 그 키를 읽는 화면을 전부 확인합니다
+- `store.js` 의 10개 키 **모양**을 바꾸면 그 키를 읽는 화면을 전부 확인합니다
   (어느 화면이 무엇을 읽는지는 아래 "데이터" 표에 있습니다)
 - `ui.js` 의 기존 함수를 바꾸면 11화면이 다 영향을 받습니다.
   **더하는 것은 안전하고, 고치는 것은 확인이 필요합니다**
@@ -173,12 +173,15 @@ Store.progress.update(function (list) {        // 읽기 → 고치기 → 저�
 | `Store.progress` | 노동자 기능3·4 | 관리자 기능5·6 |
 | `Store.reports` | 노동자 기능8 | 관리자 기능6 |
 | `Store.posts` | 노동자 기능7 | 노동자 기능7 |
+| `Store.prefs` | 노동자 아무 화면 (글자 크기) | 노동자 전부 |
+| `Store.orders` | 관리자 기능6 (재교육 지시) | 노동자 홈 · 관리자 기능6 |
 
 **저장 데이터의 모양을 바꾸면 다른 사람 화면이 깨집니다.**
 바꿔야 하면 사용자에게 "이건 다른 분 화면도 읽는 데이터라 팀 공유가 필요합니다" 라고 알리세요.
 
 상대 팀 화면이 아직 없어도 `src/assets/seed.js` 의 예시 데이터로 개발할 수 있습니다.
-로그인 화면의 **예시 데이터 채우기** 버튼이 8개 키를 전부 채웁니다.
+로그인 화면의 **예시 데이터 채우기** 버튼이 키를 채웁니다.
+(`prefs` 는 빼고 채웁니다 — 글자 크기는 예시가 아니라 그 기기의 설정입니다.)
 
 ---
 

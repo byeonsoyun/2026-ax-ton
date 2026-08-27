@@ -27,6 +27,13 @@
    · 'reviewed' 로 올리려면 번역이 하나라도 있어야 한다.
      번역이 없는 문구를 검수 완료로 두면 기능2 선택지에 빈 문구가 올라간다.
 
+   · 새로 추가한 문구는 반드시 'waiting'(검수 대기) 으로 들어간다.
+     추가 폼에서 'reviewed' 를 만들 수 있게 하면 검수를 지나지 않은 문구가
+     그대로 안전 지시가 된다. 올리는 것은 사람이 판정 버튼을 누를 때다.
+
+   · 번역문을 받으면 역번역도 함께 받는다. 견줄 것이 없으면 판정 화면에
+     대조할 칸만 늘고, 검수자는 읽지도 못하는 문장을 눈감고 승인하게 된다.
+
    -------------------------------------------------------------------
    골격입니다. 남은 것은 화면 아래 "여기부터 채우시면 됩니다" 에 적혀 있습니다.
    =================================================================== */
@@ -108,6 +115,7 @@
     render();
     if (!result.ok) UI.toast('저장하지 못했습니다. 이 브라우저의 저장소가 막혀 있습니다.');
     else if (message) UI.toast(message);
+    return result;
   }
 
   /* 판정을 내린다. lang 이 있으면 그 언어만, 없으면 문구 전체.
@@ -371,7 +379,168 @@
   }
 
   /* -----------------------------------------------------------------
-     3. 문구 목록
+     3. 문구 추가
+
+     ★ 새 문구는 반드시 'waiting'(검수 대기) 으로 들어간다.
+       이 폼에서 'reviewed' 를 만들 수 있게 하면 검수를 지나지 않은 문구가
+       그대로 안전 지시가 된다. 올리는 것은 위 판정 버튼을 누르는 사람이다.
+
+     ★ 번역문을 받으면 역번역도 함께 받는다.
+       역번역이 없으면 판정 화면이 견줄 것이 없어서, 검수자는 읽지도 못하는
+       문장을 눈감고 승인하게 된다. 그러면 이 화면이 있는 이유가 사라진다.
+     ----------------------------------------------------------------- */
+
+  /* 한국어는 원문 칸이 이미 받는다 */
+  var ADD_LANGS = Store.LANGUAGES.filter(function (l) { return l.code !== 'ko'; });
+
+  function addId(code, kind) { return 'add-' + code + '-' + kind; }
+
+  function addInput(id, placeholder) {
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.id = id;
+    if (placeholder) input.placeholder = placeholder;
+    return input;
+  }
+
+  /* 언어 칸은 한 번만 만든다.
+     render() 는 무엇을 저장할 때마다 도는데, 그때 다시 만들면 적고 있던
+     번역이 사라진다. 언어 목록은 Store.LANGUAGES 로 고정이라 다시 만들 이유도 없다. */
+  function buildAddInputs() {
+    var box = $('add-i18n');
+    if (!box) return;
+    box.textContent = '';
+
+    box.appendChild(UI.el('h3', 'sub', '번역'));
+    box.appendChild(UI.el('p', 'muted',
+      '넣은 언어만 저장됩니다. 번역이 하나도 없어도 추가할 수 있지만, ' +
+      '그 문구는 검수 완료로 올라가지 않습니다.'));
+
+    ADD_LANGS.forEach(function (l) {
+      var wrap = UI.el('div', 'i18n-box');
+      wrap.appendChild(UI.el('h4', null, l.name + ' (' + l.native + ')'));
+
+      var f1 = UI.el('div', 'field');
+      var lb1 = UI.el('label', null, '번역문');
+      lb1.setAttribute('for', addId(l.code, 'text'));
+      f1.appendChild(lb1);
+      var text = addInput(addId(l.code, 'text'), l.native + ' 로 쓴 안전 문구');
+      text.addEventListener('input', function () { renderAddBackCheck(l.code); });
+      f1.appendChild(text);
+      wrap.appendChild(f1);
+
+      var f2 = UI.el('div', 'field');
+      var lb2 = UI.el('label', null, '역번역 — 위 번역을 다시 한국어로');
+      lb2.setAttribute('for', addId(l.code, 'back'));
+      f2.appendChild(lb2);
+      var back = addInput(addId(l.code, 'back'), '예) 프레스가 멈춰도 손을 넣지 마십시오');
+      back.addEventListener('input', function () { renderAddBackCheck(l.code); });
+      f2.appendChild(back);
+      wrap.appendChild(f2);
+
+      var warn = UI.el('div', 'i18n-warn', '');
+      warn.id = addId(l.code, 'warn');
+      wrap.appendChild(warn);
+
+      box.appendChild(wrap);
+    });
+  }
+
+  /* 적는 동안 바로 대조해 준다.
+     ★ 판정은 assets/review.js 것을 그대로 쓴다 — 기능2 의 문항 번역 칸과
+       같은 함수다. 두 화면이 각자 판정하면 한쪽이 통과시킨 것을 다른 쪽이 막는다.
+     ★ 여기 뜨는 것은 AI 가 찾아 준 것이고, 추가를 막지는 않는다.
+       판정은 사람이 위 버튼으로 한다 (화면 맨 위 "AI 여기까지"). */
+  function renderAddBackCheck(code) {
+    var box = $(addId(code, 'warn'));
+    if (!box) return;
+    box.textContent = '';
+
+    var ko = $('add-ko').value.trim();
+    var text = $(addId(code, 'text')).value.trim();
+    var back = $(addId(code, 'back')).value.trim();
+
+    if (!text) return;                  // 안 넣은 언어에는 말을 걸지 않는다
+
+    if (!back) {
+      box.appendChild(UI.el('p', 'muted',
+        '역번역을 적어 주세요. 없으면 검수 화면에서 견줄 것이 없습니다.'));
+      return;
+    }
+    if (!ko) return;                    // 원문이 없으면 견줄 대상이 없다
+
+    if (negationFlipped(ko, back)) {
+      var w = UI.el('div', 'warnbox');
+      w.appendChild(UI.el('strong', null, '⚠ 뜻이 뒤집혔을 수 있습니다'));
+      w.appendChild(UI.el('p', null,
+        '한쪽에만 "않 · 마십시오 · 금지" 같은 부정 표현이 있습니다. ' +
+        '"손을 넣지 마십시오" 가 "손을 넣어도 됩니다" 로 바뀌면 정반대 지시가 됩니다. ' +
+        '번역을 다시 확인해 주세요.'));
+      box.appendChild(w);
+      return;
+    }
+
+    var n = Review.newWordCount(ko, back);
+    box.appendChild(UI.el('p', 'muted',
+      n ? '원문에 없던 낱말 ' + n + '개. 뜻이 같으면 그대로 두셔도 됩니다.'
+        : '역번역이 원문과 같은 낱말로 돌아왔습니다.'));
+  }
+
+  function renderAllBackChecks() {
+    ADD_LANGS.forEach(function (l) { renderAddBackCheck(l.code); });
+  }
+
+  /* 분류 후보는 지금 라이브러리에 있는 것만 올린다.
+     ★ Store.setup 의 공정 이름을 쓰지 않는 이유 — 라이브러리는 운영자가 여러
+       사업장을 가로질러 관리하는 것이다. 한 사업장의 설정에 묶으면 다른
+       사업장의 분류가 후보에서 사라진다. */
+  function renderCategoryList(list) {
+    var box = $('add-category-list');
+    if (!box) return;
+    box.textContent = '';
+
+    var seen = {};
+    list.forEach(function (p) {
+      var c = (p.category || '').trim();
+      if (!c || seen[c]) return;
+      seen[c] = true;
+      var opt = document.createElement('option');
+      opt.value = c;
+      box.appendChild(opt);
+    });
+  }
+
+  /* 폼에 적힌 번역을 모은다.
+     번역문이 빈 언어는 아예 넣지 않는다 — 빈 칸이 들어가면 판정 화면에
+     견줄 것 없는 칸만 늘어나고, langsOf() 가 세지도 않는다.
+     역번역이 빈 언어는 따로 돌려줘서 접수를 막는다. */
+  function collectAddTranslations() {
+    var out = { map: {}, missingBack: [] };
+
+    ADD_LANGS.forEach(function (l) {
+      var text = $(addId(l.code, 'text')).value.trim();
+      var back = $(addId(l.code, 'back')).value.trim();
+      if (!text) return;
+      if (!back) { out.missingBack.push(l); return; }
+      out.map[l.code] = { text: text, back: back };
+    });
+
+    return out;
+  }
+
+  function clearAddForm() {
+    $('add-ko').value = '';
+    $('add-category').value = '';
+    ADD_LANGS.forEach(function (l) {
+      $(addId(l.code, 'text')).value = '';
+      $(addId(l.code, 'back')).value = '';
+      var w = $(addId(l.code, 'warn'));
+      if (w) w.textContent = '';
+    });
+  }
+
+  /* -----------------------------------------------------------------
+     4. 문구 목록
      ----------------------------------------------------------------- */
 
   function renderRows(list) {
@@ -460,7 +629,7 @@
   }
 
   /* -----------------------------------------------------------------
-     4. 라이브러리 상태
+     5. 라이브러리 상태
      ----------------------------------------------------------------- */
 
   function renderStats(list) {
@@ -569,6 +738,7 @@
     renderRows(list);
     renderStats(list);
     renderFlagForm(list);
+    renderCategoryList(list);
 
     ['all', 'reviewed', 'waiting', 'stopped'].forEach(function (key) {
       var btn = $('filter-' + key);
@@ -606,6 +776,50 @@
   window.addEventListener('storage', function (e) {
     if (e.key === Store.library.KEY) render();
   });
+
+  /* 원문이 바뀌면 이미 적어 둔 역번역들을 다시 견준다.
+     원문을 나중에 고치는 일이 흔한데, 그때 대조가 옛 원문에 머물러 있으면
+     화면이 조용히 틀린 말을 하게 된다. */
+  $('add-ko').addEventListener('input', renderAllBackChecks);
+
+  $('form-add').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    var ko = $('add-ko').value.trim();
+    if (!ko) { UI.toast('한국어 원문을 적어 주세요.'); $('add-ko').focus(); return; }
+
+    var picked = collectAddTranslations();
+
+    /* ★ 역번역 없는 번역은 받지 않는다. 그대로 받으면 판정 화면에 견줄 것이
+         없는 칸이 생기고, 검수자는 읽지도 못하는 문장을 눈감고 승인하게 된다.
+         그 승인이 곧 현장에 나가는 안전 지시다. */
+    if (picked.missingBack.length) {
+      var first = picked.missingBack[0];
+      UI.toast(picked.missingBack.map(function (l) { return l.name; }).join(' · ') +
+        ' 의 역번역을 적어 주세요. 대조할 것이 없으면 검수를 할 수 없습니다.');
+      $(addId(first.code, 'back')).focus();
+      return;
+    }
+
+    var phrase = {
+      id: Store.uid(),
+      category: $('add-category').value.trim(),
+      ko: ko,
+      /* ★ 반드시 검수 대기다. 이 폼에서 'reviewed' 를 만들지 않는다 —
+           검수를 지나지 않은 문구는 어떤 화면에서도 안전 지시로 쓰이지 않는다. */
+      status: 'waiting',
+      translations: picked.map,
+      flags: []
+    };
+
+    var saved = commit(function (list) { list.push(phrase); },
+      '추가했습니다. 검수 대기입니다 — 판정을 받아야 안전 지시로 나갑니다.');
+
+    // 저장에 실패했으면 적은 것을 지우지 않는다. 다시 칠 수는 없다.
+    if (saved && saved.ok) clearAddForm();
+  });
+
+  buildAddInputs();
 
   render();
 })();

@@ -552,4 +552,209 @@ const checkAll = (win, root, name, values) => {
   has('목록에 미정이라고 적는다', text(row), '기한 미정');
 }
 
+/* =================================================================
+   발급한 교육의 문항 고치기 (C6)
+
+   ★★ 이 항목에서 지켜야 하는 것은 하나다 —
+     **이미 그 교육을 푼 사람의 답이 계속 같은 문항을 가리키는가.**
+     어긋나면 대시보드의 취약 항목과 증빙이 조용히 다른 문항을 말한다.
+   ================================================================= */
+
+/* 발급한 교육 표에서 그 교육의 행을 찾는다 */
+function courseRow(t, title) {
+  return [...t.$('course-rows').querySelectorAll('tr')]
+    .find((tr) => text(tr).includes(title));
+}
+
+const btnIn = (root, label) =>
+  [...root.querySelectorAll('button')].find((b) => text(b).includes(label));
+
+/* 3단계 문항 목록의 항목들 */
+const quizItems = (t) => [...t.$('quiz-list').children];
+
+{
+  const t = open();
+
+  /* seed 의 c-press 는 W-4821-07 이 이미 풀었다 (progress 에 answers 3개) */
+  const row = courseRow(t, '프레스');
+  ok('발급한 교육이 목록에 있다', !!row);
+  ok('★ 발급 뒤에도 문항을 고치러 갈 수 있다', !!btnIn(row, '문항 고치기'), text(row));
+
+  eq('처음에는 고치는 중이 아니다', t.$('edit-banner').hidden, true);
+  click(t.win, btnIn(row, '문항 고치기'));
+
+  eq('★ 고치는 중이라고 크게 적는다', t.$('edit-banner').hidden, false);
+  has('어느 교육인지 적는다', text(t.$('edit-who')), '프레스');
+  has('★ 맨 뒤에만 붙는다고 미리 알린다', text(t.$('edit-banner')), '맨 뒤에만');
+  has('★ 왜 그런지도 적는다', text(t.$('edit-banner')), '어긋나지 않게');
+
+  /* ★ 초안 단계들은 감춘다 — 지금 무엇을 만드는 중인지가 섞이면 안 된다 */
+  const step1 = t.$('t-step1').closest('.card');
+  const step4 = t.$('t-step4').closest('.card');
+  eq('★ 1단계는 감춘다', step1.hidden, true);
+  eq('★ 4단계(발급)도 감춘다', step4.hidden, true);
+
+  /* 그 교육의 문항이 뜬다 (초안이 아니라) */
+  const items = quizItems(t);
+  const course = t.win.Store.courses.load().find((c) => c.id === 'c-press');
+  eq('★ 초안이 아니라 그 교육의 문항이 보인다', items.length, course.quiz.length);
+
+  /* ★ 이미 푼 사람이 있으니 지울 수 없다. 왜 못 지우는지 적는다 */
+  ok('★ 지우기 버튼이 없다', !btnIn(items[0], '삭제'), text(items[0]));
+  has('★ 왜 못 지우는지 적는다', text(items[0]), '푼 사람이 있어');
+  has('무엇을 하면 되는지도 알려 준다', text(items[0]), '내리고 새 문항을');
+
+  /* 대신 내릴 수 있다 */
+  ok('★ 대신 내릴 수 있다', !!btnIn(items[0], '내리기'));
+}
+
+{
+  /* --- 문항 내리기 — 배열에서 빼지 않는다 --- */
+  const t = open();
+  click(t.win, btnIn(courseRow(t, '프레스'), '문항 고치기'));
+
+  const before = t.win.Store.courses.load().find((c) => c.id === 'c-press').quiz.length;
+  click(t.win, btnIn(quizItems(t)[0], '내리기'));
+
+  const course = t.win.Store.courses.load().find((c) => c.id === 'c-press');
+  eq('★ 배열에서 빼지 않는다 — 옛 기록이 가리킬 곳이 남아야 한다',
+    course.quiz.length, before);
+  eq('내려졌다는 표시만 붙는다', course.quiz[0].retired, true);
+  ok('★ 뒤 문항의 id 가 안 바뀐다',
+    course.quiz[1].id === 'q2' && course.quiz[2].id === 'q3',
+    course.quiz.map((q) => q.id).join(','));
+
+  has('화면에도 내려졌다고 적는다', text(quizItems(t)[0]), '내려짐');
+  has('무슨 일이 일어나는지 알려 준다', text(t.$('toast')), '지난 기록은 그대로');
+
+  /* 다시 올릴 수 있다 */
+  click(t.win, btnIn(quizItems(t)[0], '다시 올리기'));
+  eq('다시 올라간다',
+    t.win.Store.courses.load().find((c) => c.id === 'c-press').quiz[0].retired, false);
+}
+
+{
+  /* --- 문항 더하기 — 맨 뒤에만 --- */
+  const t = open();
+  click(t.win, btnIn(courseRow(t, '프레스'), '문항 고치기'));
+
+  const before = t.win.Store.courses.load().find((c) => c.id === 'c-press').quiz;
+  const beforeIds = before.map((q) => q.id).join(',');
+
+  [...t.$('pick-qtype').querySelectorAll('input')].find((r) => r.value === 'choice').checked = true;
+  change(t.win, t.$('pick-qtype'));
+  input(t.win, t.$('q-ch-prompt'), '기름이 흘렀습니다. 어떻게 합니까?');
+  t.$('q-ch-opt-0').value = '그대로 작업한다';
+  t.$('q-ch-opt-1').value = '먼저 닦고 작업한다';
+  t.$('q-ch-answer-1').checked = true;
+  click(t.win, t.$('btn-add-q'));
+
+  const after = t.win.Store.courses.load().find((c) => c.id === 'c-press').quiz;
+  eq('문항이 하나 늘었다', after.length, before.length + 1);
+  eq('★ 맨 뒤에 붙는다', after[after.length - 1].prompt, '기름이 흘렀습니다. 어떻게 합니까?');
+  eq('★ 앞 문항의 id 가 하나도 안 바뀐다',
+    after.slice(0, before.length).map((q) => q.id).join(','), beforeIds);
+  ok('★ id 가 겹치지 않는다',
+    new Set(after.map((q) => q.id)).size === after.length,
+    after.map((q) => q.id).join(','));
+  has('바로 나간다고 알린다', text(t.$('toast')), '지금부터');
+
+  /* 고치기를 끝내면 초안으로 돌아온다 */
+  click(t.win, t.$('btn-edit-done'));
+  eq('고치기가 끝난다', t.$('edit-banner').hidden, true);
+  eq('1단계가 다시 보인다', t.$('t-step1').closest('.card').hidden, false);
+  eq('★ 그 사이에 초안이 오염되지 않았다',
+    t.$('quiz-list').textContent.includes('기름이 흘렀습니다'), false);
+}
+
+{
+  /* --- 아무도 안 푼 교육이면 진짜 지울 수 있다 --- */
+  const t = open({ before(win) { win.Store.progress.save([]); } });
+  click(t.win, btnIn(courseRow(t, '프레스'), '문항 고치기'));
+
+  const items = quizItems(t);
+  ok('★ 푼 사람이 없으면 지울 수 있다', !!btnIn(items[0], '삭제'), text(items[0]));
+
+  t.win.confirm = () => true;
+  const before = t.win.Store.courses.load().find((c) => c.id === 'c-press').quiz.length;
+  click(t.win, btnIn(items[0], '삭제'));
+  eq('지워진다',
+    t.win.Store.courses.load().find((c) => c.id === 'c-press').quiz.length, before - 1);
+}
+
+{
+  /* ★★ 문항을 내려도 대시보드의 취약 항목이 안 깨진다 — C6 의 "됐는지".
+       asked 가 있는 기록은 자리가 아니라 문항 id 로 짝을 찾는다. */
+  const t = open();
+
+  /* 첫 문항을 내리고, 첫 문항이 사라진 상태에서도 기록이 그 문항을 가리키는지 */
+  click(t.win, btnIn(courseRow(t, '프레스'), '문항 고치기'));
+  click(t.win, btnIn(quizItems(t)[0], '내리기'));
+
+  const course = t.win.Store.courses.load().find((c) => c.id === 'c-press');
+
+  /* ★★ 여기가 이 항목의 심장이다.
+       q1 을 내린 뒤에 푼 사람은 q2 · q3 만 받는다. 그 사람의 answers[0] 은
+       **q2** 의 답이다. 자리로 찾으면 q1 을 가리킨다 — 한 칸씩 밀린다.
+       그러면 대시보드가 "끼임 항목 정답률" 이라고 말하면서
+       실제로는 다른 문항의 숫자를 보여 준다. */
+  const after = { answers: [0, 1], asked: ['q2', 'q3'] };
+  eq('★★ 내린 뒤에 푼 기록은 자리가 한 칸 밀린다 — id 로 찾아야 맞는다',
+    t.win.Store.askedQuestion(course, after, 0).id, 'q2');
+  eq('그다음도 밀리지 않는다', t.win.Store.askedQuestion(course, after, 1).id, 'q3');
+
+  const row = { answers: [0, 1, 1], asked: ['q1', 'q2', 'q3'] };
+  eq('★ asked 가 있으면 문항 id 로 찾는다',
+    t.win.Store.askedQuestion(course, row, 0).id, 'q1');
+  eq('두 번째도 맞는다', t.win.Store.askedQuestion(course, row, 1).id, 'q2');
+
+  /* 옛 기록(asked 없음)은 지금까지처럼 자리로 찾는다 —
+     이 길을 없애면 이미 쌓인 기록이 통째로 빈다 */
+  const old = { answers: [0, 1, 1] };
+  eq('★ 옛 기록은 자리로 찾는다', t.win.Store.askedQuestion(course, old, 0).id, 'q1');
+
+  /* 문항이 아예 지워졌으면 없는 것을 지어내지 않는다 */
+  eq('★ 없는 문항을 지어내지 않는다',
+    t.win.Store.askedQuestion(course, { asked: ['q-gone'] }, 0), null);
+}
+
+/* =================================================================
+   설비 앞에 붙일 QR (D1)
+
+   ★ QR 이 스캔되는지는 test-qr.js 가 본다. 여기서 보는 것은
+     "화면이 올바른 주소를 QR 로 만들고, 주소를 글자로도 남기는가" 다.
+   ================================================================= */
+{
+  const t = open();
+  const row = courseRow(t, '프레스');
+  click(t.win, btnIn(row, '접속 주소'));
+
+  const note = t.$('link-note');
+  eq('주소 칸이 열린다', note.hidden, false);
+
+  /* ★ QR 그림이 실제로 들어간다 */
+  const svg = note.querySelector('svg');
+  ok('★ QR 그림이 나온다', !!svg, text(note));
+  has('무엇인지 읽어 줄 이름이 붙는다', svg.getAttribute('aria-label'), '프레스');
+
+  /* ★ 주소를 글자로도 남긴다 — QR 이 안 찍히는 상황은 반드시 있다 */
+  const code = note.querySelector('code');
+  ok('★ 주소가 글자로도 보인다', !!code, text(note));
+
+  const url = text(code);
+  ok('★ 절대 주소다 — 상대 경로면 찍어도 아무 데도 못 간다',
+    /^https?:\/\//.test(url), url);
+  has('그 교육으로 간다', url, 'course=c-press');
+  has('교육을 듣는 화면으로 간다', url, 'worker/learn.html');
+
+  /* ★ QR 안의 주소와 화면에 적힌 주소가 같아야 한다.
+       다르면 "글자 주소로는 되는데 QR 로는 안 되는" 일이 생긴다. */
+  const encoded = t.win.QR.encode(url);
+  ok('★ 이 주소는 QR 로 만들 수 있는 길이다', !!encoded, url);
+
+  has('로그인이 안 돼 있어도 이어진다고 알린다', text(note), '로그인한 뒤');
+  ok('★ "아직 만들지 않았습니다" 안내가 남아 있지 않다',
+    !text(note).includes('아직 만들지 않았습니다'), text(note));
+}
+
 report('기능2 교육 콘텐츠 생성 · 승인');

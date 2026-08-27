@@ -238,4 +238,308 @@ function open(opts = {}) {
     /if \(r\) r\.status = status;/.test(js), '신고 쓰기가 status 외의 것을 건드립니다');
 }
 
+
+/* =================================================================
+   기능6 대시보드 — 기간 걸러 보기 (C2)
+
+   ★ 날짜를 "지금" 기준으로 만든다. 예시 데이터의 2026-08 을 그대로 쓰면
+     해가 바뀌는 순간 검사가 깨진다 — 일을 안 해도 깨지는 검사가 된다.
+   ================================================================= */
+
+/* 이번 분기 안의 날짜 / 작년 날짜를 만든다 */
+function thisQuarterISO() {
+  const n = new Date();
+  return new Date(n.getFullYear(), Math.floor(n.getMonth() / 3) * 3, 1, 12).toISOString();
+}
+function lastYearISO() {
+  const n = new Date();
+  return new Date(n.getFullYear() - 1, 5, 1, 12).toISOString();
+}
+
+{
+  /* c-press 는 이번 분기, c-paint 는 작년으로 옮긴다 */
+  const t = open({
+    before(win) {
+      win.Store.courses.update((list) => {
+        list.forEach((c) => {
+          if (c.id === 'c-press') c.createdAt = thisQuarterISO();
+          if (c.id === 'c-paint') c.createdAt = lastYearISO();
+        });
+      });
+    },
+  });
+  ok('오류 없이 뜬다', t.errors.length === 0, t.errors.join(' | '));
+
+  const tiles = () => [...t.$('status-tiles').querySelectorAll('.kpi')]
+    .map((k) => text(k.querySelector('dt')) + '=' + text(k.querySelector('dd'))).join(' ');
+
+  /* --- 기본은 전체다 — 숨기지 않는 쪽 --- */
+  eq('★ 처음에는 전체를 본다', t.$('range-all').getAttribute('aria-pressed'), 'true');
+  has('전부 본다고 적는다', text(t.$('range-note')), '전부를 봅니다');
+  const allTiles = tiles();
+
+  /* --- 이번 분기 --- */
+  click(t.win, t.$('range-quarter'));
+  eq('고른 것이 눌린 상태로 보인다', t.$('range-quarter').getAttribute('aria-pressed'), 'true');
+  eq('전체는 눌리지 않은 상태', t.$('range-all').getAttribute('aria-pressed'), 'false');
+
+  const qTiles = tiles();
+  ok('★ 범위를 바꾸면 타일이 함께 바뀐다', qTiles !== allTiles, allTiles + '  vs  ' + qTiles);
+
+  /* ★ 조용히 줄이지 않는다 */
+  has('★ 무엇이 빠졌는지 적는다', text(t.$('range-note')), '빠져 있습니다');
+  has('빠진 건수를 적는다', text(t.$('range-note')), '1건');
+
+  /* --- 올해 --- */
+  click(t.win, t.$('range-year'));
+  has('올해도 작년 것은 빠진다', text(t.$('range-note')), '빠져 있습니다');
+
+  /* --- 전체로 돌아오면 원래대로 --- */
+  click(t.win, t.$('range-all'));
+  eq('★ 전체로 돌아오면 원래 숫자다', tiles(), allTiles);
+
+  /* ★ 요구사항은 "타일과 정답률 막대가 함께 바뀐다" 다.
+       타일만 보고 넘어가면 막대가 옛 범위에 머물러 있어도 모른다 —
+       담당자는 지난 분기 취약 항목을 이번 분기 것으로 읽게 된다. */
+  const bars = () => [...t.$('weak-bars').querySelectorAll('.bar-item')]
+    .map((b) => text(b));
+
+  click(t.win, t.$('range-all'));
+  const allBars = bars();
+  ok('전체에서는 두 교육의 항목이 다 나온다', allBars.length >= 3, JSON.stringify(allBars));
+  ok('작년 교육(도장·인도네시아어) 항목이 보인다',
+    allBars.join(' ').includes('인도네시아어'), JSON.stringify(allBars));
+
+  click(t.win, t.$('range-quarter'));
+  const qBars = bars();
+  ok('★ 범위를 바꾸면 막대도 함께 바뀐다',
+    qBars.length < allBars.length, JSON.stringify(allBars) + ' → ' + JSON.stringify(qBars));
+  ok('★ 범위 밖 교육의 항목은 막대에서 빠진다',
+    !qBars.join(' ').includes('인도네시아어'), JSON.stringify(qBars));
+}
+
+{
+  /* ★ 미수강자가 사라지면 안 된다.
+       발급일이 아니라 "수강한 날" 로 걸렀으면 아무것도 안 한 사람은
+       날짜가 없어서 통째로 빠지고, 이수율이 저절로 올라간다. */
+  const t = open({
+    before(win) {
+      win.Store.courses.update((list) => {
+        list.forEach((c) => { c.createdAt = thisQuarterISO(); });
+      });
+      // 기록을 전부 지운다 — 아무도 수강하지 않은 상태
+      win.Store.progress.save([]);
+    },
+  });
+
+  click(t.win, t.$('range-quarter'));
+  const tiles = [...t.$('status-tiles').querySelectorAll('.kpi')]
+    .map((k) => text(k.querySelector('dt')) + '=' + text(k.querySelector('dd'))).join(' ');
+  ok('★ 아무도 수강 안 해도 미수강자가 그대로 잡힌다', /미수강=[1-9]/.test(tiles), tiles);
+  ok('★ 이수는 0 이다 (숨겨서 100% 가 되지 않는다)', /이수=0/.test(tiles), tiles);
+}
+
+{
+  /* 날짜가 없는 교육은 숨기지 않는다 —
+     기록이 부실할수록 화면이 깨끗해지면 안 된다 */
+  const t = open({
+    before(win) {
+      win.Store.courses.update((list) => {
+        list.forEach((c) => { delete c.createdAt; });
+      });
+    },
+  });
+  click(t.win, t.$('range-quarter'));
+  has('★ 날짜 없는 교육도 그대로 본다', text(t.$('range-note')), '전부를 봅니다');
+}
+
+{
+  /* ★ 위험요소 신고는 기간을 따르지 않는다.
+       조치가 안 끝난 신고는 언제 들어온 것이든 계속 보여야 한다.
+       지난 분기 긴급 신고가 범위 밖이라고 사라지면 그게 사고다.
+
+     ★ 예시 신고는 마침 이번 분기 안에 있다. 그대로 두면 걸러도 티가 안 나서
+       검사가 아무것도 지키지 못한다 — 하나를 작년으로 옮겨 둔다. */
+  const t = open({
+    before(win) {
+      win.Store.courses.update((list) => {
+        list.forEach((c) => { c.createdAt = lastYearISO(); });
+      });
+      win.Store.reports.update((list) => {
+        if (list[0]) {
+          list[0].createdAt = lastYearISO();
+          list[0].status = 'urgent';       // 오래됐고 아직 긴급인 신고
+        }
+      });
+    },
+  });
+
+  const before = text(t.$('report-queue'));
+  ok('작년 긴급 신고가 목록에 있다', before.includes('긴급'), before.slice(0, 120));
+
+  click(t.win, t.$('range-quarter'));
+  eq('★ 기간을 좁혀도 신고 목록은 그대로다', text(t.$('report-queue')), before);
+  ok('★ 작년 긴급 신고가 사라지지 않는다',
+    text(t.$('report-queue')).includes('긴급'), text(t.$('report-queue')).slice(0, 120));
+}
+/* =================================================================
+   현장 소통 게시판으로 가는 길 (C7)
+
+   ★ 답글을 달 수 있게 만들어도 들어갈 길이 없으면 없는 기능이다.
+     담당자에게 "주소를 직접 치세요" 라고 할 수는 없다.
+   ================================================================= */
+{
+  const t = open();
+  const links = [...t.win.document.querySelectorAll('a')]
+    .map((a) => a.getAttribute('href'));
+  ok('★ 게시판으로 가는 링크가 있다',
+    links.includes('../worker/talk.html'), links.join(', '));
+
+  const card = [...t.win.document.querySelectorAll('.card')]
+    .find((c) => c.querySelector('a[href="../worker/talk.html"]'));
+  has('★ 답글이 공식 답변이 된다고 미리 알린다', text(card), '공식 답변');
+  has('★ 이름을 감출 수 없다고 알린다', text(card), '이름을 감출 수 없습니다');
+}
+
+/* =================================================================
+   목업에서 옮겨 온 것 (B4)
+   ================================================================= */
+{
+  const t = open();
+  const main = text(t.win.document.querySelector('main'));
+
+  /* ★ 증빙이 왜 믿을 만한지 — 고칠 경로가 없고, 뺄 사람이 없다 */
+  has('★ 생성된 기록은 수정할 수 없다고 적는다', main, '생성된 기록은 수정할 수 없고');
+  has('★ 숨기는 경로가 없다고 적는다', main, '숨기는 경로는 없습니다');
+
+  /* ★ 개선 루프를 화면에서 닫는다 — 보고 끝내면 교육이 안 고쳐진다 */
+  const weak = t.win.document.querySelector('.card.feature');
+  const fix = weak.querySelector('a[href="content.html"]');
+  ok('★ 취약 항목에서 교육을 고치러 갈 길이 있다', !!fix,
+    text(weak).slice(0, 120));
+  has('무엇을 하러 가는지 적는다', text(fix), '다시 만들기');
+}
+
+/* =================================================================
+   재교육 지시 (D2)
+
+   ★ 지켜야 하는 것
+     ① 해소 여부를 orders 에 저장하지 않는다 (진실이 두 곳이 되면 어긋난다)
+     ② 지시 횟수를 세거나 사람을 줄 세우지 않는다 (인사 평가 자료가 된다)
+     ③ 거둔 지시를 지우지 않는다 (냈다가 거둔 사실이 사라진다)
+   ================================================================= */
+
+/* 조치 대상 표에서 그 사람의 행을 찾는다 */
+function actionRow(t, workerId) {
+  return [...t.$('action-rows').querySelectorAll('tr')]
+    .find((tr) => text(tr).includes(workerId));
+}
+
+const btnIn = (row, label) =>
+  [...row.querySelectorAll('button')].find((b) => text(b).includes(label));
+
+{
+  const t = open({ before(win) { win.Store.orders.save([]); } });
+
+  const row = actionRow(t, 'W-4821-11');      // 미통과인 사람
+  ok('조치 대상에 그 사람이 있다', !!row);
+  ok('★ 행에서 바로 재교육을 지시할 수 있다', !!btnIn(row, '재교육 지시'), text(row));
+
+  /* 표 안에 입력칸을 넣지 않는다 — 좁은 화면에서 표가 무너진다 */
+  eq('처음에는 입력칸이 닫혀 있다', t.$('order-form').hidden, true);
+
+  click(t.win, btnIn(row, '재교육 지시'));
+  eq('누르면 입력칸이 열린다', t.$('order-form').hidden, false);
+  has('누구에게 보내는지 적힌다', text(t.$('order-who')), 'W-4821-11');
+  ok('무엇 때문인지 적힌다', text(t.$('order-why')).length > 0);
+
+  /* 빈 채로 보내지 않는다 — 무엇을 다시 들으라는 것인지 없으면 지시가 아니다 */
+  click(t.win, t.$('order-send'));
+  eq('★ 한 줄도 안 적으면 안 보내진다', t.win.Store.orders.load().length, 0);
+  has('왜 안 되는지 알려 준다', text(t.$('toast')), '한 줄 적어');
+
+  t.$('order-note').value = '환기팬이 멈췄을 때 부분을 다시 들어 주세요';
+  click(t.win, t.$('order-send'));
+
+  const orders = t.win.Store.orders.load();
+  eq('지시가 저장된다', orders.length, 1);
+  eq('누구에게', orders[0].workerId, 'W-4821-11');
+  eq('어느 교육', orders[0].courseId, 'c-paint');
+  has('남긴 말', orders[0].note, '환기팬');
+  eq('누가 냈는지 남는다', orders[0].by, 'kim@daesung.co.kr');
+  eq('거둔 적 없음', orders[0].canceledAt, null);
+
+  /* ★ 해소 여부를 여기 적지 않는다 — progress 를 보고 판정한다 */
+  ok('★ orders 에 완료/해소 필드를 만들지 않는다',
+    !('done' in orders[0]) && !('resolved' in orders[0]) && !('closedAt' in orders[0]),
+    JSON.stringify(orders[0]));
+
+  eq('보내고 나면 입력칸이 닫힌다', t.$('order-form').hidden, true);
+  has('보냈다고 알린다', text(t.$('toast')), '보냈습니다');
+
+  /* 표에 상태가 뜨고, 거둘 수 있다 */
+  const after = actionRow(t, 'W-4821-11');
+  has('★ 지시했다는 것이 표에 남는다', text(after), '지시함');
+  ok('다시 지시 버튼을 또 주지 않는다', !btnIn(after, '재교육 지시'), text(after));
+  ok('거둘 수 있다', !!btnIn(after, '거두기'));
+
+  /* ★ 지시 횟수를 세지 않는다 — 그건 인사 평가 자료다 */
+  const main = text(t.win.document.querySelector('main'));
+  ok('★ "n회" 같은 누적 횟수를 화면에 세지 않는다',
+    !/재교육\s*\d+\s*회|지시\s*\d+\s*회/.test(main), main.slice(0, 200));
+  has('★ 이 지시가 무엇이 아닌지 적는다', main, '"이 사람이 못했다" 가 아닙니다');
+  has('★ 줄 세우지 않는다고 적는다', main, '줄 세우는 화면은 만들지 않습니다');
+}
+
+{
+  /* --- 거두기 — 지우지 않고 표시만 남긴다 --- */
+  const t = open({ before(win) { win.Store.orders.save([]); } });
+  const row = actionRow(t, 'W-4821-11');
+  click(t.win, btnIn(row, '재교육 지시'));
+  t.$('order-note').value = '다시 들어 주세요';
+  click(t.win, t.$('order-send'));
+
+  click(t.win, btnIn(actionRow(t, 'W-4821-11'), '거두기'));
+
+  const orders = t.win.Store.orders.load();
+  eq('★ 지우지 않는다 — 냈다가 거둔 사실이 남는다', orders.length, 1);
+  ok('거둔 시각이 찍힌다', !!(orders[0] && orders[0].canceledAt), JSON.stringify(orders));
+  ok('다시 지시할 수 있다', !!btnIn(actionRow(t, 'W-4821-11'), '재교육 지시'));
+  has('거뒀다고 알린다', text(t.$('toast')), '거뒀습니다');
+}
+
+{
+  /* --- ★ 해소 판정은 progress 를 본다 ---
+       지시를 내린 뒤에 통과했어야 해소다. 그전 통과로 사라지면
+       담당자가 방금 보낸 지시가 보내자마자 없어진다. */
+  const t = open({
+    before(win) {
+      win.Store.orders.save([{
+        id: 'or-t1', workerId: 'W-4821-11', courseId: 'c-paint',
+        note: '다시', at: '2026-08-20T00:00:00.000Z',
+        by: 'kim@daesung.co.kr', canceledAt: null,
+      }]);
+      /* 지시보다 앞선 통과 기록 */
+      win.Store.progress.update((list) => {
+        const row = list.find((r) => r.workerId === 'W-4821-11' && r.courseId === 'c-paint');
+        row.quiz = { score: 100, passed: true, answers: [1, 1],
+          at: '2026-08-11T05:24:00.000Z', attempt: 2, firstPassed: false };
+      });
+    },
+  });
+
+  /* 통과했으니 조치 대상 표에서는 빠진다. 지시가 살아 있는지는 Store 로 본다 */
+  const o = t.win.Store.orders.load()[0];
+  const row = t.win.Store.progress.load()
+    .find((r) => r.workerId === 'W-4821-11' && r.courseId === 'c-paint');
+  eq('★ 지시보다 앞선 통과로는 해소되지 않는다', t.win.Store.orderOpen(o, row), true);
+
+  row.quiz.at = '2026-08-21T00:00:00.000Z';
+  eq('★ 지시 뒤에 통과하면 해소된다', t.win.Store.orderOpen(o, row), false);
+
+  o.canceledAt = '2026-08-22T00:00:00.000Z';
+  row.quiz.at = '2026-08-11T05:24:00.000Z';
+  eq('거둔 지시는 살아 있지 않다', t.win.Store.orderOpen(o, row), false);
+}
+
 report('기능6 담당자 대시보드');

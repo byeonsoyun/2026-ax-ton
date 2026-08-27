@@ -1145,3 +1145,287 @@
 
   a[href]::after { content: ""; }
 }
+
+/* -------------------------------------------------------------------
+   문항별 복기 (C4) — 미통과한 교육 카드 안에 붙는다
+
+   ★ 성적표처럼 보이면 안 된다. 빨간 테두리로 가두지 않고,
+     왼쪽 선 하나로 "이 교육에 딸린 것" 이라는 것만 표시한다.
+   ------------------------------------------------------------------- */
+
+.stuck {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-left: 4px solid var(--stop);
+  border-radius: 0 10px 10px 0;
+  background: var(--stop-soft);
+}
+
+.stuck-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.stuck-title { font-size: .95em; font-weight: 800; color: var(--ink); }
+
+/* 장갑 낀 손으로 누른다 — 노동자 화면의 누르는 곳은 전부 60px */
+.stuck .say {
+  min-height: var(--tap-min);
+  padding: 0 14px;
+  background: var(--surface);
+}
+
+.stuck-list { list-style: none; margin: 0; padding: 0; }
+
+.stuck-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.stuck-list li + li { border-top: 1px solid #f0d6d2; }
+
+.stuck-list .ico { font-size: 1.6em; flex: 0 0 auto; }
+.stuck-list .body { flex: 1 1 auto; min-width: 0; }
+.stuck-list .body strong { display: block; font-size: .98em; }
+
+.stuck-list .body .meta {
+  margin: 2px 0 0;
+  font-size: .88em;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.stuck-why {
+  margin: 8px 0 0;
+  font-size: .85em;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* -------------------------------------------------------------------
+   내 글 수정·삭제 (C3)
+
+   ★ 감춘 글에 뜨는 안내는 경고가 아니다. 못 하는 이유를 말해 주는 것이다.
+     빨갛게 칠하면 뭔가 잘못한 것처럼 읽힌다 — 익명은 잘못이 아니다.
+   ------------------------------------------------------------------- */
+
+.mine-actions:empty { display: none; }
+.mine-actions { margin: 10px 0 0; }
+
+.mine-actions .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* 장갑 낀 손으로 누른다 */
+.mine-actions .btn-sm {
+  min-height: var(--tap-min);
+  padding: 0 16px;
+}
+
+.anon-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f7f9fb;
+  font-size: .9em;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.anon-note .ico { font-size: 1.2em; flex: 0 0 auto; }
+
+/* 되돌릴 수 없는 것이라 이쪽은 경고가 맞다 */
+.anon-warn {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-left: 4px solid var(--stop);
+  border-radius: 0 10px 10px 0;
+  background: var(--stop-soft);
+  font-size: .9em;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.anon-warn[hidden] { display: none; }
+
+/* -------------------------------------------------------------------
+   오늘의 안전 문구 넘겨 보기 (C5)
+
+   ★ 장갑 낀 손으로 누른다. 좌우 버튼은 60px 정사각형이다.
+     볼 것이 하나뿐이면 JS 가 통째로 감춘다 — 반응 없는 버튼은 고장이다.
+   ------------------------------------------------------------------- */
+
+.today-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.today-nav[hidden] { display: none; }
+
+.btn-round {
+  width: var(--tap-min);
+  height: var(--tap-min);
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3em;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.btn-round:active { background: #eef2f6; }
+.btn-round:focus-visible { outline: 3px solid #7aa8d8; outline-offset: 2px; }
+
+.today-pos {
+  margin: 0;
+  min-width: 64px;
+  text-align: center;
+  font-size: .9em;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+/* -------------------------------------------------------------------
+   글자 크기 고르는 칸 (B3)
+
+   ★ 칸에 적힌 "가" 가 실제로 그 크기다.
+     "작게 / 보통 / 크게" 라는 글자를 읽어야 고를 수 있으면,
+     글자가 안 보여서 여기 온 사람에게는 아무 도움이 안 된다.
+   ★ em 이 아니라 px 을 쓴다 — 지금 고른 크기에 따라 미리보기가 같이
+     커지면 세 칸의 차이가 안 보인다.
+   ------------------------------------------------------------------- */
+
+.font-demo > span:not(.sub):not(.mark) { line-height: 1.1; }
+
+.font-demo-small  > span:not(.sub):not(.mark) { font-size: 14px; }
+.font-demo-normal > span:not(.sub):not(.mark) { font-size: 18px; }
+.font-demo-large  > span:not(.sub):not(.mark) { font-size: 26px; }
+
+.font-demo .sub { font-size: 13px; }
+
+/* -------------------------------------------------------------------
+   관리자 답글 구분 (C7)
+
+   ★ 공식 답변과 동료 의견이 섞이면 안 된다.
+     색만으로 구분하지 않는다 — 왼쪽 선 + "공식 답변" 배지(아이콘+글자+색)
+     세 가지가 함께 간다. 흑백으로 봐도 뜻이 남는다.
+   ------------------------------------------------------------------- */
+
+.comment-item[data-official="yes"] {
+  border-left: 4px solid var(--ok, #1f7a4d);
+  border-radius: 0 10px 10px 0;
+  background: #f4faf6;
+  padding-left: 10px;
+}
+
+.comment-item[data-official="yes"] .meta { font-weight: 700; }
+
+/* 담당자로 들어왔다는 안내 */
+.admin-here {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-left: 4px solid var(--brand);
+  border-radius: 0 10px 10px 0;
+  background: #f2f6fb;
+  font-size: .9em;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.admin-here[hidden] { display: none; }
+
+/* 돌아갈 길. 담당자에게는 아래 탭바가 없으므로 이것이 유일한 출구다. */
+.admin-here .back-link {
+  display: inline-block;
+  margin-top: 8px;
+  min-height: 40px;
+  line-height: 40px;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+/* 탭바를 감출 수 있어야 한다.
+   style-admin.css 가 .tabbar 에 display:grid 를 주고 있어서
+   hidden 속성만으로는 안 사라진다. */
+.tabbar[hidden] { display: none; }
+
+/* -------------------------------------------------------------------
+   재교육 지시 (D2) — 담당자가 "이것 다시 들어 주세요" 라고 남긴 것
+
+   ★ 화면 맨 위에 온다. 지금 해야 할 일이 있으면 그것부터 보여야 한다.
+   ★ 색만으로 구분하지 않는다 — 🔁 그림 + 제목 + 왼쪽 선이 함께 간다.
+   ------------------------------------------------------------------- */
+
+.order-card {
+  border-left: 6px solid var(--warn, #b26a00);
+  background: #fff9ef;
+}
+
+.order-item + .order-item {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.order-item .pict {
+  margin: 0 0 4px;
+  font-size: 2em;
+  line-height: 1;
+}
+
+.order-item .order-title {
+  margin: 0 0 6px;
+  font-size: 1.08em;
+  font-weight: 800;
+}
+
+/* 담당자가 남긴 말. 한국어라 못 읽을 수 있다 —
+   그래서 바로 아래 order-lang 배지가 그 사실을 적는다. */
+.order-item .order-note {
+  margin: 0 0 6px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.order-item .order-lang { margin: 0 0 8px; }
+
+/* -------------------------------------------------------------------
+   넓은 화면에서의 노동자 화면 (D3)
+
+   ★ 노동자 화면은 폰이 본체입니다. 여기서 레이아웃을 두 벌로 만들지
+     않습니다 — 큰 버튼과 큰 글자가 가로로 늘어나면 오히려 읽기 어렵고,
+     터치 타깃 60px 과 글자 크기 조절(B3)이 여기에 얽혀 있습니다.
+
+   ★ 대신 폰 너비로 가운데 모읍니다. 담당자가 PC 로 노동자 화면을
+     확인할 때 실제로 보이는 모양과 같아야 합니다.
+   ------------------------------------------------------------------- */
+
+@media (min-width: 900px) {
+  .page { max-width: 560px; }
+
+  .tabbar.fixed {
+    left: 50%;
+    right: auto;
+    width: 100%;
+    max-width: 560px;
+    transform: translateX(-50%);
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    border-radius: 14px 14px 0 0;
+  }
+}

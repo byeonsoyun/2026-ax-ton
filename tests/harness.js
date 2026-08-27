@@ -32,6 +32,10 @@ function boot(pageRelPath, opts = {}) {
   const nav = [];
   const locShim = {
     protocol: 'https:',
+    // QR 은 절대 주소를 만들어야 해서 origin·host 도 필요하다 (D1)
+    origin: win.location.origin,
+    host: win.location.host,
+    hostname: win.location.hostname,
     pathname: win.location.pathname,
     search: win.location.search,
     get href() { return win.location.href; },
@@ -61,6 +65,7 @@ function boot(pageRelPath, opts = {}) {
   run('assets/ui.js');
   run('assets/review.js');
   run('assets/diagrams.js');
+  run('assets/qr.js');
   if (opts.page) run(opts.page, { shimLocation: true });
 
   return { dom, win, errors, nav, run, $: (id) => win.document.getElementById(id) };

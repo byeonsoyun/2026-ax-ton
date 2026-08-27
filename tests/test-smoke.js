@@ -70,7 +70,7 @@ PAGES.forEach(([html, js, login]) => {
 }
 
 /* -------------------------------------------------------------------
-   seed.js 데이터 계약 — 8개 키의 모양이 유지되는지
+   seed.js 데이터 계약 — 키의 모양이 유지되는지
    ------------------------------------------------------------------- */
 {
   const t = boot('worker/learn.html', { login: 'W-4821-07' });
@@ -83,6 +83,28 @@ PAGES.forEach(([html, js, login]) => {
   eq('수강 이력 3건', S.progress.load().length, 3);
   eq('신고 2건', S.reports.load().length, 2);
   eq('게시글 2건', S.posts.load().length, 2);
+
+  /* 9·10번째 키 (덩어리 2에서 늘렸다) */
+  eq('재교육 지시 1건', S.orders.load().length, 1);
+  const order = S.orders.load()[0];
+  ok('지시가 사람과 교육을 가리킨다',
+    !!order.workerId && !!order.courseId, JSON.stringify(order));
+  ok('★ 지시에 "완료" 필드가 없다 — 해소는 progress 로 판정한다',
+    !('doneAt' in order) && !('done' in order), JSON.stringify(order));
+
+  /* ★ prefs 는 기기 설정이라 예시 데이터가 건드리지 않는다.
+       채운다고 저시력 사용자가 키워 놓은 글자가 되돌아가면 안 된다. */
+  eq('글자 크기 기본값', S.prefs.load().fontScale, 'normal');
+  ok('글자 크기 후보가 셋', S.FONT_SCALES.length === 3, JSON.stringify(S.FONT_SCALES));
+
+  S.prefs.save({ fontScale: 'large' });
+  S.prefs.save({ fontScale: 'large' });
+  t.win.Seed.fill();
+  eq('★ 예시 데이터를 채워도 글자 크기는 그대로다', S.prefs.load().fontScale, 'large');
+
+  ok('★ 이상한 값은 기본값으로 되돌린다',
+    (S.prefs.save({ fontScale: 'huge' }), S.prefs.load().fontScale === 'normal'),
+    S.prefs.load().fontScale);
 
   // progress 의 기존 필드가 그대로인지 (P3·P4 가 읽는 모양)
   const rows = S.progress.load();
@@ -282,6 +304,153 @@ function bootWithSpeech(mode) {
   t.win.UI.voiceWait(10);
   t.win.UI.speak({ text: '시험', lang: 'km' });   // 아무도 누르지 않았다
   eq('★ 누르지도 않았는데 고장이라고 하지 않는다', t.win.UI.voiceBlocked(), false);
+}
+
+/* =================================================================
+   설비 앞 QR → 로그인 → 그 교육 (D1)
+
+   ★ 여기가 뚫리면 QR 은 "로그인 화면으로 가는 그림" 이 된다.
+     찍은 사람은 어느 설비를 찍었는지 잃고, 목록에서 찾아야 한다.
+     글을 못 읽는 사람에게는 거기서 끝이다.
+   ================================================================= */
+{
+  /* 로그인 안 한 채로 QR 주소를 열었을 때 어디로 보내는가.
+     화면 스크립트는 돌리지 않는다 — 실제 브라우저는 여기서 이미 떠난다. */
+  const t = boot('worker/learn.html?course=c-press', { seed: false });
+
+  eq('★ 가려던 자리를 그대로 집어낸다',
+    t.win.Auth.wantedPath(), 'worker/learn.html?course=c-press');
+
+  const url = t.win.Auth.loginUrl();
+  has('로그인 화면으로 보낸다', url, 'index.html');
+  has('★ 어디로 가려던 것인지 함께 넘긴다', url, 'next=');
+  has('★ 어느 교육인지도 남는다', decodeURIComponent(url), 'course=c-press');
+  has('한 칸 위로 올라간다 (절대경로를 쓰지 않는다)', url, '../index.html');
+}
+
+{
+  /* 로그인 화면 자체에서는 붙일 것이 없다 */
+  const t = boot('index.html', { seed: false });
+  eq('★ 로그인 화면에서는 next 를 만들지 않는다', t.win.Auth.wantedPath(), '');
+  eq('그냥 로그인 화면', t.win.Auth.loginUrl(), 'index.html');
+}
+
+{
+  /* 로그인하면 그리로 이어진다 */
+  const t = boot('index.html?next=' + encodeURIComponent('worker/learn.html?course=c-press'),
+    { page: 'assets/login.js' });
+
+  t.$('login-id').value = 'W-4821-07';
+  t.$('login-pw').value = '1234';
+  t.$('form-login').dispatchEvent(new t.win.Event('submit', { bubbles: true, cancelable: true }));
+
+  has('★ 로그인 뒤 찍은 그 교육으로 간다', t.nav.join(' | '), 'worker/learn.html?course=c-press');
+}
+
+{
+  /* 이미 로그인돼 있으면 바로 그리로 */
+  const t = boot('index.html?next=' + encodeURIComponent('worker/learn.html?course=c-press'),
+    { login: 'W-4821-07', page: 'assets/login.js' });
+  has('★ 이미 로그인돼 있으면 바로 간다', t.nav.join(' | '), 'course=c-press');
+}
+
+{
+  /* ★ 남의 역할 화면으로는 보내지 않는다 */
+  const t = boot('index.html?next=' + encodeURIComponent('admin/dashboard.html'),
+    { login: 'W-4821-07', page: 'assets/login.js' });
+  has('★ 노동자를 관리자 화면으로 보내지 않는다', t.nav.join(' | '), 'worker/home.html');
+  ok('대시보드로 안 간다', t.nav.join(' | ').indexOf('dashboard') === -1, t.nav.join(' | '));
+}
+
+{
+  /* ★★ 넘어온 값을 그대로 믿지 않는다.
+       믿으면 링크 하나로 아무 데나 보낼 수 있게 된다. */
+  const auth = boot('index.html', { page: 'assets/login.js', login: 'W-4821-07' }).win.Auth;
+
+  const bad = [
+    'https://example.com/',
+    '//example.com/',
+    'http://example.com',
+    '../../etc/passwd',
+    'worker/../admin/dashboard.html',
+    'javascript:alert(1)',
+    'index.html',
+    'worker/home.html; drop',
+  ];
+  const survived = bad.filter((v) => auth.safeNext(v) !== '');
+  ok('★ 우리 화면 경로가 아닌 값은 전부 버린다', survived.length === 0, survived.join(' | '));
+
+  eq('우리 화면은 받는다', auth.safeNext('worker/learn.html?course=c-press'),
+    'worker/learn.html?course=c-press');
+  eq('쿼리 없는 것도 받는다', auth.safeNext('admin/dashboard.html'), 'admin/dashboard.html');
+  eq('빈 값은 빈 값', auth.safeNext(''), '');
+}
+
+/* =================================================================
+   PC / 모바일 두 벌 레이아웃 (D3)
+
+   ★ jsdom 은 화면을 그리지 않는다. 그래서 "보기 좋은가" 는 여기서 못 본다.
+     대신 **지켜야 하는 규칙이 CSS 에 실제로 있는지**를 글로 확인한다.
+     특히 취약 항목이 PC 에서 반으로 줄어들지 않는가 — 그것이 줄면
+     정보 위계가 뒤바뀌고, 담당자는 이수율만 보고 교육을 안 고친다.
+   ================================================================= */
+{
+  const fs2 = require('fs');
+  const path2 = require('path');
+  const SRC2 = require('./harness').SRC;
+  const read2 = (p) => fs2.readFileSync(path2.join(SRC2, p), 'utf8');
+
+  const adminCss = read2('admin/admin.css');
+  const workerCss = read2('worker/worker.css');
+
+  /* @media (min-width: 1024px) { ... } 안쪽만 떼어 낸다 */
+  function mediaBlock(css, query) {
+    const at = css.indexOf(query);
+    if (at === -1) return '';
+    let depth = 0, start = -1;
+    for (let i = at; i < css.length; i++) {
+      if (css[i] === '{') { depth++; if (depth === 1) start = i + 1; }
+      else if (css[i] === '}') { depth--; if (depth === 0) return css.slice(start, i); }
+    }
+    return '';
+  }
+
+  const pc = mediaBlock(adminCss, '@media (min-width: 1024px)');
+  ok('★ 관리자 화면에 넓은 화면용 규칙이 있다', pc.length > 0);
+
+  /* ★★ 이 검사가 D3 에서 가장 중요하다 */
+  const feature = /\.card\.feature\s*\{[^}]*grid-column:\s*1\s*\/\s*-1/.test(pc);
+  ok('★★ PC 에서도 취약 항목은 한 줄 전체를 쓴다 (반으로 줄지 않는다)',
+    feature, pc.slice(0, 200));
+
+  has('★ 두 칸으로 나눈다', pc, 'grid-template-columns');
+  has('★ 하단 탭바가 세로 메뉴가 된다', pc, '.tabbar.fixed');
+  has('아래 탭바가 없으니 아래 여백을 줄인다', pc, 'padding-bottom');
+
+  /* ★ 노동자 화면은 두 벌로 만들지 않는다 — 폰이 본체다 */
+  const workerWide = mediaBlock(workerCss, '@media (min-width: 900px)');
+  ok('노동자 화면에도 넓은 화면 규칙이 있다', workerWide.length > 0);
+  has('★ 폰 너비로 가운데 모은다', workerWide, 'max-width');
+  ok('★ 노동자 화면을 여러 칸으로 쪼개지 않는다',
+    workerWide.indexOf('grid-template-columns') === -1, workerWide.slice(0, 200));
+
+  /* ★ 되돌린 적 있는 그 파일을 다시 가져오지 않았다 (devlog 2026-08-19).
+       주석에 이름이 나오는 것은 괜찮다 — 실제로 읽어 들이는지를 본다. */
+  const cssFiles = ['assets/style.css', 'assets/style-admin.css', 'assets/app.css',
+    'admin/admin.css', 'worker/worker.css'];
+  const imported = cssFiles.filter((f) => /@import[^;]*style-pc/.test(read2(f)));
+  ok('★ CSS 가 style-pc.css 를 읽어 들이지 않는다', imported.length === 0, imported.join(', '));
+
+  const pages = ['admin/dashboard.html', 'admin/content.html', 'admin/proof.html',
+    'admin/setup.html', 'admin/library.html', 'worker/home.html', 'index.html'];
+  const linked = pages.filter((f) => /<link[^>]*style-pc/.test(read2(f)));
+  ok('★ 화면이 style-pc.css 를 걸지 않는다', linked.length === 0, linked.join(', '));
+
+  /* 터치 타깃 규칙은 좁은 화면에서 그대로다 —
+     60px 을 푸는 것은 마우스로 쓰는 넓은 화면 안에서만이어야 한다 */
+  const outsideMedia = adminCss.replace(pc, '');
+  ok('★ 좁은 화면의 터치 타깃 규칙을 건드리지 않았다',
+    outsideMedia.indexOf('min-height: 48px') === -1, 'min-height:48px 가 미디어 쿼리 밖에 있다');
 }
 
 /* 아무 신호도 안 주는 브라우저 — 기다려 봐야 알 수 있다.

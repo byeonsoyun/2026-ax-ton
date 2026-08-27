@@ -153,4 +153,39 @@ const text = (n) => (n ? n.textContent.trim().replace(/\s+/g, ' ') : '');
   ok('import/export 안 씀', !/^\s*(import|export)\s/m.test(js));
 }
 
+/* =================================================================
+   설비 앞 QR 로 들어왔을 때 (D1)
+
+   ★ 목록을 보여 주고 "찾아서 누르세요" 라고 하면, 글을 못 읽는 사람에게는
+     QR 을 찍은 뜻이 사라진다. 찍은 그 설비의 교육이 바로 열려야 한다.
+   ================================================================= */
+{
+  const t = boot('worker/learn.html?course=c-press',
+    { login: 'W-4821-07', page: 'worker/learn.js' });
+
+  ok('오류 없이 뜬다', t.errors.length === 0, t.errors.join(' | '));
+  eq('★ 찍은 교육이 바로 열린다 — 목록이 아니라', t.$('view-step').hidden, false);
+  eq('목록 화면은 닫혀 있다', t.$('view-list').hidden, true);
+  has('그 교육이 맞다', text(t.$('step-title') || t.win.document.querySelector('main')), '프레스');
+}
+
+{
+  /* ★ 남의 공정 교육이면 열지 않는다.
+       엉뚱한 설비의 안전 지시를 배우게 된다. */
+  const t = boot('worker/learn.html?course=c-paint',
+    { login: 'W-4821-07', page: 'worker/learn.js' });   // 프레스 노동자
+
+  eq('★ 내 교육이 아니면 열지 않는다', t.$('view-step').hidden, true);
+  eq('목록을 그대로 보여 준다', t.$('view-list').hidden, false);
+}
+
+{
+  /* 없는 교육 id 여도 죽지 않는다 */
+  const t = boot('worker/learn.html?course=c-없는것',
+    { login: 'W-4821-07', page: 'worker/learn.js' });
+
+  ok('오류 없이 뜬다', t.errors.length === 0, t.errors.join(' | '));
+  eq('목록으로 남는다', t.$('view-list').hidden, false);
+}
+
 report('기능3 안전교육 수강');

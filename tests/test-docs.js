@@ -63,11 +63,20 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
   // 옛 포지션 절이 남아 있지 않은지
   ok('P2·P3·P4 절이 사라졌다', !/\n# P[234] /.test(t));
 
-  // 할 일마다 "어디" 와 "됐는지" 가 있는가 — 없으면 실행할 수 없다
-  // 남은 개수는 일을 끝낼수록 줄어드는 게 맞다. 여기서 보는 것은 개수가 아니라
-  // "할 일이 실행 가능한 목록으로 있는가" 다. V1·V2 를 끝내면서 15 → 8 로 낮췄다.
-  const boxes = (t.match(/- \[ \]/g) || []).length;
-  ok('할 일이 체크박스로 있다 (' + boxes + '개)', boxes >= 8, String(boxes));
+  /* 할 일마다 "어디" 와 "됐는지" 가 있는가 — 없으면 실행할 수 없다.
+
+     ★ 남은 개수에 바닥을 두지 않는다.
+       예전에는 "- [ ] 가 8개 이상" 을 봤는데, 일을 끝낼 때마다 검사가 깨져서
+       그때마다 숫자를 내리게 된다. 숫자를 내리는 검사는 아무것도 지키지 않는다.
+       (V1·V2 를 끝내며 15 → 8 로 한 번 내렸고, C7 에서 또 걸렸다.)
+       그래서 개수가 아니라 남은 항목 "하나하나가" 실행 가능한지를 본다. */
+  const openItems = t.split(/\n(?=- \[)/).filter((s) => s.startsWith('- [ ]'));
+  const doneCount = (t.match(/- \[x\]/g) || []).length;
+  ok('끝낸 일이 체크로 남아 있다 (' + doneCount + '개)', doneCount >= 10, String(doneCount));
+
+  const vague = openItems.filter((s) => !s.includes('**어디**:'));
+  ok('★ 남은 일마다 "어디" 가 적혀 있다 (' + openItems.length + '개 남음)',
+    vague.length === 0, vague.map((s) => s.split('\n')[0]).join(' | '));
 
   const wheres = (t.match(/\*\*어디\*\*:/g) || []).length;
   const dones = (t.match(/\*\*됐는지\*\*:/g) || []).length;
@@ -128,8 +137,8 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
     ['fileFlag', 'src/admin/library.js'],
     ['negationFlipped', 'src/assets/review.js'],   // 기능2 와 함께 쓰려고 빼냈다
     ['setStatus', 'src/admin/library.js'],
-    ['renderRows', 'src/admin/proof.js'],
-    ['pickTodayPhrase', 'src/worker/home.js'],
+    ['courseBlock', 'src/admin/proof.js'],       // C1 에서 renderRows 를 덩어리 단위로 바꿨다
+    ['phrasePool', 'src/worker/home.js'],        // C5 에서 pickTodayPhrase 를 쪼갠 것
   ];
 
   refs.forEach(([fn, file]) => {
@@ -247,6 +256,47 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
     'admin/dashboard', 'admin/content', 'admin/proof', 'admin/library']
     .filter((f) => !read('src/' + f + '.html').includes('여기부터 채우시면 됩니다'));
   ok('★ 여덟 화면에 "여기부터" 칸이 다 있다', todos.length === 0, todos.join(', '));
+
+  /* ★ 칸이 있는지만 보면 B5 가 고친 어긋남을 다시 놓친다.
+       칸 안에 "이미 끝난 것" 이 적혀 있어도 위 검사는 통과한다.
+       처음 보는 사람은 문서보다 화면을 믿어서 이미 있는 기능을 또 만든다. */
+  const SCREENS = ['worker/home', 'worker/report', 'worker/talk', 'worker/my',
+    'admin/dashboard', 'admin/content', 'admin/proof', 'admin/library'];
+
+  /* 그 화면의 "여기부터 채우시면 됩니다" 칸만 잘라 낸다 */
+  const todoBox = (f) => {
+    const html = read('src/' + f + '.html');
+    const from = html.indexOf('여기부터 채우시면 됩니다');
+    if (from === -1) return '';
+    const to = html.indexOf('</section>', from);
+    return html.slice(from, to === -1 ? html.length : to);
+  };
+
+  /* 끝낸 기능이 아직 할 일로 적혀 있으면 안 된다.
+     ★ 새 항목을 끝낼 때마다 여기에 한 줄 더하세요 — 그것이 화면도 함께
+       정리하라는 신호가 됩니다 (07-next-tasks.md 의 - [x] 와 짝입니다). */
+  const DONE = [
+    { label: '문항 다국어', why: 'A1 에서 끝남 — Store.qtext' },
+    { label: '언어별 판정', why: 'A2 에서 끝남 — Store.phraseStatus' },
+    { label: '교육 기한', why: 'B1 에서 끝남 — UI.dueBadge' },
+    { label: '문구 추가', why: 'B2 에서 끝남 — admin/library 의 #form-add' },
+    { label: '기간 걸러 보기', why: 'C2 에서 끝남 — admin/dashboard 의 범위 고르기' },
+    { label: '관리자 답글 표시', why: 'C7 에서 끝남 — talk.js 의 isOfficial' },
+    { label: '글자 크기 조절', why: 'B3 에서 끝남 — worker/my 의 글자 크기 칸' },
+    { label: '재교육 지시', why: 'D2 에서 끝남 — Store.orders · dashboard 의 #order-form' },
+    { label: '문항 수정·삭제', why: 'C6 에서 끝남 — content 의 #edit-banner · q.retired' },
+    { label: 'QR 이미지', why: 'D1 에서 끝남 — assets/qr.js · content 의 #link-note' },
+  ];
+
+  DONE.forEach((d) => {
+    const stale = SCREENS.filter((f) => todoBox(f).includes('<dt>' + d.label));
+    ok('★ 끝난 "' + d.label + '" 이 할 일 칸에 없다 (' + d.why + ')',
+      stale.length === 0, stale.join(', '));
+  });
+
+  /* 팀 시절 표기. 지금은 혼자라 P1~P4 가 가리키는 사람이 없다. */
+  const withP = SCREENS.filter((f) => /—\s*P[1-4]\b|P[1-4]\s*가 채우/.test(read('src/' + f + '.html')));
+  ok('★ 화면에 P1~P4 표기가 남아 있지 않다', withP.length === 0, withP.join(', '));
 }
 
 report('문서 — 물어보기만 해도 다음 할 일을 찾을 수 있는가');

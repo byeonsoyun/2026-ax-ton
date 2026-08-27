@@ -3,8 +3,8 @@
 
    담당: P3
    기능번호: 기능6
-   읽는 키: progress, reports, setup, courses, library
-   쓰는 키: reports (조치 상태만)
+   읽는 키: progress, reports, setup, courses, library, orders
+   쓰는 키: reports (조치 상태만) · orders (재교육 지시)
    근거: SCREEN 기능6 · PRD §5
 
    ★ 이 화면의 주인공은 이수율이 아니다.
@@ -85,10 +85,71 @@
     return { key: row.quiz.passed ? 'pass' : 'fail', label: row.quiz.passed ? '이수' : '미통과', row: row };
   }
 
+
+  /* -----------------------------------------------------------------
+     기간 걸러 보기 (C2)
+
+     ★ 기준은 "교육을 발급한 날" (course.createdAt) 이다.
+       수강한 날이나 검증한 날로 거르면 **아직 아무것도 안 한 사람은
+       날짜가 없어서 통째로 빠진다.** 미수강자가 사라지고 이수율이 저절로
+       올라간다 — 이 화면이 절대 하면 안 되는 일이다.
+       (같은 이유로 audienceOf() 도 누구도 빼지 않는다)
+
+     ★ 날짜가 없는 교육은 숨기지 않는다. 자료가 모자란 것을 "해당 없음" 으로
+       바꾸면, 기록이 부실할수록 화면이 깨끗해진다.
+     ----------------------------------------------------------------- */
+
+  var range = 'all';        // 'quarter' · 'year' · 'all'. 기본은 전체 — 숨기지 않는 쪽
+
+  var RANGE_LABEL = { quarter: '이번 분기', year: '올해', all: '전체 기간' };
+
+  /* 그 범위가 시작하는 시각. 전체면 null. */
+  function rangeStartTime(key) {
+    var now = new Date();
+    if (key === 'year') return new Date(now.getFullYear(), 0, 1).getTime();
+    if (key === 'quarter') {
+      return new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1).getTime();
+    }
+    return null;
+  }
+
+  function inRange(course) {
+    var from = rangeStartTime(range);
+    if (from === null) return true;
+    if (!course || !course.createdAt) return true;   // 날짜가 없으면 숨기지 않는다
+    var at = new Date(course.createdAt).getTime();
+    if (isNaN(at)) return true;                      // 못 읽는 날짜도 숨기지 않는다
+    return at >= from;
+  }
+
+  function coursesInRange() {
+    return Store.courses.load().filter(inRange);
+  }
+
+  /* ★ 무엇이 빠져 있는지 화면에 적는다.
+       조용히 줄이면 담당자는 "전부 본 것" 으로 읽고, 범위 밖의 미이수를 놓친다. */
+  function renderRangeNote() {
+    var all = Store.courses.load();
+    var shown = all.filter(inRange);
+    var hidden = all.length - shown.length;
+
+    var note = $('range-note');
+    if (note) {
+      note.textContent = hidden
+        ? RANGE_LABEL[range] + ' 교육 ' + shown.length + '건을 봅니다. ' +
+          '이 범위 밖 교육 ' + hidden + '건은 빠져 있습니다.'
+        : RANGE_LABEL[range] + ' — 교육 ' + all.length + '건 전부를 봅니다.';
+    }
+
+    ['quarter', 'year', 'all'].forEach(function (key) {
+      var btn = $('range-' + key);
+      if (btn) btn.setAttribute('aria-pressed', range === key ? 'true' : 'false');
+    });
+  }
   /* 모든 (노동자 × 교육) 조합. 이 화면의 거의 모든 숫자가 여기서 나온다. */
   function allPairs() {
     var out = [];
-    Store.courses.load().forEach(function (course) {
+    coursesInRange().forEach(function (course) {
       audienceOf(course).forEach(function (worker) {
         out.push({ worker: worker, course: course, state: stateOf(worker, course) });
       });
@@ -157,9 +218,14 @@
       if (!row.quiz || !Array.isArray(row.quiz.answers)) return;
       var course = courseOf(row.courseId);
       if (!course || !Array.isArray(course.quiz)) return;
+      if (!inRange(course)) return;      // 기간 걸러 보기 (C2) — 막대도 함께 바뀐다
 
       row.quiz.answers.forEach(function (correct, i) {
-        var q = course.quiz[i];
+        /* ★ 자리로 찾지 않고 Store.askedQuestion 을 쓴다 (C6).
+             answers 의 자리는 "그때 낸 문항" 의 순서지 course.quiz 의
+             자리가 아니다. 문항을 내리면 어긋나고, 어긋나면 이 막대가
+             조용히 다른 문항의 정답률을 말한다. */
+        var q = Store.askedQuestion(course, row.quiz, i);
         if (!q) return;
         // hazard 가 없는 문항은 유형으로 묶는다. 묶을 이름이 없으면 셀 수 없다.
         var topic = q.hazard || ('type:' + q.type);
@@ -255,12 +321,127 @@
     var out = [];
     row.quiz.answers.forEach(function (correct, i) {
       if (correct === 1) return;
-      var q = (course.quiz || [])[i];
+      // 자리가 아니라 그때 낸 문항으로 찾는다 (C6)
+      var q = Store.askedQuestion(course, row.quiz, i);
       if (!q) return;
       var haz = hazardOf(q.hazard);
       out.push(haz ? haz.icon + ' ' + haz.label : (QLABEL[q.type] || q.type));
     });
     return out;
+  }
+
+  /* -----------------------------------------------------------------
+     재교육 지시 (D2) — Store.orders
+
+     ★ 이 기록으로 사람을 세지 않는다.
+       "이 사람 재교육 3회" 는 인사 평가 자료다. 개인별 점수를 인사·평가
+       목적으로 내보내지 않는다는 이 화면의 원칙과 같은 이유로, 누적 횟수를
+       세거나 사람을 줄 세우는 화면을 만들지 않는다.
+       지시는 "이 교육을 다시 듣게 한다" 는 뜻이지 "이 사람이 못했다" 가 아니다.
+
+     ★ 해소 판정은 Store.orderOpen() 한 곳에서 한다.
+       노동자 홈이 같은 함수를 쓴다 — 계산이 두 곳이면 한쪽만 고쳐져서
+       담당자는 "보냈다" 고 보는데 노동자 화면에는 안 뜨는 일이 생긴다.
+     ----------------------------------------------------------------- */
+
+  /* 이 사람 · 이 교육에 살아 있는 지시. 없으면 null. */
+  function openOrderFor(worker, course) {
+    var row = progressOf(worker.id, course.id);
+    return Store.orders.load().filter(function (o) {
+      return o.workerId === worker.id && o.courseId === course.id &&
+        Store.orderOpen(o, row);
+    })[0] || null;
+  }
+
+  /* 지금 지시를 쓰고 있는 대상. null 이면 입력칸이 닫혀 있다. */
+  var orderTarget = null;
+
+  function openOrderForm(pair) {
+    orderTarget = { workerId: pair.worker.id, courseId: pair.course.id };
+
+    $('order-who').textContent =
+      pair.worker.id + ' · ' + pair.course.title;
+
+    var topics = stuckTopics(pair);
+    $('order-why').textContent = topics.length
+      ? '막힌 항목: ' + topics.join(' · ') + '. 이 부분을 다시 듣게 합니다.'
+      : (pair.state.key === 'none'
+        ? '아직 수강하지 않았습니다. 다시 안내가 갑니다.'
+        : '아직 이해도 검증을 마치지 않았습니다.');
+
+    $('order-note').value = '';
+    $('order-form').hidden = false;
+    $('order-note').focus();
+  }
+
+  function closeOrderForm() {
+    orderTarget = null;
+    $('order-form').hidden = true;
+    $('order-note').value = '';
+  }
+
+  function sendOrder() {
+    if (!orderTarget) return;
+
+    var note = ($('order-note').value || '').trim();
+    if (!note) {
+      UI.toast('무엇을 다시 들으면 되는지 한 줄 적어 주세요.');
+      $('order-note').focus();
+      return;
+    }
+
+    var target = orderTarget;
+    Store.orders.update(function (list) {
+      list.push({
+        id: 'or-' + Date.now(),
+        workerId: target.workerId,
+        courseId: target.courseId,
+        note: note,
+        at: new Date().toISOString(),
+        by: user.userId,
+        canceledAt: null
+      });
+    });
+
+    closeOrderForm();
+    render();
+    UI.toast('재교육 지시를 보냈습니다. 노동자 홈 화면에 뜹니다.');
+  }
+
+  function cancelOrder(order) {
+    /* ★ 지우지 않고 취소 표시만 남긴다.
+         지워 버리면 지시를 냈다가 거둔 사실이 기록에서 사라진다. */
+    Store.orders.update(function (list) {
+      var row = Store.findBy(list, 'id', order.id);
+      if (row) row.canceledAt = new Date().toISOString();
+    });
+    render();
+    UI.toast('지시를 거뒀습니다. 노동자 화면에서 사라집니다.');
+  }
+
+  /* 표 안의 "재교육" 칸 하나 */
+  function orderCell(pair) {
+    var cell = UI.el('td');
+    var open = openOrderFor(pair.worker, pair.course);
+
+    if (open) {
+      var box = UI.el('div', 'chips');
+      box.appendChild(UI.waitBadge('지시함 · ' + (open.at || '').slice(0, 10)));
+
+      var undo = UI.el('button', 'btn-sm', '거두기');
+      undo.type = 'button';
+      undo.addEventListener('click', function () { cancelOrder(open); });
+      box.appendChild(undo);
+
+      cell.appendChild(box);
+      return cell;
+    }
+
+    var btn = UI.el('button', 'btn-sm go', '재교육 지시');
+    btn.type = 'button';
+    btn.addEventListener('click', function () { openOrderForm(pair); });
+    cell.appendChild(btn);
+    return cell;
   }
 
   function renderActions(pairs) {
@@ -269,10 +450,16 @@
 
     var need = pairs.filter(function (p) { return p.state.key !== 'pass'; });
 
+    /* 대상이 사라졌는데 입력칸이 열려 있으면 닫는다 —
+       기간을 바꾸거나 그 사이에 통과하면 그럴 수 있다 */
+    if (orderTarget && !need.some(function (p) {
+      return p.worker.id === orderTarget.workerId && p.course.id === orderTarget.courseId;
+    })) closeOrderForm();
+
     if (!need.length) {
       var tr = UI.el('tr');
       var cell = UI.el('td');
-      cell.colSpan = 5;
+      cell.colSpan = 6;
       cell.appendChild(UI.el('p', 'empty', '조치가 필요한 사람이 없습니다.'));
       tr.appendChild(cell);
       body.appendChild(tr);
@@ -303,6 +490,8 @@
       }
       tr.appendChild(topicCell);
 
+      tr.appendChild(orderCell(p));
+
       body.appendChild(tr);
     });
   }
@@ -311,6 +500,9 @@
      4. 위험요소 신고 큐 — 익명
      ----------------------------------------------------------------- */
 
+  /* ★ 위험요소 신고는 기간 걸러 보기를 따르지 않는다.
+       조치가 안 끝난 신고는 언제 들어온 것이든 계속 보여야 한다.
+       지난 분기 긴급 신고가 범위 밖이라고 사라지면 그게 사고가 된다. */
   function renderReports() {
     var box = $('report-queue');
     box.textContent = '';
@@ -391,7 +583,7 @@
     var list = $('due-list');
     list.textContent = '';
 
-    var courses = Store.courses.load();
+    var courses = coursesInRange();       // 기한도 교육에 딸린 것이라 범위를 따른다
     if (!courses.length) {
       list.appendChild(UI.emptyRow('발급된 교육이 없습니다. 교육 콘텐츠 생성에서 먼저 만들어 주세요.'));
       return;
@@ -429,6 +621,7 @@
 
   function render() {
     var pairs = allPairs();
+    renderRangeNote();
     renderStatus(pairs);
     renderWeak();
     renderActions(pairs);
@@ -436,9 +629,24 @@
     renderDue(pairs);
   }
 
+
+  /* 기간 걸러 보기 (C2) */
+  ['quarter', 'year', 'all'].forEach(function (key) {
+    var btn = $('range-' + key);
+    if (btn) btn.addEventListener('click', function () { range = key; render(); });
+  });
+
+  /* 재교육 지시 (D2) */
+  $('order-send').addEventListener('click', sendOrder);
+  $('order-cancel').addEventListener('click', closeOrderForm);
+  $('order-note').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') sendOrder();
+  });
+
   window.addEventListener('storage', function (e) {
     if (e.key === Store.progress.KEY || e.key === Store.reports.KEY ||
-        e.key === Store.courses.KEY || e.key === Store.setup.KEY) render();
+        e.key === Store.courses.KEY || e.key === Store.setup.KEY ||
+        e.key === Store.orders.KEY) render();
   });
 
   render();

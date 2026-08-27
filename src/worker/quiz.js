@@ -103,6 +103,12 @@
   function questionsOf(course) {
     return (Array.isArray(course.quiz) ? course.quiz : []).filter(function (q) {
       if (!q || !KIND[q.type]) return false;
+
+      /* ★ 내린 문항은 앞으로 내지 않는다 (C6).
+           배열에서 빼지 않고 표시만 한 것이라, 이미 그 문항을 푼 사람의
+           기록은 그대로 남는다. 지워 버리면 옛 기록이 가리킬 곳을 잃는다. */
+      if (q.retired) return false;
+
       if (q.type === 'hotspot') return !!(q.answer && typeof q.answer.x === 'number');
       if (q.type === 'choice') return Array.isArray(q.options) && q.options.length > 1
         && typeof q.answer === 'number';
@@ -578,7 +584,15 @@
         answers: run.answers.slice(),
         at: new Date().toISOString(),
         attempt: attempt,
-        firstPassed: firstPassed
+        firstPassed: firstPassed,
+
+        /* ★ 그때 실제로 낸 문항의 id 를 함께 남긴다 (C6).
+             answers 의 자리는 "낸 문항" 의 순서지 course.quiz 의 자리가 아니다.
+             채점할 수 없는 문항이 섞여 있거나(questionsOf 가 걸러 낸다)
+             나중에 담당자가 문항을 내리면 자리가 어긋나고, 그러면
+             대시보드의 취약 항목과 증빙이 **조용히 다른 문항을 가리킨다.**
+             읽는 쪽은 Store.askedQuestion() 하나만 쓴다. */
+        asked: run.questions.map(function (q) { return q.id; })
       };
     });
 
