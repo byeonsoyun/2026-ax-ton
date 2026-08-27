@@ -63,11 +63,20 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
   // 옛 포지션 절이 남아 있지 않은지
   ok('P2·P3·P4 절이 사라졌다', !/\n# P[234] /.test(t));
 
-  // 할 일마다 "어디" 와 "됐는지" 가 있는가 — 없으면 실행할 수 없다
-  // 남은 개수는 일을 끝낼수록 줄어드는 게 맞다. 여기서 보는 것은 개수가 아니라
-  // "할 일이 실행 가능한 목록으로 있는가" 다. V1·V2 를 끝내면서 15 → 8 로 낮췄다.
-  const boxes = (t.match(/- \[ \]/g) || []).length;
-  ok('할 일이 체크박스로 있다 (' + boxes + '개)', boxes >= 8, String(boxes));
+  /* 할 일마다 "어디" 와 "됐는지" 가 있는가 — 없으면 실행할 수 없다.
+
+     ★ 남은 개수에 바닥을 두지 않는다.
+       예전에는 "- [ ] 가 8개 이상" 을 봤는데, 일을 끝낼 때마다 검사가 깨져서
+       그때마다 숫자를 내리게 된다. 숫자를 내리는 검사는 아무것도 지키지 않는다.
+       (V1·V2 를 끝내며 15 → 8 로 한 번 내렸고, C7 에서 또 걸렸다.)
+       그래서 개수가 아니라 남은 항목 "하나하나가" 실행 가능한지를 본다. */
+  const openItems = t.split(/\n(?=- \[)/).filter((s) => s.startsWith('- [ ]'));
+  const doneCount = (t.match(/- \[x\]/g) || []).length;
+  ok('끝낸 일이 체크로 남아 있다 (' + doneCount + '개)', doneCount >= 10, String(doneCount));
+
+  const vague = openItems.filter((s) => !s.includes('**어디**:'));
+  ok('★ 남은 일마다 "어디" 가 적혀 있다 (' + openItems.length + '개 남음)',
+    vague.length === 0, vague.map((s) => s.split('\n')[0]).join(' | '));
 
   const wheres = (t.match(/\*\*어디\*\*:/g) || []).length;
   const dones = (t.match(/\*\*됐는지\*\*:/g) || []).length;
@@ -271,6 +280,8 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
     { label: '언어별 판정', why: 'A2 에서 끝남 — Store.phraseStatus' },
     { label: '교육 기한', why: 'B1 에서 끝남 — UI.dueBadge' },
     { label: '문구 추가', why: 'B2 에서 끝남 — admin/library 의 #form-add' },
+    { label: '기간 걸러 보기', why: 'C2 에서 끝남 — admin/dashboard 의 범위 고르기' },
+    { label: '관리자 답글 표시', why: 'C7 에서 끝남 — talk.js 의 isOfficial' },
   ];
 
   DONE.forEach((d) => {

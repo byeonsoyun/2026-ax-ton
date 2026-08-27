@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="worker.css">
 <script src="../assets/store.js"></script>
 <script src="../assets/auth.js"></script>
-<script>Auth.require('worker');</script>
+<script>Auth.require(['worker', 'admin']);</script>
 </head>
 <body class="has-tabbar">
 
@@ -29,6 +29,10 @@
   </p>
 
   <p class="voicenote" id="voicenote" hidden></p>
+
+  <!-- 담당자로 들어왔을 때만 뜬다. 여기가 노동자 게시판이라는 것을 알아야
+       "공식 답변" 이라는 표시의 뜻이 선다. -->
+  <p class="admin-here" id="admin-here" hidden></p>
 
   <!-- 화면 A — 글 목록 -->
   <div id="view-list">
@@ -117,7 +121,6 @@
     <p class="why">아래는 골격에 넣지 않은 것들입니다. 지금 상태로도 글과 댓글이 저장됩니다.</p>
     <dl>
       <dt>번역</dt><dd>다른 언어로 쓴 글을 내 언어로 보여 주는 기능. 검수 없는 자동 번역을 안전 지시로 쓰지 않도록 주의해야 합니다</dd>
-      <dt>관리자 답글 표시</dt><dd>관리자가 단 댓글을 눈에 띄게 구분하기</dd>
       <dt>내 파일</dt><dd><code>worker/talk.html</code> · <code>worker/talk.js</code> · <code>worker/worker.css</code></dd>
     </dl>
   </section>

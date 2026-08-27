@@ -271,7 +271,7 @@ var Seed = (function () {
   var POSTS = [
     { id: 'po-1', title: '프레스 교대 시간 바뀐 것 맞나요?', body: '오늘부터 30분 당겨진다고 들었습니다.',
       author: 'W-4821-07', anonymous: false, createdAt: '2026-08-14T02:00:00.000Z',
-      comments: [{ author: '김현수', body: '맞습니다. 다음 주까지만입니다.', createdAt: '2026-08-14T02:40:00.000Z' }] },
+      comments: [{ author: 'kim@daesung.co.kr', body: '맞습니다. 다음 주까지만입니다.', createdAt: '2026-08-14T02:40:00.000Z' }] },
     { id: 'po-2', title: '도장실 마스크 어디서 받나요', body: '',
       author: '', anonymous: true, createdAt: '2026-08-15T23:10:00.000Z', comments: [] }
   ];

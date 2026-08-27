@@ -743,4 +743,148 @@ function pickFont(t, code) {
   ok('오류 없이 뜬다', t.errors.length === 0, t.errors.join(' | '));
 }
 
+/* =================================================================
+   기능7 소통 — 관리자 답글 구분 (C7)
+
+   ★ 지켜야 하는 것 셋
+     ① 공식 답변이 동료 의견처럼 보이지 않는가
+     ② 감춘 댓글이 공식으로 새어 나가지 않는가 (익명이 깨지는 통로)
+     ③ 담당자가 들어와서 돌아갈 수 있는가
+   ================================================================= */
+
+const asAdmin = (opts = {}) =>
+  open('talk', Object.assign({ login: 'kim@daesung.co.kr', role: 'admin' }, opts));
+
+{
+  /* --- 노동자 눈으로 본다. seed 의 po-1 에는 kim 의 댓글이 하나 있다 --- */
+  const t = open('talk');
+  openPostByTitle(t, '프레스 교대');
+
+  const items = [...t.$('p-comments').querySelectorAll('.comment-item')];
+  ok('댓글이 있다', items.length > 0);
+
+  const official = items.filter((li) => li.getAttribute('data-official') === 'yes');
+  eq('★ 담당자 댓글이 공식 답변으로 표시된다', official.length, 1);
+  has('글자로도 적는다 — 색만으로 구분하지 않는다', text(official[0]), '공식 답변');
+  has('누가 한 말인지 드러난다', text(official[0]), '김현수');
+  ok('★ 아이디가 아니라 이름으로 보인다',
+    !text(official[0]).includes('kim@daesung.co.kr'), text(official[0]));
+
+  /* 노동자에게는 담당자 안내가 뜨지 않는다 */
+  eq('노동자에게는 담당자 안내가 없다', t.$('admin-here').hidden, true);
+  eq('★ 노동자에게는 글쓰기 버튼이 그대로 있다', t.$('btn-new').hidden, false);
+}
+
+{
+  /* --- ★ 감춘 댓글은 절대 공식이 아니다 ---
+       감춘 것을 들춰서 역할을 붙이면 그 순간 익명이 깨진다.
+       author 에 담당자 아이디가 남아 있어도 anonymous 면 공식이 아니다. */
+  const t = open('talk', {
+    before(win) {
+      win.Store.posts.update((list) => {
+        list[0].comments.push({
+          author: 'kim@daesung.co.kr', anonymous: true,
+          body: '이건 감추고 단 댓글입니다', createdAt: '2026-08-16T00:00:00.000Z',
+        });
+      });
+    },
+  });
+  openPostByTitle(t, '프레스 교대');
+
+  const hidden = [...t.$('p-comments').querySelectorAll('.comment-item')]
+    .find((li) => text(li).includes('감추고 단 댓글'));
+  ok('그 댓글이 보인다', !!hidden);
+  ok('★ 감춘 댓글에는 공식 표시가 붙지 않는다',
+    hidden.getAttribute('data-official') !== 'yes', text(hidden));
+  has('★ 이름도 감춘 채로 남는다', text(hidden), '이름 감춤');
+  ok('★ 아이디가 새어 나가지 않는다',
+    !text(hidden).includes('kim@daesung.co.kr') && !text(hidden).includes('김현수'),
+    text(hidden));
+}
+
+{
+  /* --- 담당자로 들어왔을 때 --- */
+  const t = asAdmin();
+  ok('오류 없이 뜬다', t.errors.length === 0, t.errors.join(' | '));
+
+  const note = t.$('admin-here');
+  eq('★ 담당자로 보고 있다고 화면에 적는다', note.hidden, false);
+  has('답글이 공식 답변이 된다고 알린다', text(note), '공식 답변');
+  has('★ 이름을 감출 수 없다고 미리 알린다', text(note), '이름을 감출 수 없습니다');
+
+  /* ★ 돌아갈 길 — 아래 탭바는 전부 노동자 화면이라 누르면 튕긴다 */
+  const back = note.querySelector('.back-link');
+  ok('★ 돌아가는 링크가 있다', !!back);
+  eq('담당자 첫 화면으로 간다', back.getAttribute('href'), '../admin/dashboard.html');
+  eq('★ 노동자 탭바를 감춘다', t.win.document.querySelector('.tabbar').hidden, true);
+  ok('탭바가 없으니 아래 여백도 뗀다',
+    !t.win.document.body.className.includes('has-tabbar'), t.win.document.body.className);
+
+  /* ★ 관리자는 글을 쓰지 않는다 — 여기는 노동자가 묻는 자리다 */
+  eq('★ 글쓰기 버튼이 보이지 않는다', t.$('btn-new').hidden, true);
+}
+
+{
+  /* --- 담당자가 답글을 단다 --- */
+  const t = asAdmin();
+  openPostByTitle(t, '프레스 교대');
+
+  /* ★ 이름 감추기 칩을 아예 두지 않는다. 왜 없는지도 적는다 —
+       버튼만 조용히 없으면 고장으로 보인다 (C3 에서 배운 것) */
+  const canon = t.$('pick-canon');
+  eq('★ 담당자에게는 이름 감추기 칩이 없다',
+    canon.querySelectorAll('input[name="canon"]').length, 0);
+  has('★ 왜 없는지 적는다', text(canon), '이름을 감출 수 없습니다');
+  has('이유까지 적는다', text(canon), '누구의 말인지');
+
+  t.$('c-body').value = '설비팀에 확인했습니다. 다음 주 월요일에 고칩니다.';
+  click(t.win, t.$('btn-comment'));
+
+  const post = t.win.Store.posts.load().find((p) => p.id === 'po-1');
+  const added = post.comments[post.comments.length - 1];
+  has('답글이 저장된다', added.body, '설비팀에 확인했습니다');
+  eq('★ 감추지 않은 채로 저장된다', added.anonymous, false);
+  eq('★ 누가 답했는지 남는다', added.author, 'kim@daesung.co.kr');
+
+  /* 화면에서도 바로 공식 답변으로 보인다 */
+  const mine = [...t.$('p-comments').querySelectorAll('.comment-item')]
+    .find((li) => text(li).includes('설비팀에 확인했습니다'));
+  eq('★ 단 즉시 공식 답변으로 표시된다', mine.getAttribute('data-official'), 'yes');
+}
+
+{
+  /* --- 역할은 accounts 에서 찾는다. 댓글에 적어 두지 않는다 ---
+       적어 두면 계정 역할이 바뀐 뒤 옛 댓글이 거짓말을 한다. */
+  const t = asAdmin();
+  openPostByTitle(t, '프레스 교대');
+  t.$('c-body').value = '역할을 댓글에 적지 않습니다';
+  click(t.win, t.$('btn-comment'));
+
+  const post = t.win.Store.posts.load().find((p) => p.id === 'po-1');
+  const added = post.comments[post.comments.length - 1];
+  ok('★ 댓글에 role 같은 필드를 저장하지 않는다',
+    !('role' in added) && !('official' in added), JSON.stringify(added));
+
+  /* 계정이 노동자로 바뀌면 그 댓글은 더 이상 공식이 아니다 */
+  const t2 = open('talk', {
+    before(win) {
+      win.Store.posts.update((list) => {
+        list[0].comments.push({
+          author: 'kim@daesung.co.kr', anonymous: false,
+          body: '역할이 바뀌기 전의 답글', createdAt: '2026-08-16T01:00:00.000Z',
+        });
+      });
+      win.Store.accounts.update((list) => {
+        const acc = list.find((a) => a.userId === 'kim@daesung.co.kr');
+        acc.role = 'worker';
+      });
+    },
+  });
+  openPostByTitle(t2, '프레스 교대');
+  const stale = [...t2.$('p-comments').querySelectorAll('.comment-item')]
+    .find((li) => text(li).includes('역할이 바뀌기 전의 답글'));
+  ok('★ 역할이 바뀌면 옛 댓글도 함께 따라간다',
+    stale.getAttribute('data-official') !== 'yes', text(stale));
+}
+
 report('노동자 화면 4개 — 홈 · 신고 · 소통 · 마이');

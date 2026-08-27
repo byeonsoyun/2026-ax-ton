@@ -63,9 +63,83 @@
 
   function postOf(id) { return Store.findBy(Store.posts.load(), 'id', id); }
 
+
+  /* -----------------------------------------------------------------
+     관리자 답글 구분 (C7)
+
+     ★ 공식 답변과 동료 의견이 섞이면 안 된다.
+       노동자가 "관리자가 그렇게 하래" 로 받아들일 말과 옆 사람 짐작을
+       구분하지 못하면, 잘못된 짐작이 안전 지시처럼 돈다.
+
+     ★ 관리자는 답글만 단다. 글은 쓰지 않는다.
+       여기는 노동자가 묻는 자리다.
+
+     ★ 관리자는 이름을 감출 수 없다.
+       감출 수 있으면 노동자는 공식 답변을 알아볼 수 없고, 그러면 이 구분이
+       있으나 마나다. 익명은 신고하는 사람을 지키려고 있는 것이지
+       답하는 사람을 지키려고 있는 것이 아니다.
+
+     ★ 역할은 accounts 에서 찾는다. 댓글에 역할을 적어 두지 않는다 —
+       적어 두면 나중에 계정 역할이 바뀌었을 때 옛 댓글이 거짓말을 한다.
+
+     ★ 읽는 범위가 들어오는 범위보다 넓다.
+       지금 이 화면에 들어오는 것은 담당자까지다 (talk.html 의 가드).
+       그런데 판정은 운영자 댓글도 공식으로 본다 — 다른 기기에서 불러온
+       데이터(Store.importAll)에 운영자 댓글이 있을 수 있고, 그때
+       배지를 안 붙이는 쪽이 붙이는 쪽보다 위험하다.
+       공식 답변이 동료 의견처럼 보이는 것이 이 항목이 막으려는 일이다.
+     ----------------------------------------------------------------- */
+
+  var OFFICIAL_ROLES = ['admin', 'operator'];
+
+  function isAdmin() { return OFFICIAL_ROLES.indexOf(user.role) !== -1; }
+
+  function accountOf(userId) {
+    if (!userId) return null;
+    return Store.findBy(Store.accounts.load(), 'userId', userId);
+  }
+
+  /* 이 댓글이 공식 답변인가.
+     ★ 이름을 감춘 댓글은 절대 아니다 — 감춘 것을 들추면 익명이 깨진다. */
+  function isOfficial(item) {
+    if (!item || item.anonymous || !item.author) return false;
+    var acc = accountOf(item.author);
+    return !!acc && OFFICIAL_ROLES.indexOf(acc.role) !== -1;
+  }
+
+  /* 담당자로 들어왔다는 것을 화면에 적는다.
+     여기가 노동자 게시판이라는 것을 알아야 "공식 답변" 표시의 뜻이 선다. */
+  function renderAdminNote() {
+    var box = $('admin-here');
+    if (!box) return;
+
+    box.textContent = '';
+    if (!isAdmin()) { box.hidden = true; return; }
+
+    box.appendChild(document.createTextNode(
+      '담당자로 보고 있습니다. 여기 다는 답글은 ' +
+      '"공식 답변" 으로 표시되고, 이름을 감출 수 없습니다. ' +
+      '글쓰기는 노동자의 자리라 담당자에게는 보이지 않습니다.'));
+
+    /* ★ 돌아갈 길을 함께 준다.
+         아래 탭바는 전부 노동자 화면으로 가는데, 담당자가 누르면
+         화면 가드에 걸려 대시보드로 튕긴다. 튕기는 것과 돌아가는 것은
+         다르다 — 튕기면 사람은 그것을 고장으로 읽는다. */
+    var back = UI.el('a', 'back-link', '← 담당자 화면으로 돌아가기');
+    back.href = '../' + Store.role(user.role).landing;
+    box.appendChild(back);
+
+    box.hidden = false;
+  }
+
+  /* 보이는 이름. 계정에 이름이 있으면 그것을, 없으면 식별번호를 쓴다.
+     ★ 노동자는 이름이 비어 있어 식별번호가 그대로 보인다 —
+       사업장 안에서 쓰는 번호이고, 그게 이 제품이 쓰는 유일한 식별자다. */
   function writerName(item) {
     // 감춘 글은 아이디가 아예 없다. 없는 것을 없다고 보여 준다.
-    return item.anonymous || !item.author ? '이름 감춤' : item.author;
+    if (item.anonymous || !item.author) return '이름 감춤';
+    var acc = accountOf(item.author);
+    return (acc && acc.name) ? acc.name : item.author;
   }
 
   function renderVoiceNote() {
@@ -73,6 +147,28 @@
     var box = $('voicenote');
     box.textContent = note;
     box.hidden = !note;
+  }
+
+
+  /* ★ 관리자는 글을 쓰지 않는다 — 여기는 노동자가 묻는 자리다 (C7).
+       버튼을 남겨 두고 누르면 막는 것보다, 아예 안 보이는 쪽이 정직하다. */
+  function applyRoleUI() {
+    var newBtn = $('btn-new');
+    if (newBtn) newBtn.hidden = isAdmin();
+
+    /* ★ 노동자 탭바를 담당자에게 보여 주지 않는다.
+         탭 다섯 개가 전부 Auth.require('worker') 로 막힌 화면이라,
+         담당자가 누르면 한 칸도 안 가고 대시보드로 튕긴다.
+         눌리는데 아무 데도 안 가는 버튼은 고장이다.
+         돌아갈 길은 위 안내(renderAdminNote)의 링크로 준다. */
+    var tabs = document.querySelector('.tabbar');
+    if (tabs && isAdmin()) {
+      tabs.hidden = true;
+      document.body.className = document.body.className
+        .split(/\s+/).filter(function (c) { return c && c !== 'has-tabbar'; }).join(' ');
+    }
+
+    renderAdminNote();
   }
 
   function show(which) {
@@ -90,6 +186,19 @@
     [['pick-anon', 'anon'], ['pick-canon', 'canon']].forEach(function (pair) {
       var box = $(pair[0]);
       box.textContent = '';
+
+      /* ★ 관리자는 답글에서 이름을 감출 수 없다 (C7).
+           감출 수 있으면 노동자는 공식 답변을 알아볼 수 없고,
+           그러면 공식 답변을 구분하는 일 자체가 있으나 마나다.
+           익명은 신고하는 사람을 지키려고 있는 것이지
+           답하는 사람을 지키려고 있는 것이 아니다. */
+      if (isAdmin() && pair[1] === 'canon') {
+        box.appendChild(UI.el('p', 'anon-note',
+          '담당자의 답글은 이름을 감출 수 없습니다. ' +
+          '공식 답변이 누구의 말인지 드러나야 노동자가 믿고 따를 수 있습니다.'));
+        return;
+      }
+
       box.appendChild(UI.chip({
         type: 'checkbox', name: pair[1], value: 'yes',
         icon: '🕶', label: '이름 감추기', sub: '아이디를 저장하지 않습니다'
@@ -197,12 +306,19 @@
     } else {
       comments.forEach(function (c) {
         var li = UI.el('li', 'comment-item');
+
+        /* ★ 공식 답변은 눈에 띄게 구분한다.
+             색만으로 구분하지 않는다 — 아이콘 + 글자 + 색 3중. */
+        var official = isOfficial(c);
+        if (official) li.setAttribute('data-official', 'yes');
+
         var head = UI.el('p', 'meta');
-        head.textContent = [
-          (c.anonymous || !c.author) ? '이름 감춤' : c.author,
-          UI.formatDate(c.createdAt)
-        ].join(' · ');
+        head.appendChild(document.createTextNode([
+          writerName(c), UI.formatDate(c.createdAt)
+        ].join(' · ')));
+        if (official) head.appendChild(UI.okBadge('공식 답변'));
         li.appendChild(head);
+
         li.appendChild(UI.el('p', 'body', c.body));
         box.appendChild(li);
       });
@@ -452,6 +568,7 @@
     if (openId) renderPost();
   });
 
+  applyRoleUI();
   buildAnonChips();
   renderVoiceNote();
   renderList();

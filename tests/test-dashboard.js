@@ -382,4 +382,23 @@ function lastYearISO() {
   ok('★ 작년 긴급 신고가 사라지지 않는다',
     text(t.$('report-queue')).includes('긴급'), text(t.$('report-queue')).slice(0, 120));
 }
+/* =================================================================
+   현장 소통 게시판으로 가는 길 (C7)
+
+   ★ 답글을 달 수 있게 만들어도 들어갈 길이 없으면 없는 기능이다.
+     담당자에게 "주소를 직접 치세요" 라고 할 수는 없다.
+   ================================================================= */
+{
+  const t = open();
+  const links = [...t.win.document.querySelectorAll('a')]
+    .map((a) => a.getAttribute('href'));
+  ok('★ 게시판으로 가는 링크가 있다',
+    links.includes('../worker/talk.html'), links.join(', '));
+
+  const card = [...t.win.document.querySelectorAll('.card')]
+    .find((c) => c.querySelector('a[href="../worker/talk.html"]'));
+  has('★ 답글이 공식 답변이 된다고 미리 알린다', text(card), '공식 답변');
+  has('★ 이름을 감출 수 없다고 알린다', text(card), '이름을 감출 수 없습니다');
+}
+
 report('기능6 담당자 대시보드');

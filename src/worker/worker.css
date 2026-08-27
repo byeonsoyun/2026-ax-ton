@@ -1317,3 +1317,49 @@
 .font-demo-large  > span:not(.sub):not(.mark) { font-size: 26px; }
 
 .font-demo .sub { font-size: 13px; }
+
+/* -------------------------------------------------------------------
+   관리자 답글 구분 (C7)
+
+   ★ 공식 답변과 동료 의견이 섞이면 안 된다.
+     색만으로 구분하지 않는다 — 왼쪽 선 + "공식 답변" 배지(아이콘+글자+색)
+     세 가지가 함께 간다. 흑백으로 봐도 뜻이 남는다.
+   ------------------------------------------------------------------- */
+
+.comment-item[data-official="yes"] {
+  border-left: 4px solid var(--ok, #1f7a4d);
+  border-radius: 0 10px 10px 0;
+  background: #f4faf6;
+  padding-left: 10px;
+}
+
+.comment-item[data-official="yes"] .meta { font-weight: 700; }
+
+/* 담당자로 들어왔다는 안내 */
+.admin-here {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-left: 4px solid var(--brand);
+  border-radius: 0 10px 10px 0;
+  background: #f2f6fb;
+  font-size: .9em;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.admin-here[hidden] { display: none; }
+
+/* 돌아갈 길. 담당자에게는 아래 탭바가 없으므로 이것이 유일한 출구다. */
+.admin-here .back-link {
+  display: inline-block;
+  margin-top: 8px;
+  min-height: 40px;
+  line-height: 40px;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+/* 탭바를 감출 수 있어야 한다.
+   style-admin.css 가 .tabbar 에 display:grid 를 주고 있어서
+   hidden 속성만으로는 안 사라진다. */
+.tabbar[hidden] { display: none; }
