@@ -117,11 +117,53 @@ var Auth = (function () {
      allowed 는 문자열 하나 또는 배열.
      세션이 없으면 로그인으로, 역할이 다르면 자기 자리로 돌려보낸다.
      ----------------------------------------------------------------- */
+  /* 지금 화면의 "worker/xxx.html?..." 부분. 로그인 뒤 돌아올 자리다 (D1). */
+  function wantedPath() {
+    var m = /\/((?:worker|admin)\/[a-z0-9-]+\.html)$/i.exec(location.pathname || '');
+    if (!m) return '';
+    return m[1] + (location.search || '');
+  }
+
+  /* 로그인 화면이 받은 ?next= 를 검사한다.
+
+     ★ 넘어온 값을 그대로 믿고 보내면 링크 하나로 아무 데나 보낼 수 있게 된다.
+       우리 화면 경로 모양만 받는다. */
+  function safeNext(raw) {
+    var value = String(raw || '');
+    if (!value) return '';
+    if (value.indexOf('//') !== -1 || value.indexOf('\\') !== -1 ||
+        value.indexOf('..') !== -1 || value.indexOf(':') !== -1) return '';
+    if (!/^(worker|admin)\/[a-z0-9-]+\.html(\?[A-Za-z0-9=&%._-]*)?$/.test(value)) return '';
+    return value;
+  }
+
+  /* 그 역할이 갈 수 있는 자리면 돌려주고, 아니면 빈 문자열.
+     빈 문자열이면 부르는 쪽이 그 역할의 첫 화면으로 보낸다. */
+  function nextFor(role, raw) {
+    var value = safeNext(raw);
+    if (!value) return '';
+    var area = value.split('/')[0];
+    if (role === 'worker') return area === 'worker' ? value : '';
+    return area === 'admin' ? value : '';
+  }
+
+  /* 로그인이 안 돼 있을 때 갈 곳.
+
+     ★ 어디로 가려던 것인지 함께 넘긴다 (D1).
+       설비 앞 QR 을 찍은 사람은 로그인이 안 돼 있을 수 있다.
+       그냥 로그인으로 보내면 어느 교육을 찍었는지가 사라지고,
+       QR 은 그냥 "로그인 화면으로 가는 그림" 이 된다. */
+  function loginUrl() {
+    var here = wantedPath();
+    return baseDir() + 'index.html' +
+      (here ? '?next=' + encodeURIComponent(here) : '');
+  }
+
   function require(allowed) {
     var user = current();
 
     if (!user) {
-      location.replace(baseDir() + 'index.html');
+      location.replace(loginUrl());
       return null;
     }
 
@@ -143,6 +185,10 @@ var Auth = (function () {
     logout: logout,
     go: go,
     require: require,
-    baseDir: baseDir
+    baseDir: baseDir,
+    nextFor: nextFor,
+    safeNext: safeNext,
+    wantedPath: wantedPath,
+    loginUrl: loginUrl
   };
 })();

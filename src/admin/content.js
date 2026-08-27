@@ -955,17 +955,85 @@
     });
   }
 
+  /* -----------------------------------------------------------------
+     설비 앞에 붙일 QR (D1)
+
+     ★ QR 은 절대 주소여야 한다. 노동자 폰에서 열리는 주소가 아니면
+       찍어도 아무 데도 못 간다.
+       - 배포 주소로 열었으면 그 주소를 그대로 쓴다
+       - file:// 로 열었으면 그 경로는 이 PC 안에만 있으므로 배포 주소를 쓴다.
+         그리고 지금 무엇을 쓰고 있는지 화면에 적는다
+
+     ★ 주소를 글자로도 계속 보여 준다. QR 이 안 찍히는 상황은 반드시 있다
+       (카메라 없는 기기 · 인쇄 품질 · 어두운 현장).
+     ----------------------------------------------------------------- */
+
+  /* 배포 주소. file:// 로 열었을 때 QR 이 가리킬 곳이다.
+     ★ 배포 주소가 바뀌면 여기도 바꾼다 (docs/08-overview.md 6부와 같은 값). */
+  var DEPLOY_ORIGIN = 'https://2026-ax-ton.vercel.app';
+
+  /* 이 앱의 뿌리 주소. 끝에 슬래시가 없다. */
+  function appBase() {
+    var web = location.protocol === 'http:' || location.protocol === 'https:';
+    if (!web) return { url: DEPLOY_ORIGIN, live: false };
+
+    // .../admin/content.html → .../
+    var dir = location.pathname.replace(/\/admin\/[^/]*$/, '');
+    return { url: location.origin + dir, live: true };
+  }
+
+  function courseUrl(course) {
+    var base = appBase();
+    return {
+      url: base.url + '/worker/learn.html?course=' + encodeURIComponent(course.id),
+      live: base.live
+    };
+  }
+
   function showLink(course) {
     var note = $('link-note');
     note.textContent = '';
-    note.appendChild(UI.el('strong', null, course.title));
-    note.appendChild(document.createTextNode(' 접속 주소 — '));
-    note.appendChild(UI.el('code', null,
-      '../worker/learn.html (로그인 후) · 이해도 검증: ../worker/quiz.html?course=' + course.id));
-    note.appendChild(UI.el('p', null,
-      'QR 그림은 아직 만들지 않았습니다. 외부 라이브러리를 쓸 수 없어서 직접 그려야 합니다. ' +
-      '지금은 이 주소를 노동자 폰에서 열면 됩니다.'));
     note.hidden = false;
+
+    var target = courseUrl(course);
+
+    var head = UI.el('p', 'link-head');
+    head.appendChild(UI.el('strong', null, course.title));
+    head.appendChild(document.createTextNode(' — 설비 앞에 붙일 QR'));
+    note.appendChild(head);
+
+    /* --- QR 그림 --- */
+    var box = UI.el('div', 'qr-box');
+    var img = QR.svg(target.url, { label: course.title + ' 교육으로 가는 QR 코드' });
+
+    if (img) {
+      box.appendChild(img);
+    } else {
+      /* ★ 못 만들면 못 만들었다고 적는다.
+           스캔 안 되는 그림을 그려 두는 것이 아무것도 안 그리는 것보다 나쁘다. */
+      box.appendChild(UI.el('p', 'empty',
+        '주소가 너무 길어 QR 로 만들지 못했습니다 (' + target.url.length + '자). ' +
+        '아래 주소를 그대로 쓰시거나 담당자에게 알려 주세요.'));
+    }
+    note.appendChild(box);
+
+    /* --- 주소를 글자로도. QR 이 안 찍히는 상황은 반드시 있다 --- */
+    var addr = UI.el('p', 'link-url');
+    addr.appendChild(document.createTextNode('주소 — '));
+    addr.appendChild(UI.el('code', null, target.url));
+    note.appendChild(addr);
+
+    note.appendChild(UI.el('p', 'why',
+      '찍으면 이 교육이 바로 열립니다. 로그인이 안 돼 있으면 로그인한 뒤 ' +
+      '이 교육으로 이어집니다 — 어느 설비를 찍었는지는 잃지 않습니다.'));
+
+    if (!target.live) {
+      /* file:// 로 열었으면 지금 보고 있는 화면과 QR 이 가리키는 곳이 다르다.
+         그 사실을 적지 않으면 "내가 넣은 데이터가 왜 안 보이지" 가 된다. */
+      note.appendChild(UI.el('p', 'why',
+        '지금 이 화면은 파일로 열려 있어서 QR 은 배포 주소를 가리킵니다. ' +
+        '배포 주소와 이 PC 의 저장 데이터는 서로 별개입니다.'));
+    }
   }
 
   /* -----------------------------------------------------------------

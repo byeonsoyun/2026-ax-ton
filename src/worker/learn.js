@@ -377,4 +377,23 @@
   renderVoiceNote();
   renderList();
   show('list');
+
+  /* -----------------------------------------------------------------
+     설비 앞 QR 로 들어온 경우 (D1)
+
+     ?course=<id> 가 붙어 있으면 그 교육을 바로 연다.
+     ★ 목록을 먼저 보여 주고 "찾아서 누르세요" 라고 하면, 글을 못 읽는
+       사람에게는 QR 을 찍은 뜻이 사라진다. 찍은 그 설비의 교육이 열려야 한다.
+
+     ★ 내 교육이 아니면 목록에 그대로 둔다. 남의 공정 교육을 열어 주면
+       엉뚱한 설비의 안전 지시를 배우게 된다.
+     ----------------------------------------------------------------- */
+  (function openFromQR() {
+    var m = /[?&]course=([^&]*)/.exec(location.search || '');
+    if (!m) return;
+
+    var wanted = decodeURIComponent(m[1]);
+    var course = Store.findBy(myCourses(), 'id', wanted);
+    if (course) openCourse(course);
+  })();
 })();

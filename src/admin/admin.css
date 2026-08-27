@@ -624,3 +624,37 @@ table.data .chips .badge { font-size: .68em; }
 
 .edit-banner .edit-who { margin: 0 0 6px; font-weight: 800; }
 .edit-banner .why { margin: 0 0 10px; }
+
+/* -------------------------------------------------------------------
+   설비 앞에 붙일 QR (D1)
+
+   ★ 흰 바탕에 검은 칸이어야 스캔된다. 배경색에 기대지 않고 직접 깐다.
+   ★ 인쇄할 때 QR 이 페이지 사이에서 잘리면 못 찍는다.
+   ------------------------------------------------------------------- */
+
+.qr-box {
+  margin: 10px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.qr-box svg {
+  width: 220px;
+  height: 220px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.link-head { margin: 0 0 4px; }
+
+.link-url {
+  margin: 6px 0;
+  overflow-wrap: anywhere;
+}
+
+.link-url code { font-size: .82em; }
+
+@media print {
+  .qr-box { break-inside: avoid; page-break-inside: avoid; }
+}

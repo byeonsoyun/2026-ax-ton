@@ -306,6 +306,86 @@ function bootWithSpeech(mode) {
   eq('★ 누르지도 않았는데 고장이라고 하지 않는다', t.win.UI.voiceBlocked(), false);
 }
 
+/* =================================================================
+   설비 앞 QR → 로그인 → 그 교육 (D1)
+
+   ★ 여기가 뚫리면 QR 은 "로그인 화면으로 가는 그림" 이 된다.
+     찍은 사람은 어느 설비를 찍었는지 잃고, 목록에서 찾아야 한다.
+     글을 못 읽는 사람에게는 거기서 끝이다.
+   ================================================================= */
+{
+  /* 로그인 안 한 채로 QR 주소를 열었을 때 어디로 보내는가.
+     화면 스크립트는 돌리지 않는다 — 실제 브라우저는 여기서 이미 떠난다. */
+  const t = boot('worker/learn.html?course=c-press', { seed: false });
+
+  eq('★ 가려던 자리를 그대로 집어낸다',
+    t.win.Auth.wantedPath(), 'worker/learn.html?course=c-press');
+
+  const url = t.win.Auth.loginUrl();
+  has('로그인 화면으로 보낸다', url, 'index.html');
+  has('★ 어디로 가려던 것인지 함께 넘긴다', url, 'next=');
+  has('★ 어느 교육인지도 남는다', decodeURIComponent(url), 'course=c-press');
+  has('한 칸 위로 올라간다 (절대경로를 쓰지 않는다)', url, '../index.html');
+}
+
+{
+  /* 로그인 화면 자체에서는 붙일 것이 없다 */
+  const t = boot('index.html', { seed: false });
+  eq('★ 로그인 화면에서는 next 를 만들지 않는다', t.win.Auth.wantedPath(), '');
+  eq('그냥 로그인 화면', t.win.Auth.loginUrl(), 'index.html');
+}
+
+{
+  /* 로그인하면 그리로 이어진다 */
+  const t = boot('index.html?next=' + encodeURIComponent('worker/learn.html?course=c-press'),
+    { page: 'assets/login.js' });
+
+  t.$('login-id').value = 'W-4821-07';
+  t.$('login-pw').value = '1234';
+  t.$('form-login').dispatchEvent(new t.win.Event('submit', { bubbles: true, cancelable: true }));
+
+  has('★ 로그인 뒤 찍은 그 교육으로 간다', t.nav.join(' | '), 'worker/learn.html?course=c-press');
+}
+
+{
+  /* 이미 로그인돼 있으면 바로 그리로 */
+  const t = boot('index.html?next=' + encodeURIComponent('worker/learn.html?course=c-press'),
+    { login: 'W-4821-07', page: 'assets/login.js' });
+  has('★ 이미 로그인돼 있으면 바로 간다', t.nav.join(' | '), 'course=c-press');
+}
+
+{
+  /* ★ 남의 역할 화면으로는 보내지 않는다 */
+  const t = boot('index.html?next=' + encodeURIComponent('admin/dashboard.html'),
+    { login: 'W-4821-07', page: 'assets/login.js' });
+  has('★ 노동자를 관리자 화면으로 보내지 않는다', t.nav.join(' | '), 'worker/home.html');
+  ok('대시보드로 안 간다', t.nav.join(' | ').indexOf('dashboard') === -1, t.nav.join(' | '));
+}
+
+{
+  /* ★★ 넘어온 값을 그대로 믿지 않는다.
+       믿으면 링크 하나로 아무 데나 보낼 수 있게 된다. */
+  const auth = boot('index.html', { page: 'assets/login.js', login: 'W-4821-07' }).win.Auth;
+
+  const bad = [
+    'https://example.com/',
+    '//example.com/',
+    'http://example.com',
+    '../../etc/passwd',
+    'worker/../admin/dashboard.html',
+    'javascript:alert(1)',
+    'index.html',
+    'worker/home.html; drop',
+  ];
+  const survived = bad.filter((v) => auth.safeNext(v) !== '');
+  ok('★ 우리 화면 경로가 아닌 값은 전부 버린다', survived.length === 0, survived.join(' | '));
+
+  eq('우리 화면은 받는다', auth.safeNext('worker/learn.html?course=c-press'),
+    'worker/learn.html?course=c-press');
+  eq('쿼리 없는 것도 받는다', auth.safeNext('admin/dashboard.html'), 'admin/dashboard.html');
+  eq('빈 값은 빈 값', auth.safeNext(''), '');
+}
+
 /* 아무 신호도 안 주는 브라우저 — 기다려 봐야 알 수 있다.
    기다림이 필요해서 이 묶음의 마무리(report)를 여기 안에서 한다. */
 {

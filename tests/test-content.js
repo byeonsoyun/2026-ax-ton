@@ -718,4 +718,43 @@ const quizItems = (t) => [...t.$('quiz-list').children];
     t.win.Store.askedQuestion(course, { asked: ['q-gone'] }, 0), null);
 }
 
+/* =================================================================
+   설비 앞에 붙일 QR (D1)
+
+   ★ QR 이 스캔되는지는 test-qr.js 가 본다. 여기서 보는 것은
+     "화면이 올바른 주소를 QR 로 만들고, 주소를 글자로도 남기는가" 다.
+   ================================================================= */
+{
+  const t = open();
+  const row = courseRow(t, '프레스');
+  click(t.win, btnIn(row, '접속 주소'));
+
+  const note = t.$('link-note');
+  eq('주소 칸이 열린다', note.hidden, false);
+
+  /* ★ QR 그림이 실제로 들어간다 */
+  const svg = note.querySelector('svg');
+  ok('★ QR 그림이 나온다', !!svg, text(note));
+  has('무엇인지 읽어 줄 이름이 붙는다', svg.getAttribute('aria-label'), '프레스');
+
+  /* ★ 주소를 글자로도 남긴다 — QR 이 안 찍히는 상황은 반드시 있다 */
+  const code = note.querySelector('code');
+  ok('★ 주소가 글자로도 보인다', !!code, text(note));
+
+  const url = text(code);
+  ok('★ 절대 주소다 — 상대 경로면 찍어도 아무 데도 못 간다',
+    /^https?:\/\//.test(url), url);
+  has('그 교육으로 간다', url, 'course=c-press');
+  has('교육을 듣는 화면으로 간다', url, 'worker/learn.html');
+
+  /* ★ QR 안의 주소와 화면에 적힌 주소가 같아야 한다.
+       다르면 "글자 주소로는 되는데 QR 로는 안 되는" 일이 생긴다. */
+  const encoded = t.win.QR.encode(url);
+  ok('★ 이 주소는 QR 로 만들 수 있는 길이다', !!encoded, url);
+
+  has('로그인이 안 돼 있어도 이어진다고 알린다', text(note), '로그인한 뒤');
+  ok('★ "아직 만들지 않았습니다" 안내가 남아 있지 않다',
+    !text(note).includes('아직 만들지 않았습니다'), text(note));
+}
+
 report('기능2 교육 콘텐츠 생성 · 승인');

@@ -285,6 +285,7 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
     { label: '글자 크기 조절', why: 'B3 에서 끝남 — worker/my 의 글자 크기 칸' },
     { label: '재교육 지시', why: 'D2 에서 끝남 — Store.orders · dashboard 의 #order-form' },
     { label: '문항 수정·삭제', why: 'C6 에서 끝남 — content 의 #edit-banner · q.retired' },
+    { label: 'QR 이미지', why: 'D1 에서 끝남 — assets/qr.js · content 의 #link-note' },
   ];
 
   DONE.forEach((d) => {
