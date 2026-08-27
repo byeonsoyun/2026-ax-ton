@@ -603,3 +603,24 @@ table.data .chips .badge { font-size: .68em; }
 
 .order-form .sub { margin: 0 0 4px; font-size: 1em; font-weight: 800; }
 .order-form .why { margin: 0 0 10px; }
+
+/* -------------------------------------------------------------------
+   발급한 교육의 문항 고치기 (C6)
+
+   ★ 지금 어디에 문항을 붙이는 중인지 크게 적는다.
+     모르면 발급된 교육에 문항이 붙는다.
+   ------------------------------------------------------------------- */
+
+.edit-banner {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--warn, #b26a00);
+  border-radius: 0 10px 10px 0;
+  background: #fff9ef;
+}
+
+.edit-banner[hidden] { display: none; }
+
+.edit-banner .edit-who { margin: 0 0 6px; font-weight: 800; }
+.edit-banner .why { margin: 0 0 10px; }

@@ -304,6 +304,13 @@
       li.appendChild(document.createTextNode(q.prompt));
       li.appendChild(UI.el('span', 'proof-qtype', ' (' + (QLABEL[q.type] || q.type) + ')'));
 
+      /* ★ 나중에 내린 문항도 빼지 않는다 (C6).
+           그 문항으로 이해를 확인한 사람이 실제로 있었다. 문서에서 빼면
+           증빙이 실제와 달라진다. 대신 지금은 안 나간다는 것을 적는다. */
+      if (q.retired) {
+        li.appendChild(UI.el('span', 'proof-qtype', ' — 지금은 내려진 문항입니다'));
+      }
+
       if (langs.length) {
         var got = langs.filter(function (code) { return Store.qhas(q, code); });
         var line = got.length

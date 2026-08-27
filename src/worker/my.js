@@ -225,9 +225,11 @@
     row.quiz.answers.forEach(function (correct, i) {
       if (correct === 1) return;
 
-      /* 답은 문항 순서와 짝지어져 있다. 그 교육의 문항이 나중에 지워졌으면
-         짝이 없다 — 없는 문항을 지어내지 않고 건너뛴다. */
-      var q = (course.quiz || [])[i];
+      /* 답은 "그때 낸 문항" 과 짝지어져 있다. 자리로 찾으면 나중에 문항을
+         내렸을 때 어긋난다 — Store.askedQuestion 이 그 짝을 찾는다 (C6).
+         그 문항이 아예 지워졌으면 짝이 없다.
+         없는 문항을 지어내지 않고 건너뛴다. */
+      var q = Store.askedQuestion(course, row.quiz, i);
       if (!q) return;
 
       var haz = Store.hazard(q.hazard);

@@ -4,7 +4,8 @@
    담당: P3
    기능번호: 기능2
    읽는 키: setup, library
-   쓰는 키: courses
+   쓰는 키: courses (발급 · 발급 뒤 문항 고치기)
+   읽는 키(추가): progress — 이미 푼 사람이 있는지 (C6)
    근거: SCREEN 기능2 · PRD §4.1
 
    설비 → 언어 → 문구 → 문항 → 승인. 승인하면 그 공정 노동자의
@@ -47,6 +48,108 @@
   /* 초안. 승인을 누를 때까지 저장하지 않는다 —
      반쯤 만든 교육이 courses 에 들어가면 노동자 화면에 그대로 나온다. */
   var draft = newDraft();
+
+  /* -----------------------------------------------------------------
+     발급한 교육의 문항 고치기 (C6)
+
+     ★ 문항 만드는 폼을 두 벌로 만들지 않는다.
+       3단계 카드가 초안에도 쓰이고 발급된 교육에도 쓰인다. 두 벌이 되면
+       언젠가 한쪽만 고쳐진다 (C1 의 courseBlock, C3 의 글쓰기 화면과 같은 이유).
+
+     ★★ 이미 그 교육을 푼 사람의 progress.quiz.answers 는 그때 낸 문항과
+       짝지어져 있다. 그래서 여기서 할 수 있는 것을 좁게 정했다.
+
+       할 수 있는 것 — 맨 뒤에 문항 더하기
+                     — 문항 내리기 (retired: 앞으로 안 나감. 기록은 그대로)
+                     — 아무도 안 푼 교육이면 진짜 지우기
+
+       하지 않는 것 — 순서 바꾸기
+                     — 선택지 개수·순서·정답 번호 바꾸기
+         정답은 "몇 번째 선택지" 라는 번호로 저장된다. 그것을 바꾸면
+         옛 기록이 다른 선택지를 가리키고, **틀린 작업을 맞다고 가르친다.**
+         고쳐야 하면 그 문항을 내리고 새 문항을 붙인다.
+     ----------------------------------------------------------------- */
+
+  var editingCourseId = null;
+
+  function courseOf(id) { return Store.findBy(Store.courses.load(), 'id', id); }
+
+  function editingCourse() {
+    return editingCourseId ? courseOf(editingCourseId) : null;
+  }
+
+  /* 지금 문항이 붙는 자리의 문항 목록 */
+  function targetQuiz() {
+    var c = editingCourse();
+    return c ? (c.quiz || []) : draft.quiz;
+  }
+
+  /* 이 교육을 푼 기록이 하나라도 있는가 —
+     있으면 문항을 지우지 않는다. 지우면 옛 기록이 가리킬 곳을 잃는다. */
+  function hasAnswers(courseId) {
+    return Store.progress.load().some(function (r) {
+      return r.courseId === courseId && r.quiz && Array.isArray(r.quiz.answers) &&
+        r.quiz.answers.length > 0;
+    });
+  }
+
+  /* 문항 하나를 지금 자리에 붙인다. 발급된 교육이면 바로 저장한다. */
+  function pushQuestion(q) {
+    var courseId = editingCourseId;
+    if (!courseId) {
+      q.id = 'q' + (draft.quiz.length + 1);
+      draft.quiz.push(q);
+      return true;
+    }
+
+    var result = Store.courses.update(function (list) {
+      var c = Store.findBy(list, 'id', courseId);
+      if (!c) return;
+      c.quiz = c.quiz || [];
+      /* ★ id 는 그 교육 안에서 겹치면 안 된다. 지금 개수로 매기면
+           내렸다 더할 때 겹칠 수 있어, 안 쓰는 번호를 찾아 붙인다. */
+      var n = c.quiz.length + 1;
+      while (c.quiz.some(function (x) { return x.id === 'q' + n; })) n += 1;
+      q.id = 'q' + n;
+      c.quiz.push(q);          // ★ 맨 뒤에만. 앞 문항의 자리를 건드리지 않는다
+    });
+
+    if (!result.ok) {
+      UI.toast('저장하지 못했습니다. 이 브라우저의 저장소가 막혀 있습니다.');
+      return false;
+    }
+    return true;
+  }
+
+  function startEditing(course) {
+    editingCourseId = course.id;
+    $('edit-who').textContent = '"' + course.title + '" 의 문항을 고치는 중입니다.';
+    $('edit-banner').hidden = false;
+    render();
+    $('edit-banner').scrollIntoView({ block: 'center' });
+  }
+
+  function stopEditing() {
+    editingCourseId = null;
+    $('edit-banner').hidden = true;
+    render();
+  }
+
+  /* 문항을 내린다 — 배열에서 빼지 않고 표시만 한다.
+     빼 버리면 이미 그 문항을 푼 기록이 가리킬 곳을 잃는다. */
+  function retireQuestion(courseId, qid, on) {
+    Store.courses.update(function (list) {
+      var c = Store.findBy(list, 'id', courseId);
+      if (!c) return;
+      var q = Store.findBy(c.quiz || [], 'id', qid);
+      if (q) q.retired = !!on;
+    });
+    render();
+    UI.toast(on
+      ? '문항을 내렸습니다. 앞으로 이 문항은 나오지 않습니다. 지난 기록은 그대로입니다.'
+      : '문항을 다시 올렸습니다.');
+  }
+
 
   function newDraft() {
     return { title: '', equipmentId: '', languages: [], phraseIds: [], quiz: [], dueAt: '' };
@@ -518,13 +621,12 @@
 
       var hi = collectI18n('hotspot', null);
 
-      draft.quiz.push({
-        id: 'q' + (draft.quiz.length + 1),
+      if (!pushQuestion({
         type: 'hotspot',
         prompt: hp,
         answer: Diagrams.answerFor(pickedZone),
         i18n: hi.i18n
-      });
+      })) return;
       $('q-hot-prompt').value = '';
       clearI18nInputs();
 
@@ -553,15 +655,14 @@
         return;
       }
 
-      draft.quiz.push({
-        id: 'q' + (draft.quiz.length + 1),
+      if (!pushQuestion({
         type: 'choice',
         prompt: cp,
         options: options,
         answer: answer,
         results: results,
         i18n: ci.i18n
-      });
+      })) return;
       $('q-ch-prompt').value = '';
       for (var k = 0; k < 3; k++) { $('q-ch-opt-' + k).value = ''; $('q-ch-res-' + k).value = ''; }
       clearI18nInputs();
@@ -580,13 +681,12 @@
 
       var mi = collectI18n('match', null);
 
-      draft.quiz.push({
-        id: 'q' + (draft.quiz.length + 1),
+      if (!pushQuestion({
         type: 'match',
         prompt: mp,
         pairs: pairs,
         i18n: mi.i18n
-      });
+      })) return;
       $('q-ma-prompt').value = '';
       clearI18nInputs();
       $('q-ma-pairs').textContent = '';
@@ -594,7 +694,9 @@
       addPairRow();
     }
 
-    UI.toast('문항을 추가했습니다.');
+    UI.toast(editingCourseId
+      ? '문항을 맨 뒤에 더했습니다. 지금부터 이 교육을 푸는 사람에게 나옵니다.'
+      : '문항을 추가했습니다.');
     render();
   }
 
@@ -602,27 +704,75 @@
     var list = $('quiz-list');
     list.textContent = '';
 
-    if (!draft.quiz.length) {
+    var course = editingCourse();
+    var quiz = targetQuiz();
+
+    if (!quiz.length) {
       list.appendChild(UI.emptyRow('아직 문항이 없습니다. 아래에서 하나 만들어 주세요.'));
       return;
     }
 
-    draft.quiz.forEach(function (q, i) {
+    /* 발급된 교육이면 "이미 푼 사람이 있는가" 를 한 번만 본다 */
+    var locked = course ? hasAnswers(course.id) : false;
+
+    quiz.forEach(function (q, i) {
       var type = Store.findBy(QTYPES, 'code', q.type) || { icon: '?', label: q.type };
       var li = UI.itemRow(type.icon, q.prompt, (i + 1) + '번 · ' + type.label);
 
       var row = UI.el('div', 'btn-row');
-      var del = UI.el('button', 'btn-sm danger', '삭제');
-      del.type = 'button';
-      del.addEventListener('click', function () {
-        draft.quiz.splice(i, 1);
-        // 번호를 다시 매긴다. 지운 뒤 q1, q3 이 남으면 채점 기록이 헷갈린다
-        draft.quiz.forEach(function (x, k) { x.id = 'q' + (k + 1); });
-        render();
-      });
-      row.appendChild(del);
-      li.appendChild(row);
 
+      /* --- 초안: 그냥 지운다. 아직 아무도 못 봤다 --- */
+      if (!course) {
+        var del = UI.el('button', 'btn-sm danger', '삭제');
+        del.type = 'button';
+        del.addEventListener('click', function () {
+          draft.quiz.splice(i, 1);
+          // 번호를 다시 매긴다. 지운 뒤 q1, q3 이 남으면 채점 기록이 헷갈린다
+          draft.quiz.forEach(function (x, k) { x.id = 'q' + (k + 1); });
+          render();
+        });
+        row.appendChild(del);
+        li.appendChild(row);
+        list.appendChild(li);
+        return;
+      }
+
+      /* --- 발급된 교육 --- */
+      if (q.retired) li.appendChild(UI.stopBadge('내려짐 · 앞으로 안 나옴'));
+
+      var toggle = UI.el('button', 'btn-sm', q.retired ? '다시 올리기' : '내리기');
+      toggle.type = 'button';
+      toggle.addEventListener('click', function () {
+        retireQuestion(course.id, q.id, !q.retired);
+      });
+      row.appendChild(toggle);
+
+      if (locked) {
+        /* ★ 왜 못 지우는지 화면에 적는다.
+             버튼만 조용히 없으면 사람은 그것을 고장으로 읽는다 (C3 에서 배운 것). */
+        li.appendChild(UI.el('p', 'why',
+          '이미 이 교육을 푼 사람이 있어 문항을 지울 수 없습니다. ' +
+          '지우면 그 사람의 답이 어느 문항의 것인지 알 수 없게 됩니다. ' +
+          '고쳐야 하면 이 문항을 내리고 새 문항을 붙여 주세요.'));
+      } else {
+        var hardDel = UI.el('button', 'btn-sm danger', '삭제');
+        hardDel.type = 'button';
+        hardDel.addEventListener('click', function () {
+          if (!window.confirm('"' + q.prompt + '" 문항을 지울까요?\n\n' +
+            '아직 이 교육을 푼 사람이 없어서 지울 수 있습니다.')) return;
+          Store.courses.update(function (all) {
+            var c = Store.findBy(all, 'id', course.id);
+            if (!c) return;
+            var at = (c.quiz || []).indexOf(Store.findBy(c.quiz || [], 'id', q.id));
+            if (at !== -1) c.quiz.splice(at, 1);
+          });
+          render();
+          UI.toast('문항을 지웠습니다.');
+        });
+        row.appendChild(hardDel);
+      }
+
+      li.appendChild(row);
       list.appendChild(li);
     });
   }
@@ -776,6 +926,13 @@
       link.addEventListener('click', function () { showLink(c); });
       row.appendChild(link);
 
+      /* 발급한 뒤에도 문항을 손볼 수 있다 (C6).
+         할 수 있는 것과 없는 것은 3단계 카드의 안내에 적혀 있다. */
+      var edit = UI.el('button', 'btn-sm', '문항 고치기');
+      edit.type = 'button';
+      edit.addEventListener('click', function () { startEditing(c); });
+      row.appendChild(edit);
+
       var del = UI.el('button', 'btn-sm danger', '삭제');
       del.type = 'button';
       del.addEventListener('click', function () {
@@ -847,10 +1004,40 @@
       badge($('b-step1'), !!(draft.equipmentId && draft.title && draft.languages.length),
         draft.languages.length + '개 언어', '미설정');
       badge($('b-step2'), draft.phraseIds.length > 0, draft.phraseIds.length + '개 문구', '미설정');
-      badge($('b-step3'), draft.quiz.length > 0, draft.quiz.length + '문항', '미설정');
+
+      var quiz = targetQuiz();
+      badge($('b-step3'), quiz.length > 0, quiz.length + '문항', '미설정');
+
+      applyEditMode();
     }
 
     renderCourses();
+  }
+
+  /* 발급된 교육을 고치는 중이면 초안의 단계들을 감춘다 (C6).
+     ★ 남겨 두면 "지금 무엇을 만드는 중인지" 가 섞인다 —
+       고치는 줄 알고 초안에 문항을 붙이거나, 그 반대가 된다. */
+  function applyEditMode() {
+    var editing = !!editingCourseId;
+
+    ['t-step1', 't-step2', 't-step4'].forEach(function (id) {
+      var head = $(id);
+      var card = head && head.closest ? head.closest('.card') : null;
+      if (card) card.hidden = editing;
+    });
+
+    /* 그 사이에 그 교육이 지워졌으면 조용히 빠져나온다.
+       ★ 여기서 stopEditing() 을 부르면 render() 안에서 render() 를 불러
+         무한히 돈다. 상태만 되돌리고 다음 그리기에 맡긴다. */
+    if (editing && !editingCourse()) {
+      editingCourseId = null;
+      $('edit-banner').hidden = true;
+      ['t-step1', 't-step2', 't-step4'].forEach(function (id) {
+        var head = $(id);
+        var card = head && head.closest ? head.closest('.card') : null;
+        if (card) card.hidden = false;
+      });
+    }
   }
 
   function resetForms() {
@@ -912,6 +1099,7 @@
   $('pick-qtype').addEventListener('change', showTypeForm);
   $('q-ma-add').addEventListener('click', addPairRow);
   $('btn-add-q').addEventListener('click', addQuestion);
+  $('btn-edit-done').addEventListener('click', stopEditing);
   $('btn-approve').addEventListener('click', approve);
 
   $('btn-reset-draft').addEventListener('click', function () {

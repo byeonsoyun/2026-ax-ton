@@ -147,6 +147,15 @@ function openQuiz(opts) {
     JSON.stringify(Object.keys(row.quiz)));
   eq('두 번째 시도로 기록', row.quiz.attempt, 2);
   eq('최초 시도는 통과였음이 남는다', row.quiz.firstPassed, true);
+
+  /* ★ 그때 낸 문항의 id 를 함께 남긴다 (C6).
+       안 남기면, 나중에 담당자가 문항을 내렸을 때 answers 의 자리가
+       한 칸씩 밀린다. 그러면 대시보드의 취약 항목과 증빙이
+       조용히 다른 문항을 가리킨다. */
+  eq('★ 무엇을 냈는지 함께 남는다',
+    JSON.stringify(row.quiz.asked), JSON.stringify(['q1', 'q2', 'q3']));
+  eq('★ answers 와 asked 의 자리가 짝지어진다',
+    (row.quiz.asked || []).length, row.quiz.answers.length);
 }
 
 /* =================================================================
@@ -430,6 +439,40 @@ function openQuiz(opts) {
   eq('★ 문구만 번역된 것은 qhas false — 언어가 섞인 화면을 숨기지 않는다',
     S.qhas(q, 'id'), false);
   eq('번역이 아예 없으면 qhas false', S.qhas(q, 'vi'), false);
+}
+
+/* =================================================================
+   내린 문항은 앞으로 안 나온다 · 무엇을 냈는지 기록에 남는다 (C6)
+
+   ★ 담당자가 문항을 내려도(retired) 배열에서는 빼지 않는다.
+     이미 그 문항을 푼 기록이 가리킬 곳이 남아야 하기 때문이다.
+     그래서 "내지 않는" 일은 여기서 해야 한다.
+   ================================================================= */
+{
+  const t = openQuiz({
+    login: 'W-4821-07',
+    query: '?course=c-press',
+    before(win) {
+      win.Store.progress.update((list) => {
+        const r = list.find((x) => x.workerId === 'W-4821-07' && x.courseId === 'c-press');
+        r.quiz = null;                      // 다시 풀 수 있게
+      });
+      win.Store.courses.update((list) => {
+        const c = list.find((x) => x.id === 'c-press');
+        c.quiz[0].retired = true;           // 첫 문항을 내린다
+      });
+    },
+  });
+
+  ok('오류 없이 뜬다', t.errors.length === 0, t.errors.join(' | '));
+  has('★ 내린 문항을 빼고 낸다 — 3문항이 아니라 2문항',
+    text(t.$('step-count')), '문항 1 / 2');
+  ok('★ 내린 문항이 첫 문항으로 나오지 않는다',
+    text(t.$('quiz-kind')) !== '👆', text(t.$('quiz-kind')));
+
+  /* 그래도 courses 에서는 안 지웠다 — 옛 기록이 가리킬 곳이 남아야 한다 */
+  eq('★ 배열에서는 빠지지 않았다',
+    t.win.Store.courses.load().find((c) => c.id === 'c-press').quiz.length, 3);
 }
 
 report('기능4 이해도 검증');

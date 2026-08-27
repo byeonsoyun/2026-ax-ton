@@ -227,9 +227,30 @@ var Store = (function () {
 
   /* 6. progress — 노동자 기능3·4 가 쓰고 관리자 기능5·6 이 읽는다
         { workerId, courseId, lang, learnedAt,
-          quiz: { score, passed, answers, at } }
+          quiz: { score, passed, answers, at, asked } }
+        asked 는 그때 실제로 낸 문항의 id 목록이다 (C6). answers 와 자리가 짝지어진다.
         통과하지 못하면 교육 완료로 기록되지 않는다 (SCREEN 기능4). */
   var progress = listStore('progress');
+
+  /* progress.quiz.answers[i] 가 가리키는 문항을 찾는다 (C6).
+
+     ★ answers 는 "그때 실제로 낸 문항" 의 순서다. course.quiz 의 자리와
+       같다는 보장이 없다 — 채점할 수 없는 문항이 섞여 있거나(quiz.js 의
+       questionsOf 가 걸러 낸다) 나중에 문항을 내리면(retired) 어긋난다.
+       어긋나면 대시보드의 취약 항목과 증빙이 **조용히 다른 문항을 가리킨다.**
+       틀린 곳을 틀렸다고 말하지 못하는 것보다, 엉뚱한 곳을 가리키는 쪽이 나쁘다.
+
+     ★ 그래서 새 기록에는 quiz.asked (문항 id 목록) 를 함께 남긴다.
+       asked 가 있으면 그것으로 찾는다.
+
+     ★ 없는 옛 기록은 지금까지처럼 자리로 찾는다.
+       자리로 찾는 길을 없애면 이미 쌓인 기록이 통째로 빈다. */
+  function askedQuestion(course, quizRow, i) {
+    var list = (course && Array.isArray(course.quiz)) ? course.quiz : [];
+    var asked = (quizRow && Array.isArray(quizRow.asked)) ? quizRow.asked : null;
+    if (!asked) return list[i] || null;
+    return asked[i] ? findBy(list, 'id', asked[i]) : null;
+  }
 
   /* 7. reports — 노동자 기능8 위험요소 신고. 관리자 기능6 이 처리한다
         { id, processId, equipmentId, hazard, memo, status, createdAt }
@@ -526,7 +547,7 @@ var Store = (function () {
     accounts: accounts, session: session, setup: setup, library: library,
     courses: courses, progress: progress, reports: reports, posts: posts,
     prefs: prefs, orders: orders, FONT_SCALES: FONT_SCALES,
-    orderOpen: orderOpen,
+    orderOpen: orderOpen, askedQuestion: askedQuestion,
 
     // 공통
     uid: uid, available: available,

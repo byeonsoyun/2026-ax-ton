@@ -221,7 +221,11 @@
       if (!inRange(course)) return;      // 기간 걸러 보기 (C2) — 막대도 함께 바뀐다
 
       row.quiz.answers.forEach(function (correct, i) {
-        var q = course.quiz[i];
+        /* ★ 자리로 찾지 않고 Store.askedQuestion 을 쓴다 (C6).
+             answers 의 자리는 "그때 낸 문항" 의 순서지 course.quiz 의
+             자리가 아니다. 문항을 내리면 어긋나고, 어긋나면 이 막대가
+             조용히 다른 문항의 정답률을 말한다. */
+        var q = Store.askedQuestion(course, row.quiz, i);
         if (!q) return;
         // hazard 가 없는 문항은 유형으로 묶는다. 묶을 이름이 없으면 셀 수 없다.
         var topic = q.hazard || ('type:' + q.type);
@@ -317,7 +321,8 @@
     var out = [];
     row.quiz.answers.forEach(function (correct, i) {
       if (correct === 1) return;
-      var q = (course.quiz || [])[i];
+      // 자리가 아니라 그때 낸 문항으로 찾는다 (C6)
+      var q = Store.askedQuestion(course, row.quiz, i);
       if (!q) return;
       var haz = hazardOf(q.hazard);
       out.push(haz ? haz.icon + ' ' + haz.label : (QLABEL[q.type] || q.type));

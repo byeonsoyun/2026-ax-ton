@@ -115,6 +115,22 @@
         <span class="badge badge-neutral" id="b-step3">미설정</span>
       </div>
 
+      <!-- 발급한 교육의 문항을 고치는 중일 때만 뜬다 (C6).
+           ★ 문항 만드는 폼을 두 벌로 만들지 않는다. 두 벌이 되면 언젠가
+             한쪽만 고쳐진다. 대신 지금 어디에 붙이는 중인지를 크게 적는다 —
+             모르면 발급된 교육에 문항이 붙는다. -->
+      <div class="edit-banner" id="edit-banner" hidden>
+        <p class="edit-who" id="edit-who"></p>
+        <p class="why">
+          <b>이미 발급된 교육입니다.</b> 여기서 더한 문항은 <b>맨 뒤에만</b> 붙고,
+          앞 문항의 순서는 바뀌지 않습니다 — 이미 이 교육을 푼 사람의 기록이
+          어긋나지 않게 하기 위해서입니다.
+        </p>
+        <div class="btn-row">
+          <button class="btn btn-quiet" type="button" id="btn-edit-done">고치기 끝내기</button>
+        </div>
+      </div>
+
       <ul class="item-list" id="quiz-list"></ul>
 
       <hr class="hr">
@@ -224,7 +240,6 @@
     <p class="why">아래는 골격에 넣지 않은 것들입니다. 지금 상태로도 데이터는 끝까지 흐릅니다.</p>
     <dl>
       <dt>QR 이미지</dt><dd>지금은 접속 주소를 글자로 보여 줍니다. QR 그림은 외부 라이브러리 없이 그려야 합니다 (우선순위 2층)</dd>
-      <dt>문항 수정·삭제</dt><dd>지금은 초안에서만 지울 수 있고, 발급한 교육의 문항은 못 고칩니다</dd>
       <dt>내 파일</dt><dd><code>admin/content.html</code> · <code>admin/content.js</code> · <code>admin/admin.css</code></dd>
     </dl>
   </section>
