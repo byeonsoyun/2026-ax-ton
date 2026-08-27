@@ -3,8 +3,8 @@
 
    담당: P3
    기능번호: 기능6
-   읽는 키: progress, reports, setup, courses, library
-   쓰는 키: reports (조치 상태만)
+   읽는 키: progress, reports, setup, courses, library, orders
+   쓰는 키: reports (조치 상태만) · orders (재교육 지시)
    근거: SCREEN 기능6 · PRD §5
 
    ★ 이 화면의 주인공은 이수율이 아니다.
@@ -325,16 +325,136 @@
     return out;
   }
 
+  /* -----------------------------------------------------------------
+     재교육 지시 (D2) — Store.orders
+
+     ★ 이 기록으로 사람을 세지 않는다.
+       "이 사람 재교육 3회" 는 인사 평가 자료다. 개인별 점수를 인사·평가
+       목적으로 내보내지 않는다는 이 화면의 원칙과 같은 이유로, 누적 횟수를
+       세거나 사람을 줄 세우는 화면을 만들지 않는다.
+       지시는 "이 교육을 다시 듣게 한다" 는 뜻이지 "이 사람이 못했다" 가 아니다.
+
+     ★ 해소 판정은 Store.orderOpen() 한 곳에서 한다.
+       노동자 홈이 같은 함수를 쓴다 — 계산이 두 곳이면 한쪽만 고쳐져서
+       담당자는 "보냈다" 고 보는데 노동자 화면에는 안 뜨는 일이 생긴다.
+     ----------------------------------------------------------------- */
+
+  /* 이 사람 · 이 교육에 살아 있는 지시. 없으면 null. */
+  function openOrderFor(worker, course) {
+    var row = progressOf(worker.id, course.id);
+    return Store.orders.load().filter(function (o) {
+      return o.workerId === worker.id && o.courseId === course.id &&
+        Store.orderOpen(o, row);
+    })[0] || null;
+  }
+
+  /* 지금 지시를 쓰고 있는 대상. null 이면 입력칸이 닫혀 있다. */
+  var orderTarget = null;
+
+  function openOrderForm(pair) {
+    orderTarget = { workerId: pair.worker.id, courseId: pair.course.id };
+
+    $('order-who').textContent =
+      pair.worker.id + ' · ' + pair.course.title;
+
+    var topics = stuckTopics(pair);
+    $('order-why').textContent = topics.length
+      ? '막힌 항목: ' + topics.join(' · ') + '. 이 부분을 다시 듣게 합니다.'
+      : (pair.state.key === 'none'
+        ? '아직 수강하지 않았습니다. 다시 안내가 갑니다.'
+        : '아직 이해도 검증을 마치지 않았습니다.');
+
+    $('order-note').value = '';
+    $('order-form').hidden = false;
+    $('order-note').focus();
+  }
+
+  function closeOrderForm() {
+    orderTarget = null;
+    $('order-form').hidden = true;
+    $('order-note').value = '';
+  }
+
+  function sendOrder() {
+    if (!orderTarget) return;
+
+    var note = ($('order-note').value || '').trim();
+    if (!note) {
+      UI.toast('무엇을 다시 들으면 되는지 한 줄 적어 주세요.');
+      $('order-note').focus();
+      return;
+    }
+
+    var target = orderTarget;
+    Store.orders.update(function (list) {
+      list.push({
+        id: 'or-' + Date.now(),
+        workerId: target.workerId,
+        courseId: target.courseId,
+        note: note,
+        at: new Date().toISOString(),
+        by: user.userId,
+        canceledAt: null
+      });
+    });
+
+    closeOrderForm();
+    render();
+    UI.toast('재교육 지시를 보냈습니다. 노동자 홈 화면에 뜹니다.');
+  }
+
+  function cancelOrder(order) {
+    /* ★ 지우지 않고 취소 표시만 남긴다.
+         지워 버리면 지시를 냈다가 거둔 사실이 기록에서 사라진다. */
+    Store.orders.update(function (list) {
+      var row = Store.findBy(list, 'id', order.id);
+      if (row) row.canceledAt = new Date().toISOString();
+    });
+    render();
+    UI.toast('지시를 거뒀습니다. 노동자 화면에서 사라집니다.');
+  }
+
+  /* 표 안의 "재교육" 칸 하나 */
+  function orderCell(pair) {
+    var cell = UI.el('td');
+    var open = openOrderFor(pair.worker, pair.course);
+
+    if (open) {
+      var box = UI.el('div', 'chips');
+      box.appendChild(UI.waitBadge('지시함 · ' + (open.at || '').slice(0, 10)));
+
+      var undo = UI.el('button', 'btn-sm', '거두기');
+      undo.type = 'button';
+      undo.addEventListener('click', function () { cancelOrder(open); });
+      box.appendChild(undo);
+
+      cell.appendChild(box);
+      return cell;
+    }
+
+    var btn = UI.el('button', 'btn-sm go', '재교육 지시');
+    btn.type = 'button';
+    btn.addEventListener('click', function () { openOrderForm(pair); });
+    cell.appendChild(btn);
+    return cell;
+  }
+
   function renderActions(pairs) {
     var body = $('action-rows');
     body.textContent = '';
 
     var need = pairs.filter(function (p) { return p.state.key !== 'pass'; });
 
+    /* 대상이 사라졌는데 입력칸이 열려 있으면 닫는다 —
+       기간을 바꾸거나 그 사이에 통과하면 그럴 수 있다 */
+    if (orderTarget && !need.some(function (p) {
+      return p.worker.id === orderTarget.workerId && p.course.id === orderTarget.courseId;
+    })) closeOrderForm();
+
     if (!need.length) {
       var tr = UI.el('tr');
       var cell = UI.el('td');
-      cell.colSpan = 5;
+      cell.colSpan = 6;
       cell.appendChild(UI.el('p', 'empty', '조치가 필요한 사람이 없습니다.'));
       tr.appendChild(cell);
       body.appendChild(tr);
@@ -364,6 +484,8 @@
         topicCell.appendChild(chips);
       }
       tr.appendChild(topicCell);
+
+      tr.appendChild(orderCell(p));
 
       body.appendChild(tr);
     });
@@ -508,9 +630,18 @@
     var btn = $('range-' + key);
     if (btn) btn.addEventListener('click', function () { range = key; render(); });
   });
+
+  /* 재교육 지시 (D2) */
+  $('order-send').addEventListener('click', sendOrder);
+  $('order-cancel').addEventListener('click', closeOrderForm);
+  $('order-note').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') sendOrder();
+  });
+
   window.addEventListener('storage', function (e) {
     if (e.key === Store.progress.KEY || e.key === Store.reports.KEY ||
-        e.key === Store.courses.KEY || e.key === Store.setup.KEY) render();
+        e.key === Store.courses.KEY || e.key === Store.setup.KEY ||
+        e.key === Store.orders.KEY) render();
   });
 
   render();

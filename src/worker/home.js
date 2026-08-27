@@ -3,7 +3,7 @@
 
    담당: P2
    기능번호: — (진입점)
-   읽는 키: setup, courses, library, progress
+   읽는 키: setup, courses, library, progress, orders
    쓰는 키: 없음
    근거: SCREEN 화면2 · PRD §4.2
 
@@ -202,6 +202,78 @@
   }
 
   /* -----------------------------------------------------------------
+     1-1. 담당자가 내린 재교육 지시 (D2)
+
+     ★ 판정은 Store.orderOpen() 한 곳에서 한다. 담당자 대시보드가 같은
+       함수를 쓴다 — 계산이 두 곳이면 한쪽만 고쳐져서, 담당자는 "보냈다" 고
+       보는데 이 화면에는 아무것도 안 뜨는 일이 생긴다.
+
+     ★ 담당자가 남긴 말은 한국어다. 이 화면에서 그것을 번역할 방법이 없다
+       (검수를 지난 문구만 안전 지시로 쓴다는 규칙이 여기에도 걸린다).
+       그래서 조용히 두지 않고 **한국어라고 화면에 적는다.**
+       못 읽는 말을 아무 표시 없이 두면 그냥 못 본 것이 된다.
+
+     ★ 무엇을 하면 되는지는 글이 아니라 그림과 버튼으로 준다.
+       메모를 못 읽어도 "이 교육을 다시 듣는다" 까지는 갈 수 있어야 한다.
+     ----------------------------------------------------------------- */
+
+  function myOpenOrders() {
+    var courses = myCourses();
+    return Store.orders.load().filter(function (o) {
+      if (o.workerId !== me.id) return false;
+      return Store.orderOpen(o, progressOf(o.courseId));
+    }).map(function (o) {
+      return { order: o, course: Store.findBy(courses, 'id', o.courseId) };
+    }).filter(function (x) { return !!x.course; });
+  }
+
+  function renderOrders() {
+    var card = $('order-card');
+    var box = $('order-list');
+    box.textContent = '';
+
+    var list = myOpenOrders();
+    card.hidden = !list.length;
+    if (!list.length) return;
+
+    list.forEach(function (x) {
+      var item = UI.el('div', 'order-item');
+
+      var pict = UI.el('p', 'pict', '🔁');
+      pict.setAttribute('aria-hidden', 'true');
+      item.appendChild(pict);
+
+      item.appendChild(UI.el('p', 'order-title', x.course.title));
+
+      if (x.order.note) {
+        item.appendChild(UI.el('p', 'order-note', x.order.note));
+        // ★ 못 읽는 말을 못 읽는다고 적는다
+        var mark = UI.el('p', 'order-lang');
+        mark.appendChild(UI.waitBadge('담당자가 한국어로 남긴 말'));
+        item.appendChild(mark);
+      }
+
+      // 글자를 한 자도 안 읽어도 무슨 일인지 알 수 있게
+      var listen = UI.el('div', 'listen');
+      listen.appendChild(UI.audioButton(function () {
+        return {
+          text: '"' + x.course.title + '" 교육을 다시 들어 주세요.' +
+            (x.order.note ? ' ' + x.order.note : ''),
+          lang: 'ko'
+        };
+      }, '다시 들으라는 안내 듣기'));
+      listen.appendChild(UI.el('span', 'label', '들어 보기'));
+      item.appendChild(listen);
+
+      var actions = UI.el('div', 'big-actions');
+      actions.appendChild(bigLink('🎧', '다시 듣기', 'learn.html'));
+      item.appendChild(actions);
+
+      box.appendChild(item);
+    });
+  }
+
+  /* -----------------------------------------------------------------
      2. 수강 → 검증 → 완료 3단계
      ----------------------------------------------------------------- */
 
@@ -359,6 +431,7 @@
   function render() {
     renderVoiceNote();
     renderToday();
+    renderOrders();
     renderStage();
     renderMenu();
     renderBadTrans();

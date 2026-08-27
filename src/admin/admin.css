@@ -582,3 +582,24 @@ table.data .chips .badge { font-size: .68em; }
   .proof-course h4 { page-break-after: avoid; }
   .proof-scope { page-break-inside: avoid; }
 }
+
+/* -------------------------------------------------------------------
+   재교육 지시 입력칸 (D2)
+
+   ★ 표 안에 입력칸을 넣지 않는다. 좁은 화면에서 표가 무너진다.
+     표에서 사람을 고르면 표 아래 이 칸이 열린다.
+   ------------------------------------------------------------------- */
+
+.order-form {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--brand);
+  border-radius: 0 10px 10px 0;
+  background: var(--bg);
+}
+
+.order-form[hidden] { display: none; }
+
+.order-form .sub { margin: 0 0 4px; font-size: 1em; font-weight: 800; }
+.order-form .why { margin: 0 0 10px; }

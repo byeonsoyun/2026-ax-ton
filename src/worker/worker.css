@@ -1363,3 +1363,43 @@
    style-admin.css 가 .tabbar 에 display:grid 를 주고 있어서
    hidden 속성만으로는 안 사라진다. */
 .tabbar[hidden] { display: none; }
+
+/* -------------------------------------------------------------------
+   재교육 지시 (D2) — 담당자가 "이것 다시 들어 주세요" 라고 남긴 것
+
+   ★ 화면 맨 위에 온다. 지금 해야 할 일이 있으면 그것부터 보여야 한다.
+   ★ 색만으로 구분하지 않는다 — 🔁 그림 + 제목 + 왼쪽 선이 함께 간다.
+   ------------------------------------------------------------------- */
+
+.order-card {
+  border-left: 6px solid var(--warn, #b26a00);
+  background: #fff9ef;
+}
+
+.order-item + .order-item {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.order-item .pict {
+  margin: 0 0 4px;
+  font-size: 2em;
+  line-height: 1;
+}
+
+.order-item .order-title {
+  margin: 0 0 6px;
+  font-size: 1.08em;
+  font-weight: 800;
+}
+
+/* 담당자가 남긴 말. 한국어라 못 읽을 수 있다 —
+   그래서 바로 아래 order-lang 배지가 그 사실을 적는다. */
+.order-item .order-note {
+  margin: 0 0 6px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.order-item .order-lang { margin: 0 0 8px; }

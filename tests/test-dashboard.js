@@ -420,4 +420,126 @@ function lastYearISO() {
   has('무엇을 하러 가는지 적는다', text(fix), '다시 만들기');
 }
 
+/* =================================================================
+   재교육 지시 (D2)
+
+   ★ 지켜야 하는 것
+     ① 해소 여부를 orders 에 저장하지 않는다 (진실이 두 곳이 되면 어긋난다)
+     ② 지시 횟수를 세거나 사람을 줄 세우지 않는다 (인사 평가 자료가 된다)
+     ③ 거둔 지시를 지우지 않는다 (냈다가 거둔 사실이 사라진다)
+   ================================================================= */
+
+/* 조치 대상 표에서 그 사람의 행을 찾는다 */
+function actionRow(t, workerId) {
+  return [...t.$('action-rows').querySelectorAll('tr')]
+    .find((tr) => text(tr).includes(workerId));
+}
+
+const btnIn = (row, label) =>
+  [...row.querySelectorAll('button')].find((b) => text(b).includes(label));
+
+{
+  const t = open({ before(win) { win.Store.orders.save([]); } });
+
+  const row = actionRow(t, 'W-4821-11');      // 미통과인 사람
+  ok('조치 대상에 그 사람이 있다', !!row);
+  ok('★ 행에서 바로 재교육을 지시할 수 있다', !!btnIn(row, '재교육 지시'), text(row));
+
+  /* 표 안에 입력칸을 넣지 않는다 — 좁은 화면에서 표가 무너진다 */
+  eq('처음에는 입력칸이 닫혀 있다', t.$('order-form').hidden, true);
+
+  click(t.win, btnIn(row, '재교육 지시'));
+  eq('누르면 입력칸이 열린다', t.$('order-form').hidden, false);
+  has('누구에게 보내는지 적힌다', text(t.$('order-who')), 'W-4821-11');
+  ok('무엇 때문인지 적힌다', text(t.$('order-why')).length > 0);
+
+  /* 빈 채로 보내지 않는다 — 무엇을 다시 들으라는 것인지 없으면 지시가 아니다 */
+  click(t.win, t.$('order-send'));
+  eq('★ 한 줄도 안 적으면 안 보내진다', t.win.Store.orders.load().length, 0);
+  has('왜 안 되는지 알려 준다', text(t.$('toast')), '한 줄 적어');
+
+  t.$('order-note').value = '환기팬이 멈췄을 때 부분을 다시 들어 주세요';
+  click(t.win, t.$('order-send'));
+
+  const orders = t.win.Store.orders.load();
+  eq('지시가 저장된다', orders.length, 1);
+  eq('누구에게', orders[0].workerId, 'W-4821-11');
+  eq('어느 교육', orders[0].courseId, 'c-paint');
+  has('남긴 말', orders[0].note, '환기팬');
+  eq('누가 냈는지 남는다', orders[0].by, 'kim@daesung.co.kr');
+  eq('거둔 적 없음', orders[0].canceledAt, null);
+
+  /* ★ 해소 여부를 여기 적지 않는다 — progress 를 보고 판정한다 */
+  ok('★ orders 에 완료/해소 필드를 만들지 않는다',
+    !('done' in orders[0]) && !('resolved' in orders[0]) && !('closedAt' in orders[0]),
+    JSON.stringify(orders[0]));
+
+  eq('보내고 나면 입력칸이 닫힌다', t.$('order-form').hidden, true);
+  has('보냈다고 알린다', text(t.$('toast')), '보냈습니다');
+
+  /* 표에 상태가 뜨고, 거둘 수 있다 */
+  const after = actionRow(t, 'W-4821-11');
+  has('★ 지시했다는 것이 표에 남는다', text(after), '지시함');
+  ok('다시 지시 버튼을 또 주지 않는다', !btnIn(after, '재교육 지시'), text(after));
+  ok('거둘 수 있다', !!btnIn(after, '거두기'));
+
+  /* ★ 지시 횟수를 세지 않는다 — 그건 인사 평가 자료다 */
+  const main = text(t.win.document.querySelector('main'));
+  ok('★ "n회" 같은 누적 횟수를 화면에 세지 않는다',
+    !/재교육\s*\d+\s*회|지시\s*\d+\s*회/.test(main), main.slice(0, 200));
+  has('★ 이 지시가 무엇이 아닌지 적는다', main, '"이 사람이 못했다" 가 아닙니다');
+  has('★ 줄 세우지 않는다고 적는다', main, '줄 세우는 화면은 만들지 않습니다');
+}
+
+{
+  /* --- 거두기 — 지우지 않고 표시만 남긴다 --- */
+  const t = open({ before(win) { win.Store.orders.save([]); } });
+  const row = actionRow(t, 'W-4821-11');
+  click(t.win, btnIn(row, '재교육 지시'));
+  t.$('order-note').value = '다시 들어 주세요';
+  click(t.win, t.$('order-send'));
+
+  click(t.win, btnIn(actionRow(t, 'W-4821-11'), '거두기'));
+
+  const orders = t.win.Store.orders.load();
+  eq('★ 지우지 않는다 — 냈다가 거둔 사실이 남는다', orders.length, 1);
+  ok('거둔 시각이 찍힌다', !!(orders[0] && orders[0].canceledAt), JSON.stringify(orders));
+  ok('다시 지시할 수 있다', !!btnIn(actionRow(t, 'W-4821-11'), '재교육 지시'));
+  has('거뒀다고 알린다', text(t.$('toast')), '거뒀습니다');
+}
+
+{
+  /* --- ★ 해소 판정은 progress 를 본다 ---
+       지시를 내린 뒤에 통과했어야 해소다. 그전 통과로 사라지면
+       담당자가 방금 보낸 지시가 보내자마자 없어진다. */
+  const t = open({
+    before(win) {
+      win.Store.orders.save([{
+        id: 'or-t1', workerId: 'W-4821-11', courseId: 'c-paint',
+        note: '다시', at: '2026-08-20T00:00:00.000Z',
+        by: 'kim@daesung.co.kr', canceledAt: null,
+      }]);
+      /* 지시보다 앞선 통과 기록 */
+      win.Store.progress.update((list) => {
+        const row = list.find((r) => r.workerId === 'W-4821-11' && r.courseId === 'c-paint');
+        row.quiz = { score: 100, passed: true, answers: [1, 1],
+          at: '2026-08-11T05:24:00.000Z', attempt: 2, firstPassed: false };
+      });
+    },
+  });
+
+  /* 통과했으니 조치 대상 표에서는 빠진다. 지시가 살아 있는지는 Store 로 본다 */
+  const o = t.win.Store.orders.load()[0];
+  const row = t.win.Store.progress.load()
+    .find((r) => r.workerId === 'W-4821-11' && r.courseId === 'c-paint');
+  eq('★ 지시보다 앞선 통과로는 해소되지 않는다', t.win.Store.orderOpen(o, row), true);
+
+  row.quiz.at = '2026-08-21T00:00:00.000Z';
+  eq('★ 지시 뒤에 통과하면 해소된다', t.win.Store.orderOpen(o, row), false);
+
+  o.canceledAt = '2026-08-22T00:00:00.000Z';
+  row.quiz.at = '2026-08-11T05:24:00.000Z';
+  eq('거둔 지시는 살아 있지 않다', t.win.Store.orderOpen(o, row), false);
+}
+
 report('기능6 담당자 대시보드');

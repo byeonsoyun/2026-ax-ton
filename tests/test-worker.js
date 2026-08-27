@@ -950,4 +950,107 @@ const asAdmin = (opts = {}) =>
     !text(learn).includes('남음'), text(learn));
 }
 
+/* =================================================================
+   홈 — 재교육 지시가 노동자에게 닿는가 (D2)
+
+   ★ 담당자가 "보냈다" 고 보는데 노동자 화면에 안 뜨면 그건 없는 기능이다.
+   ★ 담당자가 남긴 말은 한국어다. 못 읽는 말을 아무 표시 없이 두면
+     그냥 못 본 것이 된다.
+   ================================================================= */
+
+/* seed 의 or-1 은 W-4821-11(도장·인도네시아어) 에게 내려진 지시다 */
+const asWorker11 = (opts = {}) => open('home', Object.assign({ login: 'W-4821-11' }, opts));
+
+{
+  const t = asWorker11();
+  ok('오류 없이 뜬다', t.errors.length === 0, t.errors.join(' | '));
+
+  eq('★ 받은 지시가 홈에 뜬다', t.$('order-card').hidden, false);
+  const item = t.$('order-list').querySelector('.order-item');
+  ok('지시가 하나 있다', !!item);
+  has('어느 교육인지 보인다', text(item), '도장');
+  has('담당자가 남긴 말이 보인다', text(item), '환기팬');
+
+  /* ★ 한국어라는 것을 적는다 */
+  has('★ 한국어로 남긴 말이라고 적는다', text(item), '한국어');
+
+  /* 글자를 한 자도 안 읽어도 무슨 일인지 알 수 있어야 한다 */
+  ok('★ 소리로 들을 수 있다', !!item.querySelector('.btn-audio'));
+  ok('★ 그림이 함께 있다', text(item.querySelector('.pict')).length > 0);
+
+  const go = item.querySelector('a[href="learn.html"]');
+  ok('★ 다시 들으러 가는 큰 버튼이 있다', !!go, text(item));
+  ok('큰 버튼이다 — 장갑 낀 손으로 누른다',
+    go.className.includes('btn-primary'), go.className);
+}
+
+{
+  /* ★ 남의 지시는 안 뜬다 — 같은 공정 · 같은 교육이어도.
+       seed 의 or-1 은 다른 공정(도장)이라 교육 필터에 우연히 걸린다.
+       그것만 보면 "내 것만 거른다" 를 지우고도 검사가 통과한다.
+       그래서 같은 공정 사람(W-4821-03 · 프레스)에게 내려진
+       같은 교육(c-press) 지시로 본다. */
+  const t = open('home', {                       // W-4821-07 · 프레스
+    before(win) {
+      win.Store.orders.save([{
+        id: 'or-other', workerId: 'W-4821-03', courseId: 'c-press',
+        note: '이건 다른 사람에게 내려진 지시입니다',
+        at: '2026-08-20T00:00:00.000Z', by: 'kim@daesung.co.kr', canceledAt: null,
+      }]);
+    },
+  });
+  eq('★ 같은 공정 · 같은 교육이어도 남의 지시는 안 보인다',
+    t.$('order-card').hidden, true);
+  ok('★ 남의 메모가 화면에 새어 나오지 않는다',
+    !text(t.win.document.querySelector('main')).includes('다른 사람에게 내려진'),
+    text(t.$('order-list')));
+}
+
+{
+  /* ★ 지시 뒤에 통과하면 저절로 사라진다 — 해소를 따로 저장하지 않는다 */
+  const t = asWorker11({
+    before(win) {
+      win.Store.progress.update((list) => {
+        const row = list.find((r) => r.workerId === 'W-4821-11' && r.courseId === 'c-paint');
+        row.quiz = { score: 100, passed: true, answers: [1, 1],
+          at: '2026-08-20T00:00:00.000Z', attempt: 2, firstPassed: false };
+      });
+    },
+  });
+  eq('★ 지시 뒤에 통과하면 지시가 사라진다', t.$('order-card').hidden, true);
+  eq('★ 그래도 지시 기록 자체는 남아 있다', t.win.Store.orders.load().length, 1);
+}
+
+{
+  /* ★ 지시보다 앞선 통과로는 사라지지 않는다 */
+  const t = asWorker11({
+    before(win) {
+      win.Store.progress.update((list) => {
+        const row = list.find((r) => r.workerId === 'W-4821-11' && r.courseId === 'c-paint');
+        row.quiz = { score: 100, passed: true, answers: [1, 1],
+          at: '2026-08-01T00:00:00.000Z', attempt: 2, firstPassed: false };
+      });
+    },
+  });
+  eq('★ 지시 전에 통과한 기록으로는 안 사라진다', t.$('order-card').hidden, false);
+}
+
+{
+  /* 거둔 지시는 안 뜬다 */
+  const t = asWorker11({
+    before(win) {
+      win.Store.orders.update((list) => {
+        list[0].canceledAt = '2026-08-20T00:00:00.000Z';
+      });
+    },
+  });
+  eq('★ 거둔 지시는 노동자 화면에서 사라진다', t.$('order-card').hidden, true);
+}
+
+{
+  /* 지시가 없으면 빈 칸을 만들지 않는다 */
+  const t = asWorker11({ before(win) { win.Store.orders.save([]); } });
+  eq('★ 지시가 없으면 칸을 통째로 감춘다', t.$('order-card').hidden, true);
+}
+
 report('노동자 화면 4개 — 홈 · 신고 · 소통 · 마이');

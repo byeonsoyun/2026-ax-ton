@@ -277,6 +277,28 @@ var Store = (function () {
           지시는 "이 교육을 다시 듣게 한다" 는 뜻이지 "이 사람이 못했다" 가 아니다. */
   var orders = listStore('orders');
 
+  /* 이 지시가 아직 살아 있는가 (D2).
+
+     ★ 판정을 여기 한 곳에 둔다. 담당자 대시보드와 노동자 홈이 같은 함수를
+       쓴다 — 계산을 화면마다 두면 한쪽만 고쳐져서, 담당자는 "보냈다" 고
+       보고 노동자 화면에는 아무것도 안 뜨는 일이 생긴다.
+
+     ★ 해소됐다는 것을 orders 에 적지 않는다. progress 를 보고 판정한다.
+       "완료" 를 따로 저장하면 진실이 두 곳이 되고 언젠가 어긋난다.
+
+     ★ 지시를 내린 뒤(at)에 통과했어야 해소다.
+       그전에 통과한 기록으로 지시가 저절로 사라지면, 담당자가 방금 보낸
+       지시가 보내자마자 없어진다. */
+  function orderOpen(order, progressRow) {
+    if (!order || order.canceledAt) return false;
+
+    var q = progressRow && progressRow.quiz;
+    if (!q || !q.passed) return true;
+    if (!q.at || !order.at) return true;      // 언제인지 모르면 살아 있는 것으로 둔다
+
+    return String(q.at) <= String(order.at);  // ISO 문자열이라 그대로 견줄 수 있다
+  }
+
 
   /* -----------------------------------------------------------------
      글자 크기를 화면이 그려지기 전에 적용한다 (B3)
@@ -504,6 +526,7 @@ var Store = (function () {
     accounts: accounts, session: session, setup: setup, library: library,
     courses: courses, progress: progress, reports: reports, posts: posts,
     prefs: prefs, orders: orders, FONT_SCALES: FONT_SCALES,
+    orderOpen: orderOpen,
 
     // 공통
     uid: uid, available: available,
