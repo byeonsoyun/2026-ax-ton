@@ -180,6 +180,13 @@
          listen 옆에 새로 끼워 넣어서 배지가 쌓였다. */
     var note = $('today-note');
     note.textContent = '';
+
+    /* ★ "검수 완료" 를 적는다 (B4 — 목업에 있던 배지).
+         phrasePool() 이 Store.phraseOk 를 지난 것만 담으므로 여기 오른
+         문구는 전부 검수를 지난 것이다. 그 사실이 화면에 보여야
+         노동자가 이 지시를 믿을 근거가 생긴다 — 검수를 지나지 않은 말은
+         아예 안 나온다는 것이 이 제품의 약속이다. */
+    note.appendChild(UI.okBadge('검수 완료'));
     if (!t) note.appendChild(UI.waitBadge('내 언어 번역 준비 중'));
 
     var listen = $('today-listen');
@@ -266,6 +273,30 @@
     { icon: '🙋', label: '내 기록', href: 'my.html', say: '내 교육 기록을 봅니다' }
   ];
 
+  /* 메뉴 칸에 붙는 배지 (B4 — 목업에 있던 것).
+     들어가기 전에 무엇이 기다리는지 알려 준다.
+
+     ★ 익명이라는 것을 누르기 전에 말한다. 들어가서야 알면 이미 늦다 —
+       망설이던 사람은 그 화면을 열지도 않는다.
+
+     ★ 목업의 "오프라인 가능" 은 옮기지 않았다. 지금 오프라인으로 돌지
+       않는다 (Service Worker 는 E층). 화면이 거짓말을 하면 안 된다.
+       대신 C7 에서 생긴 "공식 답변 표시" 를 적는다. */
+  function menuBadge(item) {
+    if (item.href === 'learn.html') {
+      var courses = myCourses();
+      if (!courses.length) return null;
+      var left = courses.filter(function (c) { return stateOf(c.id) !== 'done'; }).length;
+      return left
+        ? UI.waitBadge(courses.length + '개 중 ' + left + '개 남음')
+        : UI.okBadge('모두 마침');
+    }
+    if (item.href === 'report.html') return UI.neutralBadge('익명으로 접수');
+    if (item.href === 'talk.html') return UI.neutralBadge('공식 답변 표시');
+    if (item.href === 'my.html') return UI.neutralBadge('증빙 출력');
+    return null;
+  }
+
   function renderMenu() {
     var box = $('bigmenu');
     box.textContent = '';
@@ -279,11 +310,19 @@
       ico.setAttribute('aria-hidden', 'true');
       a.appendChild(ico);
       a.appendChild(UI.el('span', 'name', item.label));
+
+      var badge = menuBadge(item);
+      if (badge) a.appendChild(badge);
+
       cell.appendChild(a);
 
-      // 글자를 못 읽어도 무엇인지 알 수 있게
+      /* 글자를 못 읽어도 무엇인지 알 수 있게.
+         ★ 배지도 함께 읽어 준다. 배지만 붙이고 소리에서 빼면
+           글을 못 읽는 사람에게는 그 정보가 아예 없는 것과 같다. */
+      var say = item.say +
+        (badge ? '. ' + badge.textContent.replace(/^[^가-힣\d]+/, '') : '');
       cell.appendChild(UI.audioButton(function () {
-        return { text: item.say, lang: 'ko' };
+        return { text: say, lang: 'ko' };
       }, item.label + ' 설명 듣기'));
 
       box.appendChild(cell);

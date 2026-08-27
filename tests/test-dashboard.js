@@ -401,4 +401,23 @@ function lastYearISO() {
   has('★ 이름을 감출 수 없다고 알린다', text(card), '이름을 감출 수 없습니다');
 }
 
+/* =================================================================
+   목업에서 옮겨 온 것 (B4)
+   ================================================================= */
+{
+  const t = open();
+  const main = text(t.win.document.querySelector('main'));
+
+  /* ★ 증빙이 왜 믿을 만한지 — 고칠 경로가 없고, 뺄 사람이 없다 */
+  has('★ 생성된 기록은 수정할 수 없다고 적는다', main, '생성된 기록은 수정할 수 없고');
+  has('★ 숨기는 경로가 없다고 적는다', main, '숨기는 경로는 없습니다');
+
+  /* ★ 개선 루프를 화면에서 닫는다 — 보고 끝내면 교육이 안 고쳐진다 */
+  const weak = t.win.document.querySelector('.card.feature');
+  const fix = weak.querySelector('a[href="content.html"]');
+  ok('★ 취약 항목에서 교육을 고치러 갈 길이 있다', !!fix,
+    text(weak).slice(0, 120));
+  has('무엇을 하러 가는지 적는다', text(fix), '다시 만들기');
+}
+
 report('기능6 담당자 대시보드');

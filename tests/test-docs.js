@@ -282,6 +282,7 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
     { label: '문구 추가', why: 'B2 에서 끝남 — admin/library 의 #form-add' },
     { label: '기간 걸러 보기', why: 'C2 에서 끝남 — admin/dashboard 의 범위 고르기' },
     { label: '관리자 답글 표시', why: 'C7 에서 끝남 — talk.js 의 isOfficial' },
+    { label: '글자 크기 조절', why: 'B3 에서 끝남 — worker/my 의 글자 크기 칸' },
   ];
 
   DONE.forEach((d) => {

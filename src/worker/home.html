@@ -57,6 +57,15 @@
   <section class="card" aria-labelledby="t-progress">
     <h2 id="t-progress" class="card-title">내 교육</h2>
 
+    <!-- ★ 기획에서 온 문장 (SCREEN 기능3·4 · 목업 02-home).
+         이 제품이 서 있는 자리가 이 두 줄이다 — 서명은 참석의 증거일 뿐이고,
+         들었다는 것만으로 교육을 마쳤다고 기록하지 않는다.
+         빼면 이 화면은 그냥 진도표가 된다. -->
+    <p class="muted policy-note">
+      <b>이해도 검증을 통과해야 교육이 완료됩니다.</b>
+      수강만으로는 완료로 기록되지 않습니다.
+    </p>
+
     <ol class="stage-track" id="stage-track">
       <li data-step="learn"><span class="ico" aria-hidden="true">🎧</span><span class="name">듣기</span></li>
       <li data-step="quiz"><span class="ico" aria-hidden="true">👆</span><span class="name">확인</span></li>
@@ -77,6 +86,12 @@
       안전 문구의 번역이 이상하거나 뜻이 반대로 보이면 관리자에게 알려 주세요.
       확인될 때까지 그 문구는 쓰이지 않습니다. 알려 주신 분이 누구인지는 기록하지 않습니다.
     </p>
+    <!-- ★ 기획에서 온 문장 (목업 02-home).
+         검수를 안 지난 말이 그냥 섞여 있는 것이 아니라 따로 표시되고
+         안전 지시로 쓰이지 않는다는 것을, 노동자 쪽 화면에서도 말한다. -->
+    <p class="muted">
+      검수되지 않은 번역은 화면에 <b>따로 표시</b>되며 <b>안전 지시로 쓰지 않습니다.</b>
+    </p>
     <div class="listen" id="badtrans-listen"></div>
   </section>
 
@@ -86,7 +101,6 @@
     <p class="why">아래는 골격에 넣지 않은 것들입니다. 지금 상태로도 데이터는 끝까지 흐릅니다.</p>
     <dl>
       <dt>오역 신고 버튼</dt><dd>이 화면에서 눌러 바로 기능9 큐로 보내는 경로. 지금은 안내만 있습니다 (우선순위 3층)</dd>
-      <dt>글자 크기 조절</dt><dd><code>--font-base</code> 를 바꾸는 토글 (PRD §9.4)</dd>
       <dt>내 파일</dt><dd><code>worker/home.html</code> · <code>worker/home.js</code> · <code>worker/worker.css</code></dd>
     </dl>
   </section>

@@ -887,4 +887,67 @@ const asAdmin = (opts = {}) =>
     stale.getAttribute('data-official') !== 'yes', text(stale));
 }
 
+/* =================================================================
+   홈 — 목업에서 옮겨 온 것 (B4)
+
+   ★ 여기 있는 문장들은 기획에서 온 것이다. 화면을 고치다 조용히
+     빠지면 이 제품이 무엇을 주장하는 물건인지가 화면에서 사라진다.
+   ================================================================= */
+{
+  const t = open('home');
+  const main = text(t.win.document.querySelector('main'));
+
+  /* ★ 이 제품이 서 있는 자리 */
+  has('★ 검증을 통과해야 완료라고 적는다', main, '이해도 검증을 통과해야 교육이 완료됩니다');
+  has('★ 수강만으로는 완료가 아니라고 적는다', main, '수강만으로는 완료로 기록되지 않습니다');
+
+  /* ★ 검수되지 않은 번역을 어떻게 다루는지 노동자 쪽에서도 말한다 */
+  has('★ 검수 안 된 번역은 안전 지시로 쓰지 않는다고 적는다', main, '안전 지시로 쓰지 않습니다');
+
+  /* 오늘의 문구가 검수를 지난 것임을 화면에 적는다 */
+  has('★ 오늘의 문구에 검수 완료를 적는다', text(t.$('today-note')), '검수 완료');
+
+  /* 메뉴 배지 — 들어가기 전에 무엇이 기다리는지 */
+  const cells = [...t.$('bigmenu').querySelectorAll('.bigmenu-cell')];
+  const byHref = (h) => cells.find((c) => c.querySelector('a').getAttribute('href') === h);
+  has('★ 신고가 익명이라는 것을 누르기 전에 말한다',
+    text(byHref('report.html')), '익명으로 접수');
+  has('마이페이지에서 증빙을 뽑을 수 있다고 알린다',
+    text(byHref('my.html')), '증빙 출력');
+  ok('★ 남은 교육 수를 배지로 알려 준다',
+    /\d개 중 \d개 남음|모두 마침/.test(text(byHref('learn.html'))),
+    text(byHref('learn.html')));
+
+  /* ★ 배지를 붙였으면 소리에도 넣는다.
+       배지만 붙이고 소리에서 빼면 글을 못 읽는 사람에게는 없는 정보다. */
+  const spoken = [];
+  const t2 = open('home', {
+    before(win) {
+      win.speechSynthesis = {
+        cancel() {},
+        getVoices() { return [{ lang: 'ko-KR' }]; },
+        addEventListener() {}, removeEventListener() {},
+        speak(u) { spoken.push(String(u.text)); if (u.onstart) u.onstart(); if (u.onend) u.onend(); },
+      };
+      win.SpeechSynthesisUtterance = function (text) { this.text = text; };
+    },
+  });
+  const reportCell = [...t2.$('bigmenu').querySelectorAll('.bigmenu-cell')]
+    .find((c) => c.querySelector('a').getAttribute('href') === 'report.html');
+  click(t2.win, reportCell.querySelector('.btn-audio'));
+  has('★ 배지 내용도 소리로 읽어 준다', spoken.join(' '), '익명으로 접수');
+  ok('★ 아이콘은 읽지 않는다',
+    !spoken.join(' ').includes('🕶') && !spoken.join(' ').includes('●'),
+    JSON.stringify(spoken));
+}
+
+{
+  /* 아직 아무 교육도 없으면 배지를 억지로 만들지 않는다 */
+  const t = open('home', { before(win) { win.Store.courses.save([]); } });
+  const learn = [...t.$('bigmenu').querySelectorAll('.bigmenu-cell')]
+    .find((c) => c.querySelector('a').getAttribute('href') === 'learn.html');
+  ok('★ 받을 교육이 없으면 "0개 남음" 같은 말을 지어내지 않는다',
+    !text(learn).includes('남음'), text(learn));
+}
+
 report('노동자 화면 4개 — 홈 · 신고 · 소통 · 마이');
