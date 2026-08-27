@@ -42,6 +42,18 @@
    되읽기 검사는 "내 글씨를 내가 읽는 것" 이라 규격 자체를 오해했으면 못 잡습니다
 2. **글을 모르는 척하고, 또는 아무 설명 없이 다른 사람에게 폰을 건네 보기** —
    *"글자를 한 자도 안 읽고 끝까지"* 가 이 제품의 핵심 주장입니다 (V3 의 남은 한계)
+
+> **★ 무엇을 어떻게 확인하는지는 [`10-checklist.md`](10-checklist.md) 에
+> 순서대로 있습니다** — 성공/실패 케이스와 **"이건 안 되는 게 맞다"** 는 경계까지.
+
+### ★ 새로 들어온 사람(또는 새 채팅창)이 먼저 볼 것
+
+| 무엇 | 어디 |
+|---|---|
+| **개발을 이어가려면** | [`09-handover.md`](09-handover.md) — 구조 · 데이터 계약 · 작업 리듬 · **함정 모음** |
+| **손으로 확인하려면** | [`10-checklist.md`](10-checklist.md) — 체크리스트 · 성공/실패 · 경계 · 시연 코스 |
+| **발표를 준비하려면** | [`11-evaluation.md`](11-evaluation.md) — 자체 평가 · 시장 · 차별점 · AI 활용 · 예상 질문 |
+| 사람이 읽는 전체 설명 | [`08-overview.md`](08-overview.md) |
 | **배포 주소** | **https://2026-ax-ton.vercel.app** — 살아 있습니다 |
 | **팀원용 전체 설명** | [`08-overview.md`](08-overview.md) — 프로젝트를 처음 보는 사람에게 이것 하나만 주면 됩니다 |
 | **배포 방식** | GitHub 연결. **`main` 에 올라가면 자동 배포**됩니다 (아래 "배포한 뒤 달라진 것") |
@@ -927,6 +939,9 @@ cd <저장소> && NODE_PATH=~/jsdom-box/node_modules node tests/run-all.js
 | 무엇 | 어디 |
 |---|---|
 | **프로젝트 전체 설명 (팀원에게 줄 것)** | [`08-overview.md`](08-overview.md) |
+| **개발을 이어갈 사람에게 (구조 · 함정 모음)** | [`09-handover.md`](09-handover.md) |
+| **손으로 확인할 목록 (성공/실패 · 경계 · 시연)** | [`10-checklist.md`](10-checklist.md) |
+| **자체 평가 · 시장 · 차별점 · AI 활용** | [`11-evaluation.md`](11-evaluation.md) |
 | 무엇이 먼저이고 무엇을 빼도 되는지 | [`06-feature-priority.md`](06-feature-priority.md) |
 | 폴더 · 데이터 · 화면 전체 지도 | [`01-project-map.md`](01-project-map.md) |
 | 옮겨 오면 되는 기획 시안 | [`mockups/README.md`](mockups/README.md) |
