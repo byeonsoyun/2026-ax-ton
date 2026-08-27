@@ -12,6 +12,9 @@
 |---|---|
 | **이 프로젝트가 뭔지 처음부터 끝까지 알고 싶습니다** | [08-overview.md](08-overview.md) — **전체 설명 한 문서** ★ |
 | **나 뭐 하면 되죠?** | [07-next-tasks.md](07-next-tasks.md) — 다음 할 일 ★ |
+| **개발을 이어받습니다 / 며칠 만에 다시 옵니다** | [09-handover.md](09-handover.md) — **인계 문서** ★ 구조 · 데이터 계약 · 작업 리듬 · **함정 모음** |
+| **손으로 직접 확인해 보려 합니다** | [10-checklist.md](10-checklist.md) — **체크리스트** ★ 성공/실패 케이스 · 경계 · 시연 코스 |
+| **발표를 준비합니다** | [11-evaluation.md](11-evaluation.md) — 자체 평가 · 시장조사 · 차별점 · **AI 활용** · 예상 질문 |
 | **오늘 처음입니다** | [00-getting-started.md](00-getting-started.md) — 설치부터 첫 화면까지 |
 | **화면별 요구사항** | [02-positions.md](02-positions.md) — 팀 시절 기록이지만 내용은 유효 |
 | **이 프로젝트가 뭐죠?** | [01-project-map.md](01-project-map.md) — 폴더 · 데이터 · 화면 전체 지도 |
