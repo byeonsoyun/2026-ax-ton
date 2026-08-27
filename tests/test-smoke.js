@@ -386,6 +386,73 @@ function bootWithSpeech(mode) {
   eq('빈 값은 빈 값', auth.safeNext(''), '');
 }
 
+/* =================================================================
+   PC / 모바일 두 벌 레이아웃 (D3)
+
+   ★ jsdom 은 화면을 그리지 않는다. 그래서 "보기 좋은가" 는 여기서 못 본다.
+     대신 **지켜야 하는 규칙이 CSS 에 실제로 있는지**를 글로 확인한다.
+     특히 취약 항목이 PC 에서 반으로 줄어들지 않는가 — 그것이 줄면
+     정보 위계가 뒤바뀌고, 담당자는 이수율만 보고 교육을 안 고친다.
+   ================================================================= */
+{
+  const fs2 = require('fs');
+  const path2 = require('path');
+  const SRC2 = require('./harness').SRC;
+  const read2 = (p) => fs2.readFileSync(path2.join(SRC2, p), 'utf8');
+
+  const adminCss = read2('admin/admin.css');
+  const workerCss = read2('worker/worker.css');
+
+  /* @media (min-width: 1024px) { ... } 안쪽만 떼어 낸다 */
+  function mediaBlock(css, query) {
+    const at = css.indexOf(query);
+    if (at === -1) return '';
+    let depth = 0, start = -1;
+    for (let i = at; i < css.length; i++) {
+      if (css[i] === '{') { depth++; if (depth === 1) start = i + 1; }
+      else if (css[i] === '}') { depth--; if (depth === 0) return css.slice(start, i); }
+    }
+    return '';
+  }
+
+  const pc = mediaBlock(adminCss, '@media (min-width: 1024px)');
+  ok('★ 관리자 화면에 넓은 화면용 규칙이 있다', pc.length > 0);
+
+  /* ★★ 이 검사가 D3 에서 가장 중요하다 */
+  const feature = /\.card\.feature\s*\{[^}]*grid-column:\s*1\s*\/\s*-1/.test(pc);
+  ok('★★ PC 에서도 취약 항목은 한 줄 전체를 쓴다 (반으로 줄지 않는다)',
+    feature, pc.slice(0, 200));
+
+  has('★ 두 칸으로 나눈다', pc, 'grid-template-columns');
+  has('★ 하단 탭바가 세로 메뉴가 된다', pc, '.tabbar.fixed');
+  has('아래 탭바가 없으니 아래 여백을 줄인다', pc, 'padding-bottom');
+
+  /* ★ 노동자 화면은 두 벌로 만들지 않는다 — 폰이 본체다 */
+  const workerWide = mediaBlock(workerCss, '@media (min-width: 900px)');
+  ok('노동자 화면에도 넓은 화면 규칙이 있다', workerWide.length > 0);
+  has('★ 폰 너비로 가운데 모은다', workerWide, 'max-width');
+  ok('★ 노동자 화면을 여러 칸으로 쪼개지 않는다',
+    workerWide.indexOf('grid-template-columns') === -1, workerWide.slice(0, 200));
+
+  /* ★ 되돌린 적 있는 그 파일을 다시 가져오지 않았다 (devlog 2026-08-19).
+       주석에 이름이 나오는 것은 괜찮다 — 실제로 읽어 들이는지를 본다. */
+  const cssFiles = ['assets/style.css', 'assets/style-admin.css', 'assets/app.css',
+    'admin/admin.css', 'worker/worker.css'];
+  const imported = cssFiles.filter((f) => /@import[^;]*style-pc/.test(read2(f)));
+  ok('★ CSS 가 style-pc.css 를 읽어 들이지 않는다', imported.length === 0, imported.join(', '));
+
+  const pages = ['admin/dashboard.html', 'admin/content.html', 'admin/proof.html',
+    'admin/setup.html', 'admin/library.html', 'worker/home.html', 'index.html'];
+  const linked = pages.filter((f) => /<link[^>]*style-pc/.test(read2(f)));
+  ok('★ 화면이 style-pc.css 를 걸지 않는다', linked.length === 0, linked.join(', '));
+
+  /* 터치 타깃 규칙은 좁은 화면에서 그대로다 —
+     60px 을 푸는 것은 마우스로 쓰는 넓은 화면 안에서만이어야 한다 */
+  const outsideMedia = adminCss.replace(pc, '');
+  ok('★ 좁은 화면의 터치 타깃 규칙을 건드리지 않았다',
+    outsideMedia.indexOf('min-height: 48px') === -1, 'min-height:48px 가 미디어 쿼리 밖에 있다');
+}
+
 /* 아무 신호도 안 주는 브라우저 — 기다려 봐야 알 수 있다.
    기다림이 필요해서 이 묶음의 마무리(report)를 여기 안에서 한다. */
 {

@@ -658,3 +658,115 @@ table.data .chips .badge { font-size: .68em; }
 @media print {
   .qr-box { break-inside: avoid; page-break-inside: avoid; }
 }
+
+/* ===================================================================
+   PC 레이아웃 (D3)
+
+   담당자는 사무실 PC 로, 노동자는 현장 폰으로 씁니다.
+   지금까지는 반응형 한 벌이라, 27인치 화면에서도 폰 화면이
+   가운데 길게 늘어져 있었습니다.
+
+   ★ 이 구역은 관리자 화면에만 걸립니다 (admin.css 는 admin/ 만 읽습니다).
+     노동자 화면은 폰이 본체라 여기서 손대지 않습니다.
+
+   ★★ 목업의 style-pc.css 를 가져오지 않았습니다.
+     2026-08-19 에 한 번 시도했다가 `.row` `.field-row` `.main` 이름이
+     실제 마크업과 충돌해서 되돌렸습니다. 그 파일은 목업 전용 골격입니다.
+     여기서는 **새 클래스 이름을 만들지 않고**, 이미 있는 이름에
+     넓은 화면일 때의 배치만 더합니다.
+
+   ★ 좁은 화면에서는 아무것도 바뀌지 않습니다.
+     1024px 미만은 지금 그대로입니다 — 담당자도 현장에서는 폰으로 봅니다.
+   =================================================================== */
+
+@media (min-width: 1024px) {
+
+  /* --- 하단 탭바 → 왼쪽 세로 메뉴 -------------------------------
+     폰에서는 엄지가 닿는 아래가 맞지만, 마우스로 쓰는 화면에서
+     아래 끝까지 내려가는 것은 먼 길입니다. */
+  .tabbar.fixed {
+    top: 0;
+    right: auto;
+    bottom: 0;
+    width: 200px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 4px;
+    /* 위쪽은 머리띠가 덮습니다. 그만큼 비워 둡니다 */
+    padding: 76px 10px 10px;
+    border-top: 0;
+    border-right: 1px solid var(--line);
+    box-shadow: none;
+  }
+
+  .tabbar.fixed a {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 10px;
+    /* 마우스로 누르는 자리라 60px 을 고집하지 않습니다.
+       폰 레이아웃(1024px 미만)에서는 그대로 60px 입니다. */
+    min-height: 48px;
+    padding: 0 12px;
+    border-radius: 10px;
+    font-size: .82em;
+  }
+
+  .tabbar.fixed a[aria-current="page"] {
+    background: var(--brand-soft);
+  }
+
+  /* 머리띠가 세로 메뉴 위를 덮습니다 */
+  .apphead {
+    z-index: 40;
+    padding-left: 216px;
+  }
+
+  /* --- 본문 -------------------------------------------------------
+     세로 메뉴를 피해 오른쪽에 놓고, 두 칸으로 나눕니다. */
+  body.has-tabbar .page {
+    margin-left: 200px;
+    margin-right: auto;
+    padding: 24px 28px 40px;
+    padding-bottom: 40px;      /* 아래 탭바가 없으므로 여백을 줄입니다 */
+
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: var(--gap);
+  }
+
+  /* 기본은 한 줄 전체. 반으로 나눌 것만 아래에서 고릅니다. */
+  body.has-tabbar .page > * { grid-column: 1 / -1; }
+  body.has-tabbar .page > .card { grid-column: span 1; }
+
+  /* ★★ 취약 항목은 이 화면에서 가장 커야 합니다 (SCREEN 기능6).
+       반으로 줄이면 이수 현황 타일과 같은 크기가 되고,
+       담당자는 이수율만 보고 교육을 안 고칩니다.
+       이 한 줄이 D3 에서 가장 중요합니다. */
+  body.has-tabbar .page > .card.feature { grid-column: 1 / -1; }
+
+  /* 교육 만들기 4단계도 두 칸으로 */
+  #builder {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: var(--gap);
+  }
+  #builder > .card { grid-column: span 1; }
+
+  /* --- 입력칸 -----------------------------------------------------
+     넓은 화면에서 한 줄 입력칸이 1000px 로 늘어나면 오히려 읽기 어렵습니다. */
+  .field input[type="text"],
+  .field input[type="date"],
+  .field select {
+    max-width: 460px;
+  }
+
+  /* 표는 넓게 씁니다 — 가로 스크롤이 줄어듭니다 */
+  .tablewrap { overflow-x: visible; }
+
+  /* QR 은 종이에 붙일 것이라 넓은 화면에서 좀 더 크게 */
+  .qr-box svg { width: 260px; height: 260px; }
+}

@@ -1403,3 +1403,29 @@
 }
 
 .order-item .order-lang { margin: 0 0 8px; }
+
+/* -------------------------------------------------------------------
+   넓은 화면에서의 노동자 화면 (D3)
+
+   ★ 노동자 화면은 폰이 본체입니다. 여기서 레이아웃을 두 벌로 만들지
+     않습니다 — 큰 버튼과 큰 글자가 가로로 늘어나면 오히려 읽기 어렵고,
+     터치 타깃 60px 과 글자 크기 조절(B3)이 여기에 얽혀 있습니다.
+
+   ★ 대신 폰 너비로 가운데 모읍니다. 담당자가 PC 로 노동자 화면을
+     확인할 때 실제로 보이는 모양과 같아야 합니다.
+   ------------------------------------------------------------------- */
+
+@media (min-width: 900px) {
+  .page { max-width: 560px; }
+
+  .tabbar.fixed {
+    left: 50%;
+    right: auto;
+    width: 100%;
+    max-width: 560px;
+    transform: translateX(-50%);
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    border-radius: 14px 14px 0 0;
+  }
+}
