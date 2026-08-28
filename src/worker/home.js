@@ -351,9 +351,11 @@
      ★ 익명이라는 것을 누르기 전에 말한다. 들어가서야 알면 이미 늦다 —
        망설이던 사람은 그 화면을 열지도 않는다.
 
-     ★ 목업의 "오프라인 가능" 은 옮기지 않았다. 지금 오프라인으로 돌지
-       않는다 (Service Worker 는 E층). 화면이 거짓말을 하면 안 된다.
-       대신 C7 에서 생긴 "공식 답변 표시" 를 적는다. */
+     ★ 목업은 이 자리(소통 칸)에 "오프라인 가능" 을 두었지만 여기 두지 않는다.
+       오프라인은 소통 화면 하나의 성질이 아니라 앱 전체의 성질이다.
+       메뉴 한 칸에 붙이면 "소통만 오프라인" 으로 읽힌다.
+       그래서 메뉴 아래에 따로 적는다 (renderOfflineOk).
+       이 자리에는 C7 에서 생긴 "공식 답변 표시" 를 그대로 둔다. */
   function menuBadge(item) {
     if (item.href === 'learn.html') {
       var courses = myCourses();
@@ -417,6 +419,31 @@
     box.appendChild(UI.el('span', 'label', '설명 듣기'));
   }
 
+  /* 오프라인으로 열린다는 표시 (E1) — 목업 02-home 의 "오프라인 가능".
+
+     ★★ 담겼을 때만 그린다. UI.offlineReady() 가 실제 controller 를 본다.
+       고정 문구로 박아 두면 file:// 로 열었을 때도, 아직 안 담겼을 때도
+       "오프라인 가능" 이라고 말하게 된다. B4 에서 이 배지를 일부러 뺀 이유가
+       바로 그것이었다 — 화면이 거짓말을 하면 안 된다.
+
+     ★ "처음 한 번은 인터넷이 필요하다" 를 함께 적는다. 설비 앞에서 QR 을
+       처음 찍는 사람에게는 그 한 번이 있어야 한다. 안 적으면
+       "오프라인 된다더니" 가 된다. */
+  function renderOfflineOk() {
+    var box = $('offline-ok');
+    if (!box) return;
+    box.textContent = '';
+
+    if (!UI.offlineReady()) { box.hidden = true; return; }
+
+    box.appendChild(UI.okBadge('오프라인 가능'));
+    box.appendChild(document.createTextNode(' '));
+    box.appendChild(UI.el('span', 'offline-ok-body',
+      '이 기기에 저장돼 있어 인터넷이 끊겨도 교육을 이어갈 수 있습니다. ' +
+      '처음 한 번만 인터넷이 필요합니다.'));
+    box.hidden = false;
+  }
+
   function renderVoiceNote() {
     var note = UI.voiceNote(me.lang);
     var box = $('voicenote');
@@ -434,6 +461,7 @@
     renderOrders();
     renderStage();
     renderMenu();
+    renderOfflineOk();
     renderBadTrans();
   }
 

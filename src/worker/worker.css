@@ -760,6 +760,21 @@
    홈 — 메뉴 4갈래
    ------------------------------------------------------------------- */
 
+/* 오프라인으로 열린다는 표시 (E1) — 담겼을 때만 JS 가 그린다.
+   메뉴 아래 한 줄이다. 메뉴 한 칸에 붙이면 그 칸만 오프라인으로 읽힌다. */
+.offline-ok {
+  margin: calc(var(--gap) * -1 + 4px) 0 var(--gap);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: .82em;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.offline-ok[hidden] { display: none; }
+
 .bigmenu {
   display: grid;
   grid-template-columns: 1fr 1fr;

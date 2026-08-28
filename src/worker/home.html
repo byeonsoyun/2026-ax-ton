@@ -88,6 +88,14 @@
   <!-- 3. 메뉴 4갈래 — 픽토그램 + 글자 + 음성 -->
   <nav class="bigmenu" id="bigmenu" aria-label="주요 메뉴"></nav>
 
+  <!-- 3-1. 오프라인으로 열린다는 표시 (E1).
+       ★ 목업(02-home)에 있던 "오프라인 가능" 배지다. B4 에서는 일부러 옮기지
+         않았다 — 그때는 실제로 오프라인으로 돌지 않았고, 화면이 거짓말을 하면
+         안 되기 때문이다. 이제 sw.js 가 화면을 담으므로 붙인다.
+       ★ 다만 고정 문구로 박지 않는다. 정말로 담겼을 때만 JS 가 그린다
+         (UI.offlineReady). file:// 로 열면 안 뜨고, 그게 맞다. -->
+  <p class="offline-ok" id="offline-ok" hidden></p>
+
   <!-- 4. 번역이 이상하면 알려 달라 — 오역을 가장 먼저 발견하는 사람이 노동자다 -->
   <section class="card" aria-labelledby="t-badtrans">
     <h2 id="t-badtrans" class="card-title">말이 이상하면 알려 주세요</h2>
