@@ -148,6 +148,103 @@
   }
 
   /* -----------------------------------------------------------------
+     말로 알리기 (음성 신고)
+
+     ★★ 목소리는 어디에도 저장하지 않는다. 브라우저가 글자로 바꾼 결과만
+       메모 칸에 넣고, 그 글자만 reports 로 간다.
+       reports 는 익명인데 목소리는 사람을 식별한다 — 작은 사업장에서는
+       담당자가 녹음을 들으면 누구인지 거의 확실히 안다.
+       익명이 깨지면 신고가 멈추고, 이 제품의 선행지표도 함께 사라진다.
+
+     ★ 옮긴 글자는 사람이 고칠 수 있게 메모 칸에 그대로 둔다.
+       받아쓰기는 틀린다. 틀린 채로 바로 보내면 담당자가 엉뚱한 곳을 본다.
+
+     ★ 안 되면 왜 안 되는지 적고 손으로 쓰는 길을 남긴다 (V4 와 같은 규칙).
+       버튼만 감추면 사람은 그것을 고장으로 읽는다.
+     ----------------------------------------------------------------- */
+
+  var voice = { session: null, base: '' };
+
+  function voiceState(key, kind) {
+    var box = $('voice-state');
+    if (!box) return;
+    var text = key ? I18N.t(key) : '';
+    box.textContent = text;
+    box.className = 'voice-state' + (kind ? ' is-' + kind : '');
+    box.hidden = !text;
+  }
+
+  function voiceButtonLabel(key) {
+    var btn = $('btn-voice');
+    if (!btn) return;
+    var label = btn.querySelector('[data-i18n]');
+    if (label) label.textContent = I18N.t(key);
+  }
+
+  /* UI.listen 이 돌려주는 코드를 그 사람의 언어로 옮긴다 */
+  var VOICE_ERROR = {
+    unsupported: 'voice.errUnsupported',
+    offline: 'voice.errOffline',
+    'not-allowed': 'voice.errDenied',
+    'service-not-allowed': 'voice.errDenied',
+    network: 'voice.errOffline',
+    'no-speech': 'voice.nothing'
+  };
+
+  function stopVoice(reason) {
+    if (voice.session) { voice.session.stop(); voice.session = null; }
+    $('btn-voice').classList.remove('is-listening');
+    voiceButtonLabel('voice.speakBtn');
+    if (reason) voiceState(reason, reason === 'voice.gotIt' ? 'ok' : 'warn');
+  }
+
+  function startVoice() {
+    /* 시작하기 전에 못 하는 이유부터 본다. 눌렀는데 아무 일도 안 일어나면
+       그것이 가장 나쁜 실패다. */
+    var problem = UI.listenProblem();
+    if (problem) {
+      voiceState(VOICE_ERROR[problem] || 'voice.errUnsupported', 'warn');
+      UI.speak(I18N.say(VOICE_ERROR[problem] || 'voice.errUnsupported'));
+      return;
+    }
+
+    voice.base = $('memo').value.trim();
+    voice.session = UI.listen({
+      lang: me.lang,
+      onText: function (finalText, interim) {
+        var joined = (voice.base ? voice.base + ' ' : '') + finalText + interim;
+        $('memo').value = joined.trim();
+      },
+      onEnd: function (finalText) {
+        voice.session = null;
+        $('btn-voice').classList.remove('is-listening');
+        voiceButtonLabel('voice.speakBtn');
+        if (finalText.trim()) $('btn-voice').dataset.used = '1';
+        voiceState(finalText.trim() ? 'voice.gotIt' : 'voice.nothing',
+          finalText.trim() ? 'ok' : 'warn');
+        /* 옮겼다고 말로도 알린다 — 글을 못 읽으면 이 안내가 안 닿는다 */
+        UI.speak(I18N.say(finalText.trim() ? 'voice.gotIt' : 'voice.nothing'));
+      },
+      onError: function (code) {
+        stopVoice(VOICE_ERROR[code] || 'voice.errUnsupported');
+      }
+    });
+
+    if (!voice.session) return;
+    $('btn-voice').classList.add('is-listening');
+    voiceButtonLabel('voice.stopBtn');
+    voiceState('voice.listening', 'live');
+  }
+
+  /* 못 하는 브라우저에서도 버튼은 남긴다 — 누르면 왜 안 되는지 말해 준다.
+     대신 들어오자마자 그 사실을 적어 둔다. */
+  function renderVoiceAvail() {
+    var problem = UI.listenProblem();
+    if (problem) voiceState(VOICE_ERROR[problem] || 'voice.errUnsupported', 'warn');
+    else voiceState('', '');
+  }
+
+  /* -----------------------------------------------------------------
      보내기
 
      ★ 저장하는 값은 이 여섯 개뿐이다.
@@ -164,6 +261,7 @@
 
     var eq = Store.findBy(Store.setup.load().equipments, 'id', equipmentId);
     var ticket = makeTicket();
+    var voiceUsed = $('btn-voice') ? $('btn-voice').dataset.used === '1' : false;
 
     var result = Store.reports.update(function (list) {
       list.push({
@@ -175,6 +273,9 @@
         equipmentId: equipmentId,
         hazard: hazard,
         memo: $('memo').value.trim(),
+        /* 말한 것을 옮긴 글인지. ★ 사람을 가리키는 값이 아니다 —
+           받아쓰기는 틀리므로 담당자가 그 사실을 알고 읽어야 한다. */
+        memoFromVoice: voiceUsed,
         status: 'received',
         createdAt: new Date().toISOString()
       });
@@ -212,6 +313,9 @@
     UI.$$('input[name="equip"]').forEach(function (n) { n.checked = false; });
     UI.$$('input[name="hazard"]').forEach(function (n) { n.checked = false; });
     $('memo').value = '';
+    if ($('btn-voice')) $('btn-voice').dataset.used = '';
+    stopVoice('');
+    renderVoiceAvail();
     refreshBadges();
     $('view-done').hidden = true;
     $('view-form').hidden = false;
@@ -286,6 +390,7 @@
 
   function render() {
     renderVoiceNote();
+    renderVoiceAvail();
     renderList();
     refreshBadges();
   }
@@ -298,6 +403,20 @@
   $('pick-hazard').addEventListener('change', refreshBadges);
   $('btn-send').addEventListener('click', send);
   $('btn-again').addEventListener('click', reset);
+
+  /* 같은 버튼이 시작이자 멈춤이다. 버튼이 둘이면 글을 못 읽는 사람은
+     어느 것이 지금 눌러야 할 것인지 알 수 없다. */
+  $('btn-voice').addEventListener('click', function () {
+    if (voice.session) stopVoice('');
+    else startVoice();
+  });
+
+  /* 인터넷이 끊기면 말로 알리기가 안 된다. 그 사실이 바로 보여야 한다 */
+  window.addEventListener('offline', renderVoiceAvail);
+  window.addEventListener('online', renderVoiceAvail);
+
+  /* 화면을 떠나면 듣기를 멈춘다 — 마이크를 켜 둔 채 나가면 안 된다 */
+  window.addEventListener('pagehide', function () { stopVoice(''); });
 
   window.addEventListener('pagehide', UI.stopSpeak);
   UI.onVoicesReady(renderVoiceNote);

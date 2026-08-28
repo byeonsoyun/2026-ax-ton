@@ -137,6 +137,25 @@ var I18N = (function () {
     'report.listenDone':  { ko: '접수 안내 듣기',   km: 'ស្តាប់ការជូនដំណឹង', id: 'Dengarkan info laporan', vi: 'Nghe thông báo tiếp nhận', ne: 'दर्ता जानकारी सुन्नुहोस्', th: 'ฟังข้อมูลการรับแจ้ง' },
     'report.listenAnon':  { ko: '익명 안내 듣기',   km: 'ស្តាប់ការពន្យល់អនាមិក', id: 'Dengarkan info anonim', vi: 'Nghe giải thích ẩn danh', ne: 'गुमनाम जानकारी सुन्नुहोस्', th: 'ฟังข้อมูลการไม่ระบุชื่อ' },
 
+    /* 말로 알리기 (음성 신고).
+       ★ 여기에도 안전 지시는 없다. 무엇을 누르면 되는지의 안내뿐이다. */
+    'voice.speakBtn':  { ko: '말로 알리기',   km: 'ប្រាប់ដោយសំឡេង', id: 'Lapor dengan suara', vi: 'Báo bằng giọng nói', ne: 'बोलेर जनाउनुहोस्', th: 'แจ้งด้วยเสียง' },
+    'voice.stopBtn':   { ko: '다 말했습니다', km: 'និយាយរួចហើយ',    id: 'Selesai bicara',     vi: 'Đã nói xong',       ne: 'भनिसकें',         th: 'พูดเสร็จแล้ว' },
+    'voice.listening': { ko: '듣고 있습니다', km: 'កំពុងស្តាប់',     id: 'Sedang mendengar',   vi: 'Đang nghe',         ne: 'सुन्दै छ',        th: 'กำลังฟัง' },
+    'voice.gotIt':     { ko: '글자로 옮겼습니다. 맞는지 봐 주세요.', km: 'បានប្តូរទៅជាអក្សរ។ សូមពិនិត្យមើល។', id: 'Sudah diubah menjadi teks. Mohon periksa.', vi: 'Đã chuyển thành chữ. Vui lòng kiểm tra.', ne: 'अक्षरमा उतारियो। कृपया जाँच्नुहोस्।', th: 'แปลงเป็นข้อความแล้ว โปรดตรวจสอบ' },
+    'voice.nothing':   { ko: '아무 말도 못 알아들었습니다. 다시 해 보시거나 손으로 써 주세요.', km: 'មិនបានឮអ្វីទេ។ សូមព្យាយាមម្តងទៀត ឬសរសេរដោយដៃ។', id: 'Tidak ada yang terdengar. Coba lagi atau tulis dengan tangan.', vi: 'Không nghe được gì. Hãy thử lại hoặc tự viết.', ne: 'केही सुनिएन। फेरि प्रयास गर्नुहोस् वा हातले लेख्नुहोस्।', th: 'ไม่ได้ยินอะไรเลย ลองใหม่หรือพิมพ์เอง' },
+
+    /* 안 될 때 — 조용히 넘어가지 않는다. 왜 안 되는지와 대신 할 수 있는 것을 함께 말한다 */
+    'voice.errUnsupported': { ko: '이 브라우저는 말을 글자로 바꾸지 못합니다. 손으로 써 주세요. 두 가지만 골라도 신고는 됩니다.', km: 'កម្មវិធីរុករកនេះមិនអាចប្តូរសំឡេងទៅជាអក្សរបានទេ។ សូមសរសេរដោយដៃ។ ជ្រើសរើសតែពីរក៏អាចរាយការណ៍បានដែរ។', id: 'Peramban ini tidak bisa mengubah suara menjadi teks. Silakan tulis dengan tangan. Memilih dua hal saja sudah cukup untuk melapor.', vi: 'Trình duyệt này không chuyển được giọng nói thành chữ. Hãy tự viết. Chỉ chọn hai mục cũng đã báo cáo được.', ne: 'यो ब्राउजरले बोली अक्षरमा बदल्न सक्दैन। हातले लेख्नुहोस्। दुई कुरा छान्दा पनि सूचना जान्छ।', th: 'เบราว์เซอร์นี้แปลงเสียงเป็นข้อความไม่ได้ กรุณาพิมพ์เอง เลือกสองอย่างก็แจ้งได้แล้ว' },
+    'voice.errOffline':     { ko: '인터넷이 끊겨 있어 말로 알리기는 지금 안 됩니다. 손으로 써 주세요.', km: 'អ៊ីនធឺណិតដាច់ ដូច្នេះមិនអាចប្រាប់ដោយសំឡេងបានទេ។ សូមសរសេរដោយដៃ។', id: 'Internet terputus jadi lapor dengan suara tidak bisa. Silakan tulis dengan tangan.', vi: 'Mất mạng nên không báo bằng giọng nói được. Hãy tự viết.', ne: 'इन्टरनेट नभएकाले बोलेर जनाउन मिल्दैन। हातले लेख्नुहोस्।', th: 'อินเทอร์เน็ตขาด จึงแจ้งด้วยเสียงไม่ได้ กรุณาพิมพ์เอง' },
+    'voice.errDenied':      { ko: '마이크를 쓸 수 없습니다. 브라우저에서 마이크를 허용해 주세요.', km: 'មិនអាចប្រើមីក្រូហ្វូនបានទេ។ សូមអនុញ្ញាតមីក្រូហ្វូនក្នុងកម្មវិធីរុករក។', id: 'Mikrofon tidak bisa digunakan. Izinkan mikrofon di peramban.', vi: 'Không dùng được micrô. Hãy cho phép micrô trong trình duyệt.', ne: 'माइक प्रयोग गर्न सकिँदैन। ब्राउजरमा माइक अनुमति दिनुहोस्।', th: 'ใช้ไมโครโฟนไม่ได้ กรุณาอนุญาตไมโครโฟนในเบราว์เซอร์' },
+
+    /* ★★ 목소리를 저장하지 않는다는 것을 신고 화면에 적는다.
+       익명이 지켜지는지가 이 화면에서 사람이 가장 먼저 걱정하는 것이다. */
+    'voice.privacy': { ko: '말한 것은 글자로만 저장됩니다. 목소리는 저장하지 않습니다.', km: 'អ្វីដែលនិយាយនឹងរក្សាទុកជាអក្សរតែប៉ុណ្ណោះ។ សំឡេងមិនត្រូវបានរក្សាទុកទេ។', id: 'Yang Anda ucapkan hanya disimpan sebagai teks. Suara tidak disimpan.', vi: 'Điều bạn nói chỉ được lưu dưới dạng chữ. Giọng nói không được lưu.', ne: 'बोलेको कुरा अक्षरमा मात्र राखिन्छ। आवाज राखिँदैन।', th: 'สิ่งที่พูดจะถูกบันทึกเป็นข้อความเท่านั้น ไม่บันทึกเสียง' },
+    'voice.netNotice': { ko: '이 기능만 인터넷이 필요합니다. 브라우저가 소리를 알아듣는 데 씁니다.', km: 'មុខងារនេះតែប៉ុណ្ណោះត្រូវការអ៊ីនធឺណិត។ កម្មវិធីរុករកប្រើវាដើម្បីស្តាប់។', id: 'Hanya fitur ini yang butuh internet. Peramban memakainya untuk mengenali suara.', vi: 'Chỉ tính năng này cần mạng. Trình duyệt dùng nó để nhận diện giọng nói.', ne: 'यो सुविधालाई मात्र इन्टरनेट चाहिन्छ। ब्राउजरले आवाज बुझ्न प्रयोग गर्छ।', th: 'เฉพาะฟังก์ชันนี้ที่ต้องใช้อินเทอร์เน็ต เบราว์เซอร์ใช้เพื่อรู้จำเสียง' },
+    'voice.fromVoice': { ko: '말한 것을 옮김', km: 'ប្តូរពីសំឡេង', id: 'Dari suara', vi: 'Từ giọng nói', ne: 'बोलीबाट', th: 'จากเสียง' },
+
     /* 이 화면 자체에 대한 고지 */
     'i18n.unreviewed': { ko: '이 화면 안내의 번역은 아직 검수 전입니다.', km: 'ការបកប្រែនៃការណែនាំនេះមិនទាន់ត្រួតពិនិត្យទេ។', id: 'Terjemahan panduan layar ini belum diperiksa.', vi: 'Bản dịch hướng dẫn màn hình này chưa được kiểm duyệt.', ne: 'यस पर्दाको निर्देशनको अनुवाद अझै जाँच भएको छैन।', th: 'คำแปลคำแนะนำหน้านี้ยังไม่ได้ตรวจสอบ' }
   };

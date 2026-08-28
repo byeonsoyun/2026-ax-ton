@@ -123,9 +123,18 @@ function open(page, opts = {}) {
   ok('★★ 저장된 값 어디에도 내 아이디가 없다',
     !JSON.stringify(made).includes('W-4821'),
     JSON.stringify(made));
+  /* ★ 이 목록을 넓힐 때는 "그 값으로 사람을 찾을 수 있는가" 를 먼저 답해야 한다.
+     memoFromVoice 는 참/거짓 하나다. 말로 알렸는지만 말하고 누가 알렸는지는
+     말하지 않는다. 목소리 자체는 저장되지 않는다 — 저장되면 작은 사업장에서
+     담당자가 듣고 누구인지 알 수 있고, 그 순간 익명이 아니게 된다. */
   eq('저장되는 값은 정해진 것만',
     keys.slice().sort().join(','),
-    'createdAt,equipmentId,hazard,id,memo,processId,status,ticket');
+    'createdAt,equipmentId,hazard,id,memo,memoFromVoice,processId,status,ticket');
+  ok('★★ 음성 표시는 참/거짓 하나뿐이다 (사람을 가리키는 값이 아니다)',
+    typeof made.memoFromVoice === 'boolean', String(made.memoFromVoice));
+  ok('★★ 목소리(오디오)를 저장하지 않는다',
+    !/audio|blob|base64|data:audio|recording/i.test(JSON.stringify(made)),
+    JSON.stringify(made));
 
   // 접수 번호에도 사람이 안 들어간다
   ok('접수 번호가 생긴다', /^R-\d{6}-\d{4}$/.test(made.ticket), made.ticket);

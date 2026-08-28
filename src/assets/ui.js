@@ -527,6 +527,96 @@ var UI = (function () {
     window.addEventListener('offline', renderOffline);
   }
 
+  /* -------------------------------------------------------------------
+     받아쓰기 — 말한 것을 글자로 (음성 신고)
+
+     ★★ 목소리를 저장하지 않는다.
+
+       reports 는 익명이다. 그런데 목소리는 사람을 식별한다 — 10~50인
+       사업장에서 담당자가 녹음을 들으면 누구인지 거의 확실히 안다.
+       녹음을 붙이는 순간 익명 신고가 익명이 아니게 되고, 그러면 신고가
+       멈춘다. 기능이 하나 늘어나는 것이 아니라 제품의 전제가 무너진다.
+
+       그래서 브라우저가 글자로 바꾼 결과만 받고 소리는 어디에도 담지 않는다.
+       SpeechRecognition 은 원래 오디오를 돌려주지 않는다 —
+       여기서는 그것이 제약이 아니라 우리가 원하는 성질이다.
+
+     ★ 외부 요청 0건 규칙의 유일한 예외다.
+       브라우저의 받아쓰기는 대부분 소리를 인식 서버로 보낸다. 우리가 부르는
+       것은 아니지만 결과는 같으므로 그 사실을 화면에 적는다.
+       그래서 오프라인에서는 안 된다 — 그것도 화면에 적는다.
+
+     ★ 조용히 실패하지 않는다 (V4 와 같은 규칙).
+       안 되는 브라우저에서 버튼만 없애면 사람은 그것을 고장으로 읽는다.
+       왜 안 되는지를 글과 그림으로 말하고, 손으로 쓰는 길을 남겨 둔다.
+
+     ★ 여기서는 한국어 문장을 만들지 않는다. 무엇이 문제인지 코드만 돌려주고
+       화면(report.js)이 그 사람의 언어로 옮긴다. ui.js 는 관리자 화면도
+       읽으므로 i18n.js 에 기대지 않는다.
+     ------------------------------------------------------------------- */
+
+  function listenReady() {
+    try {
+      return !!(typeof window !== 'undefined' &&
+        (window.SpeechRecognition || window.webkitSpeechRecognition));
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /* 지금 받아쓰기를 할 수 있나. 못 하면 왜 못 하는지 코드로 돌려준다.
+     '' 이면 할 수 있다. */
+  function listenProblem() {
+    if (!listenReady()) return 'unsupported';
+    if (isOffline()) return 'offline';
+    return '';
+  }
+
+  function listen(opts) {
+    opts = opts || {};
+    var fail = function (code) { if (opts.onError) opts.onError(code); return null; };
+
+    if (!listenReady()) return fail('unsupported');
+
+    var Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var rec;
+    try { rec = new Rec(); } catch (e) { return fail('unsupported'); }
+
+    /* 말하는 사람의 언어로 알아듣는다. 음성 낭독과 같은 표를 쓴다 —
+       두 곳에 두면 언젠가 한쪽만 고쳐진다. */
+    rec.lang = VOICE_TAG[opts.lang] || opts.lang || 'ko-KR';
+    rec.continuous = true;      // 한 문장에서 끊기지 않게. 멈추는 것은 사람이
+    rec.interimResults = true;  // 옮겨지는 중에도 보여 준다 — 반응이 없으면 고장으로 읽힌다
+
+    var finalText = '';
+
+    rec.onresult = function (e) {
+      var interim = '';
+      for (var i = e.resultIndex; i < e.results.length; i++) {
+        var r = e.results[i];
+        if (r.isFinal) finalText += r[0].transcript;
+        else interim += r[0].transcript;
+      }
+      if (opts.onText) opts.onText(finalText, interim);
+    };
+
+    rec.onerror = function (e) {
+      var kind = (e && e.error) || 'error';
+      /* 사람이 멈춘 것은 잘못이 아니다 */
+      if (kind === 'aborted') return;
+      if (opts.onError) opts.onError(kind);
+    };
+
+    rec.onend = function () { if (opts.onEnd) opts.onEnd(finalText); };
+
+    try { rec.start(); } catch (e) { return fail('start'); }
+
+    return {
+      stop: function () { try { rec.stop(); } catch (e) { /* 이미 멈췄다 */ } },
+      cancel: function () { try { rec.abort(); } catch (e) { /* 같음 */ } }
+    };
+  }
+
   /* 화면 글자를 노동자의 언어로 바꾼다 (UI-1).
 
      ★ i18n.js 는 노동자 화면에만 실린다. 관리자·운영자 화면은 한국어 사용자가
@@ -572,6 +662,9 @@ var UI = (function () {
     offlineNote: offlineNote, renderOffline: renderOffline,
 
     // 화면 글자를 노동자의 언어로 (UI-1)
-    applyI18n: applyI18n
+    applyI18n: applyI18n,
+
+    // 받아쓰기 — 말한 것을 글자로. 목소리는 저장하지 않는다
+    listen: listen, listenReady: listenReady, listenProblem: listenProblem
   };
 })();

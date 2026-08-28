@@ -545,6 +545,18 @@
 
       if (r.memo) item.appendChild(UI.el('p', 'body', r.memo));
 
+      /* ★ 말한 것을 기계가 옮긴 글이면 그렇다고 적는다.
+         받아쓰기는 틀린다. 손으로 쓴 글과 똑같이 보이면 담당자가 그 글을
+         곧이곧대로 읽고 엉뚱한 곳을 본다.
+
+         ★ 이 표시는 사람을 가리키지 않는다. 목소리는 저장되지 않았고,
+           저장된 것은 옮겨진 글자뿐이다. */
+      if (r.memoFromVoice) {
+        var vb = UI.neutralBadge('말한 것을 옮김 · 잘못 옮겨졌을 수 있습니다');
+        vb.classList.add('voice-mark');
+        item.appendChild(vb);
+      }
+
       // ★ 신고자를 적지 않는다. reports 에 그런 값이 아예 없다.
       item.appendChild(UI.el('p', 'meta',
         [proc ? proc.name + ' 공정' : null, UI.formatDate(r.createdAt), '익명 신고']

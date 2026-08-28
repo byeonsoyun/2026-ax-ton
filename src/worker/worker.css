@@ -760,6 +760,49 @@
    홈 — 메뉴 4갈래
    ------------------------------------------------------------------- */
 
+/* 말로 알리기 (음성 신고).
+   ★ 터치 타깃 60px 을 지킨다 — 장갑 낀 손으로 누른다.
+   ★ 듣는 중은 색만으로 구분하지 않는다. 버튼 글자가 "다 말했습니다" 로
+     바뀌고 상태 줄에 "듣고 있습니다" 가 함께 뜬다. */
+.voice-report {
+  margin: 0 0 var(--gap);
+}
+
+.btn-voice {
+  width: 100%;
+  min-height: var(--tap-min);
+  background: var(--surface);
+  border: 2px solid var(--brand);
+  color: var(--brand);
+  font-weight: 800;
+}
+
+.btn-voice.is-listening {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+}
+
+.voice-state {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: .85em;
+  font-weight: 700;
+  line-height: 1.6;
+  background: #eef1f4;
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+}
+
+.voice-state.is-live { background: var(--brand-soft); color: var(--brand); border-color: #b9d2ee; }
+.voice-state.is-ok   { background: var(--ok-soft);   color: var(--ok);    border-color: #b6ddc5; }
+.voice-state.is-warn { background: var(--warn-soft); color: var(--warn);  border-color: #e6d3a6; }
+.voice-state[hidden] { display: none; }
+
+.voice-privacy,
+.voice-net { margin: 8px 0 0; }
+
 /* 오프라인으로 열린다는 표시 (E1) — 담겼을 때만 JS 가 그린다.
    메뉴 아래 한 줄이다. 메뉴 한 칸에 붙이면 그 칸만 오프라인으로 읽힌다. */
 .offline-ok {
