@@ -23,7 +23,7 @@
 |---|---|
 | 브랜치 | `feature/byeonsoyun` — 원격과 같은 자리 (`git log --oneline -1` 로 확인) |
 | `develop` | `feature` 와 같은 내용 |
-| `main` (=배포) | **2026-08-28 E1 까지 배포 완료.** `main` · `develop` · `feature` 가 전부 같은 자리입니다 |
+| `main` (=배포) | **2026-08-28 E1 까지 배포 완료.** 코드는 전부 올라가 있습니다 (그 뒤 docs 정리만 `develop`·`feature` 에 더 있습니다 — `src/` 는 같습니다) |
 | 배포 확인 | `/sw.js` 가 200 으로 나오고 그 안에 `ignoreSearch` 가 있으며, `/docs/` `/tests/` `/CLAUDE.md` 는 여전히 404 인 것을 **실제로 열어서** 확인했습니다 |
 | 마지막 기능 커밋 | `feat: 인터넷이 끊겨도 화면이 열린다 (E1)` |
 | 끝난 항목 | **전부** — A1·A2 · B1~B5 · C1~C8 · D1·D2·D3 · V1~V4 · **E1** |
