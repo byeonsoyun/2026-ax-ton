@@ -27,6 +27,11 @@ var Seed = (function () {
       name: '', title: '', siteName: '대성정밀', lang: 'km', processId: 'p-press' },
     { userId: 'W-4821-11', pw: '1234', role: 'worker',
       name: '', title: '', siteName: '대성정밀', lang: 'id', processId: 'p-paint' },
+    /* 베트남어 · 아직 아무것도 안 들은 사람.
+       ★ '글자를 한 자도 안 읽고 끝까지' 를 확인하려면 백지에서 시작하는
+         사람이 있어야 한다. 07·11 은 이미 기록이 있어서 그 확인이 안 된다. */
+    { userId: 'W-4821-03', pw: '1234', role: 'worker',
+      name: '', title: '', siteName: '대성정밀', lang: 'vi', processId: 'p-assembly' },
     { userId: 'kim@daesung.co.kr', pw: '1234', role: 'admin',
       name: '김현수', title: '현장 관리자 · 생산팀장', siteName: '대성정밀', lang: '', processId: '' },
     { userId: 'oper@safety.kr', pw: '1234', role: 'operator',

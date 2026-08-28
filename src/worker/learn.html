@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="worker.css">
 <script src="../assets/store.js"></script>
 <script src="../assets/auth.js"></script>
+<script src="../assets/i18n.js"></script>
 <script>Auth.require('worker');</script>
 </head>
 <body class="has-tabbar">
@@ -19,7 +20,7 @@
     <strong id="head-site"></strong>
     <span id="head-sub"></span>
   </div>
-  <button class="btn-sm" type="button" id="btn-logout">로그아웃</button>
+  <button class="btn-sm" type="button" id="btn-logout" data-i18n="action.logout">로그아웃</button>
 </header>
 
 <main class="page">
@@ -72,7 +73,7 @@
     </div>
 
     <div class="big-actions">
-      <button class="btn btn-quiet" type="button" id="btn-quit">교육 목록으로 돌아가기</button>
+      <button class="btn btn-quiet" type="button" id="btn-quit"><span data-i18n="learn.backToList">교육 목록으로 돌아가기</span></button>
     </div>
 
   </div>
@@ -97,11 +98,11 @@
 </main>
 
 <nav class="tabbar fixed" aria-label="메뉴">
-  <a href="home.html"><span class="ico" aria-hidden="true">🏠</span>홈</a>
-  <a href="learn.html"><span class="ico" aria-hidden="true">🎧</span>교육</a>
-  <a href="report.html"><span class="ico" aria-hidden="true">📷</span>신고</a>
-  <a href="talk.html"><span class="ico" aria-hidden="true">💬</span>소통</a>
-  <a href="my.html"><span class="ico" aria-hidden="true">🙋</span>마이</a>
+  <a href="home.html"><span class="ico" aria-hidden="true">🏠</span><span data-i18n="nav.home">홈</span></a>
+  <a href="learn.html"><span class="ico" aria-hidden="true">🎧</span><span data-i18n="nav.learn">교육</span></a>
+  <a href="report.html"><span class="ico" aria-hidden="true">📷</span><span data-i18n="nav.report">신고</span></a>
+  <a href="talk.html"><span class="ico" aria-hidden="true">💬</span><span data-i18n="nav.talk">소통</span></a>
+  <a href="my.html"><span class="ico" aria-hidden="true">🙋</span><span data-i18n="nav.my">마이</span></a>
 </nav>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>

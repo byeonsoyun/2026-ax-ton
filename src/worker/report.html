@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="worker.css">
 <script src="../assets/store.js"></script>
 <script src="../assets/auth.js"></script>
+<script src="../assets/i18n.js"></script>
 <script>Auth.require('worker');</script>
 </head>
 <body class="has-tabbar">
@@ -19,7 +20,7 @@
     <strong id="head-site"></strong>
     <span id="head-sub"></span>
   </div>
-  <button class="btn-sm" type="button" id="btn-logout">로그아웃</button>
+  <button class="btn-sm" type="button" id="btn-logout" data-i18n="action.logout">로그아웃</button>
 </header>
 
 <main class="page">
@@ -48,7 +49,7 @@
     <section class="card" aria-labelledby="t-equip">
       <div class="sec-head">
         <div>
-          <h2 id="t-equip">① 어디입니까</h2>
+          <h2 id="t-equip"><span aria-hidden="true">① </span><span data-i18n="report.step1">어디입니까</span></h2>
           <p class="why">그림을 눌러 고르세요.</p>
         </div>
         <span class="badge badge-neutral" id="b-equip">미선택</span>
@@ -60,7 +61,7 @@
     <section class="card" aria-labelledby="t-hazard">
       <div class="sec-head">
         <div>
-          <h2 id="t-hazard">② 무엇이 위험합니까</h2>
+          <h2 id="t-hazard"><span aria-hidden="true">② </span><span data-i18n="report.step2">무엇이 위험합니까</span></h2>
           <p class="why">그림을 눌러 고르세요.</p>
         </div>
         <span class="badge badge-neutral" id="b-hazard">미선택</span>
@@ -72,7 +73,7 @@
     <section class="card" aria-labelledby="t-memo">
       <div class="sec-head">
         <div>
-          <h2 id="t-memo">③ 더 할 말 (안 써도 됩니다)</h2>
+          <h2 id="t-memo"><span aria-hidden="true">③ </span><span data-i18n="report.step3">더 할 말 (안 써도 됩니다)</span></h2>
           <p class="why">
             위 두 가지만 골라도 신고가 됩니다. 글을 쓰기 어려우면 넘어가세요.
           </p>
@@ -136,11 +137,11 @@
 </main>
 
 <nav class="tabbar fixed" aria-label="메뉴">
-  <a href="home.html"><span class="ico" aria-hidden="true">🏠</span>홈</a>
-  <a href="learn.html"><span class="ico" aria-hidden="true">🎧</span>교육</a>
-  <a href="report.html"><span class="ico" aria-hidden="true">📷</span>신고</a>
-  <a href="talk.html"><span class="ico" aria-hidden="true">💬</span>소통</a>
-  <a href="my.html"><span class="ico" aria-hidden="true">🙋</span>마이</a>
+  <a href="home.html"><span class="ico" aria-hidden="true">🏠</span><span data-i18n="nav.home">홈</span></a>
+  <a href="learn.html"><span class="ico" aria-hidden="true">🎧</span><span data-i18n="nav.learn">교육</span></a>
+  <a href="report.html"><span class="ico" aria-hidden="true">📷</span><span data-i18n="nav.report">신고</span></a>
+  <a href="talk.html"><span class="ico" aria-hidden="true">💬</span><span data-i18n="nav.talk">소통</span></a>
+  <a href="my.html"><span class="ico" aria-hidden="true">🙋</span><span data-i18n="nav.my">마이</span></a>
 </nav>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>

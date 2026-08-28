@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="worker.css">
 <script src="../assets/store.js"></script>
 <script src="../assets/auth.js"></script>
+<script src="../assets/i18n.js"></script>
 <script>Auth.require('worker');</script>
 </head>
 <body class="has-tabbar">
@@ -19,7 +20,7 @@
     <strong id="head-site"></strong>
     <span id="head-sub"></span>
   </div>
-  <button class="btn-sm" type="button" id="btn-logout">로그아웃</button>
+  <button class="btn-sm" type="button" id="btn-logout" data-i18n="action.logout">로그아웃</button>
 </header>
 
 <main class="page">
@@ -55,6 +56,17 @@
       번역이 아직 없는 문구는 한국어로 나오고 "번역 준비 중" 이라고 적힙니다.
     </p>
     <div class="picker big" id="pick-mylang" role="group" aria-labelledby="t-mylang"></div>
+
+    <!-- ★ 화면 안내(버튼·탭·배지)의 번역이 아직 사람 검수를 안 거쳤다는 고지 (UI-1).
+
+         왜 이 화면에만 두나 — 화면마다 띄우면 늘 떠 있게 되고, 늘 떠 있는
+         경고는 무시하게 된다 (review.js 가 "부정 뒤집힘만" 크게 경고하는 것과
+         같은 이유다). 여기는 사람이 언어를 고른 자리라 볼 이유가 있고,
+         한국어로 되돌릴 수도 있는 자리다.
+
+         ★ 안전 문구와 문항은 이 고지의 대상이 아니다. 그쪽은 기능9 의 검수를
+           지나야만 나간다. 여기서 말하는 것은 버튼 이름과 화면 안내뿐이다. -->
+    <p class="why i18n-note" id="i18n-note" hidden></p>
 
     <hr class="hr">
 
@@ -161,11 +173,11 @@
 </main>
 
 <nav class="tabbar fixed noprint" aria-label="메뉴">
-  <a href="home.html"><span class="ico" aria-hidden="true">🏠</span>홈</a>
-  <a href="learn.html"><span class="ico" aria-hidden="true">🎧</span>교육</a>
-  <a href="report.html"><span class="ico" aria-hidden="true">📷</span>신고</a>
-  <a href="talk.html"><span class="ico" aria-hidden="true">💬</span>소통</a>
-  <a href="my.html"><span class="ico" aria-hidden="true">🙋</span>마이</a>
+  <a href="home.html"><span class="ico" aria-hidden="true">🏠</span><span data-i18n="nav.home">홈</span></a>
+  <a href="learn.html"><span class="ico" aria-hidden="true">🎧</span><span data-i18n="nav.learn">교육</span></a>
+  <a href="report.html"><span class="ico" aria-hidden="true">📷</span><span data-i18n="nav.report">신고</span></a>
+  <a href="talk.html"><span class="ico" aria-hidden="true">💬</span><span data-i18n="nav.talk">소통</span></a>
+  <a href="my.html"><span class="ico" aria-hidden="true">🙋</span><span data-i18n="nav.my">마이</span></a>
 </nav>
 
 <div class="toast noprint" id="toast" role="status" aria-live="polite" hidden></div>

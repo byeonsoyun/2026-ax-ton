@@ -289,7 +289,7 @@
     }
 
     var listen = UI.el('div', 'listen');
-    listen.appendChild(UI.audioButton(function () { return speechFor(phrase); }, '이 문구를 다시 듣기'));
+    listen.appendChild(UI.audioButton(function () { return speechFor(phrase); }, I18N.t('learn.listenAgain')));
     listen.appendChild(UI.el('span', 'label', '다시 듣기'));
     card.appendChild(listen);
 

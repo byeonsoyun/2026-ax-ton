@@ -193,8 +193,8 @@
     listen.textContent = '';
     listen.appendChild(UI.audioButton(function () {
       return speechFor(phrase);
-    }, '안전 문구 듣기'));
-    listen.appendChild(UI.el('span', 'label', '들어 보기'));
+    }, I18N.t('home.listenPhrase')));
+    listen.appendChild(UI.el('span', 'label', I18N.t('action.listen')));
 
     /* 넘겨 볼 것이 하나뿐이면 버튼을 아예 두지 않는다 (C5) */
     nav.hidden = now.total < 2;
@@ -262,7 +262,7 @@
           lang: 'ko'
         };
       }, '다시 들으라는 안내 듣기'));
-      listen.appendChild(UI.el('span', 'label', '들어 보기'));
+      listen.appendChild(UI.el('span', 'label', I18N.t('action.listen')));
       item.appendChild(listen);
 
       var actions = UI.el('div', 'big-actions');
@@ -319,7 +319,7 @@
     // 상태를 소리로도 알려 준다
     var listen = UI.audioButton(function () {
       return { text: say.textContent, lang: 'ko' };
-    }, '내 교육 상태 듣기');
+    }, I18N.t('home.listenStatus'));
     listen.classList.add('inline-audio');
     say.appendChild(listen);
   }
@@ -411,12 +411,9 @@
     var box = $('badtrans-listen');
     box.textContent = '';
     box.appendChild(UI.audioButton(function () {
-      return {
-        text: '안전 문구의 말이 이상하면 관리자에게 알려 주세요. 알려 주신 분이 누구인지는 기록하지 않습니다.',
-        lang: 'ko'
-      };
-    }, '안내 듣기'));
-    box.appendChild(UI.el('span', 'label', '설명 듣기'));
+      return I18N.say('speech.badTrans');
+    }, I18N.t('action.listenGuide')));
+    box.appendChild(UI.el('span', 'label', I18N.t('action.listenGuide')));
   }
 
   /* 오프라인으로 열린다는 표시 (E1) — 목업 02-home 의 "오프라인 가능".
@@ -436,7 +433,7 @@
 
     if (!UI.offlineReady()) { box.hidden = true; return; }
 
-    box.appendChild(UI.okBadge('오프라인 가능'));
+    box.appendChild(UI.okBadge(I18N.t('home.offlineOk')));
     box.appendChild(document.createTextNode(' '));
     box.appendChild(UI.el('span', 'offline-ok-body',
       '이 기기에 저장돼 있어 인터넷이 끊겨도 교육을 이어갈 수 있습니다. ' +

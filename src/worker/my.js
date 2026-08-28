@@ -380,6 +380,16 @@
     });
   }
 
+  /* 화면 안내 번역이 검수 전이면 그 사실을 적는다 (UI-1).
+     검수된 언어에는 아무것도 안 뜬다 — 늘 떠 있으면 무시하게 된다. */
+  function renderI18nNote() {
+    var box = $('i18n-note');
+    if (!box) return;
+    var note = (typeof I18N === 'undefined') ? '' : I18N.note();
+    box.textContent = note;
+    box.hidden = !note;
+  }
+
   function saveLang(code) {
     var result = Store.accounts.update(function (list) {
       var acc = Store.findBy(list, 'userId', me.id);
@@ -533,6 +543,7 @@
     renderVoiceNote();
     renderMe();
     renderLangPick();
+    renderI18nNote();
     renderFontPick();
     renderHistory();
     renderReports();

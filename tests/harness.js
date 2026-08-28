@@ -54,6 +54,7 @@ function boot(pageRelPath, opts = {}) {
   // <head> 의 고정 3줄 순서를 그대로 재현한다
   run('assets/store.js');
   run('assets/auth.js');
+  run('assets/i18n.js');   // 노동자 화면 <head> 에 실린다 (UI-1)
   run('assets/seed.js');
 
   if (opts.seed !== false) win.Seed.fill();

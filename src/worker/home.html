@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="worker.css">
 <script src="../assets/store.js"></script>
 <script src="../assets/auth.js"></script>
+<script src="../assets/i18n.js"></script>
 <script>Auth.require('worker');</script>
 </head>
 <body class="has-tabbar">
@@ -19,7 +20,7 @@
     <strong id="head-site"></strong>
     <span id="head-sub"></span>
   </div>
-  <button class="btn-sm" type="button" id="btn-logout">로그아웃</button>
+  <button class="btn-sm" type="button" id="btn-logout" data-i18n="action.logout">로그아웃</button>
 </header>
 
 <main class="page">
@@ -33,7 +34,7 @@
   <!-- 1. 오늘의 안전 문구 — 교육에 들어가지 않아도 한 번은 눈과 귀에 닿는다.
        ★ 검수 완료된 문구만 여기 올라온다. -->
   <section class="today" id="today" aria-labelledby="today-title">
-    <h2 class="sr-only" id="today-title">오늘의 안전 문구</h2>
+    <h2 class="sr-only" id="today-title" data-i18n="home.todayPhrase">오늘의 안전 문구</h2>
     <p class="pict" id="today-pict" aria-hidden="true">⚠</p>
     <p class="translated" id="today-text"></p>
     <p class="original" id="today-ko"></p>
@@ -46,9 +47,9 @@
          ★ 볼 것이 하나뿐이면 JS 가 통째로 감춘다 — 눌러도 아무 일이 없는
            버튼은 글을 못 읽는 사람에게 그냥 고장이다. -->
     <div class="today-nav" id="today-nav" hidden>
-      <button class="btn-round" type="button" id="today-prev" aria-label="이전 안전 문구">◀</button>
+      <button class="btn-round" type="button" id="today-prev" data-i18n-aria="home.prevPhrase" aria-label="이전 안전 문구">◀</button>
       <p class="today-pos" id="today-pos" aria-live="polite"></p>
-      <button class="btn-round" type="button" id="today-next" aria-label="다음 안전 문구">▶</button>
+      <button class="btn-round" type="button" id="today-next" data-i18n-aria="home.nextPhrase" aria-label="다음 안전 문구">▶</button>
     </div>
   </section>
 
@@ -57,14 +58,14 @@
        ★ 담당자가 남긴 말은 한국어다. 그 사실을 화면에 적는다 —
          못 읽는 말을 아무 표시 없이 두면 그냥 못 본 것이 된다. -->
   <section class="card order-card" id="order-card" aria-labelledby="t-order" hidden>
-    <h2 id="t-order" class="card-title">다시 들어 주세요</h2>
+    <h2 id="t-order" class="card-title" data-i18n="home.retryOrder">다시 들어 주세요</h2>
     <div class="order-list" id="order-list"></div>
   </section>
 
   <!-- 2. 이번 교육 상태 — 수강 → 검증 → 완료 3단계.
        글자를 읽지 않고도 지금 어디까지 왔는지 알 수 있어야 한다. -->
   <section class="card" aria-labelledby="t-progress">
-    <h2 id="t-progress" class="card-title">내 교육</h2>
+    <h2 id="t-progress" class="card-title" data-i18n="home.myCourses">내 교육</h2>
 
     <!-- ★ 기획에서 온 문장 (SCREEN 기능3·4 · 목업 02-home).
          이 제품이 서 있는 자리가 이 두 줄이다 — 서명은 참석의 증거일 뿐이고,
@@ -98,7 +99,7 @@
 
   <!-- 4. 번역이 이상하면 알려 달라 — 오역을 가장 먼저 발견하는 사람이 노동자다 -->
   <section class="card" aria-labelledby="t-badtrans">
-    <h2 id="t-badtrans" class="card-title">말이 이상하면 알려 주세요</h2>
+    <h2 id="t-badtrans" class="card-title" data-i18n="home.badTrans">말이 이상하면 알려 주세요</h2>
     <p class="muted">
       안전 문구의 번역이 이상하거나 뜻이 반대로 보이면 관리자에게 알려 주세요.
       확인될 때까지 그 문구는 쓰이지 않습니다. 알려 주신 분이 누구인지는 기록하지 않습니다.
@@ -125,11 +126,11 @@
 </main>
 
 <nav class="tabbar fixed" aria-label="메뉴">
-  <a href="home.html"><span class="ico" aria-hidden="true">🏠</span>홈</a>
-  <a href="learn.html"><span class="ico" aria-hidden="true">🎧</span>교육</a>
-  <a href="report.html"><span class="ico" aria-hidden="true">📷</span>신고</a>
-  <a href="talk.html"><span class="ico" aria-hidden="true">💬</span>소통</a>
-  <a href="my.html"><span class="ico" aria-hidden="true">🙋</span>마이</a>
+  <a href="home.html"><span class="ico" aria-hidden="true">🏠</span><span data-i18n="nav.home">홈</span></a>
+  <a href="learn.html"><span class="ico" aria-hidden="true">🎧</span><span data-i18n="nav.learn">교육</span></a>
+  <a href="report.html"><span class="ico" aria-hidden="true">📷</span><span data-i18n="nav.report">신고</span></a>
+  <a href="talk.html"><span class="ico" aria-hidden="true">💬</span><span data-i18n="nav.talk">소통</span></a>
+  <a href="my.html"><span class="ico" aria-hidden="true">🙋</span><span data-i18n="nav.my">마이</span></a>
 </nav>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>

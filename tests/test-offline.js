@@ -56,7 +56,7 @@ const ui = fs.readFileSync(path.join(SRC, 'assets/ui.js'), 'utf8');
   // 갈래별 개수 — 위 대조가 먼저 잡지만, 어느 갈래가 비었는지 바로 보이게 세어 둔다
   eq('화면 HTML 13개', listed.filter((f) => /\.html$/.test(f)).length, 13);
   eq('CSS 5개', listed.filter((f) => /\.css$/.test(f)).length, 5);
-  eq('JS 20개 (공용 9 · 화면 11)', listed.filter((f) => /\.js$/.test(f)).length, 20);
+  eq('JS 21개 (공용 10 · 화면 11)', listed.filter((f) => /\.js$/.test(f)).length, 21);
 }
 
 /* =================================================================
@@ -149,7 +149,8 @@ const ui = fs.readFileSync(path.join(SRC, 'assets/ui.js'), 'utf8');
   b.run('worker/home.js', { shimLocation: true });
   const okBox2 = b.$('offline-ok');
   ok('★ 담겼으면 "오프라인 가능" 배지가 뜬다', okBox2 && okBox2.hidden === false);
-  has('배지에 글자가 함께 있다', okBox2 ? okBox2.textContent : '', '오프라인 가능');
+  has('배지에 글자가 함께 있다 (내 언어로)', okBox2 ? okBox2.textContent : '',
+    win.I18N.t('home.offlineOk'));
   has('★ 처음 한 번은 인터넷이 필요하다고 적는다',
     okBox2 ? okBox2.textContent : '', '처음 한 번만 인터넷이 필요합니다');
   ok('배지 아이콘이 aria-hidden 이다 (읽어 주는 데 기호가 섞이지 않는다)',

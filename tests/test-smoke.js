@@ -76,7 +76,7 @@ PAGES.forEach(([html, js, login]) => {
   const t = boot('worker/learn.html', { login: 'W-4821-07' });
   const S = t.win.Store;
 
-  eq('accounts 4개', S.accounts.load().length, 4);
+  eq('accounts 5개', S.accounts.load().length, 5);
   eq('설비 3대', S.setup.load().equipments.length, 3);
   eq('안전 문구 6개', S.library.load().length, 6);
   eq('교육 2개', S.courses.load().length, 2);
@@ -149,9 +149,9 @@ PAGES.forEach(([html, js, login]) => {
   const t = boot('index.html', { seed: false, page: 'assets/login.js' });
 
   ok('index.html 오류 0건', t.errors.length === 0, t.errors.join(' | '));
-  eq('★ 첫 방문이면 계정이 채워진다', t.win.Store.accounts.load().length, 4);
-  eq('시연 계정 목록에 4개가 그려진다',
-    t.$('demo-accounts').querySelectorAll('li.demo-account').length, 4);
+  eq('★ 첫 방문이면 계정이 채워진다', t.win.Store.accounts.load().length, 5);
+  eq('시연 계정 목록에 5개가 그려진다',
+    t.$('demo-accounts').querySelectorAll('li.demo-account').length, 5);
   eq('★ 채웠으면 채웠다고 화면에 적는다', t.$('seed-auto').hidden, false);
   ok('아직 로그인 화면에 머문다 (자동으로 넘어가지 않는다)',
     t.nav.length === 0, t.nav.join(' | '));
@@ -173,7 +173,7 @@ PAGES.forEach(([html, js, login]) => {
 
   eq('★ 쓰던 데이터를 덮어쓰지 않는다', t.win.Store.setup.load().site.name, '한빛금속');
   eq('덮어쓰지 않았으면 채웠다고 말하지도 않는다', t.$('seed-auto').hidden, true);
-  eq('계정은 그대로 4개', t.win.Store.accounts.load().length, 4);
+  eq('계정은 그대로 5개', t.win.Store.accounts.load().length, 5);
 }
 
 /* -------------------------------------------------------------------

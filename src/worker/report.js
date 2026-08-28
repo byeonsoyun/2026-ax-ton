@@ -197,11 +197,14 @@
     var listen = $('done-listen');
     listen.textContent = '';
     listen.appendChild(UI.audioButton(function () {
-      return { text: '알려 주셔서 고맙습니다. 접수 번호는 ' + ticket + ' 입니다.', lang: 'ko' };
-    }, '접수 안내 듣기'));
-    listen.appendChild(UI.el('span', 'label', '들어 보기'));
+      var s = I18N.say('report.thanks');
+      s.text += '. ' + I18N.t('report.ticketNo') + ' ' + ticket;
+      s.ko += '. ' + I18N.t('report.ticketNo', 'ko') + ' ' + ticket;
+      return s;
+    }, I18N.t('report.listenDone')));
+    listen.appendChild(UI.el('span', 'label', I18N.t('action.listen')));
 
-    UI.speak({ text: '알려 주셔서 고맙습니다. 접수되었습니다.', lang: 'ko' });
+    UI.speak(I18N.say('speech.reportDone'));
     window.scrollTo(0, 0);
   }
 
@@ -272,12 +275,9 @@
     var box = $('anon-listen');
     box.textContent = '';
     box.appendChild(UI.audioButton(function () {
-      return {
-        text: '누가 알렸는지는 저장하지 않습니다. 관리자도 알 수 없습니다. 걱정하지 말고 알려 주세요.',
-        lang: 'ko'
-      };
-    }, '익명 안내 듣기'));
-    box.appendChild(UI.el('span', 'label', '설명 듣기'));
+      return I18N.say('speech.anonReport');
+    }, I18N.t('report.listenAnon')));
+    box.appendChild(UI.el('span', 'label', I18N.t('action.listenGuide')));
   }
 
   /* -----------------------------------------------------------------

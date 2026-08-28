@@ -527,7 +527,26 @@ var UI = (function () {
     window.addEventListener('offline', renderOffline);
   }
 
+  /* 화면 글자를 노동자의 언어로 바꾼다 (UI-1).
+
+     ★ i18n.js 는 노동자 화면에만 실린다. 관리자·운영자 화면은 한국어 사용자가
+       쓰고, 번역하지 않은 화면에 반쪽짜리 번역이 섞이는 것이 더 나쁘다.
+       그래서 있으면 부르고 없으면 그냥 넘어간다.
+
+     ★ HTML 에 한국어 원문을 그대로 두었으므로, 이 줄이 안 돌아도
+       화면이 비지 않는다 — 한국어로 보일 뿐이다. */
+  function applyI18n() {
+    try {
+      if (typeof I18N === 'undefined') return false;
+      I18N.apply();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   /* ui.js 는 문서 끝에서 읽히므로 DOM 이 이미 있다. */
+  applyI18n();
   registerSW();
   renderOffline();
 
@@ -550,6 +569,9 @@ var UI = (function () {
 
     // 오프라인 (E1) — 담긴 것으로 이어 가는지, 지금 끊겼는지
     registerSW: registerSW, offlineReady: offlineReady,
-    offlineNote: offlineNote, renderOffline: renderOffline
+    offlineNote: offlineNote, renderOffline: renderOffline,
+
+    // 화면 글자를 노동자의 언어로 (UI-1)
+    applyI18n: applyI18n
   };
 })();

@@ -217,7 +217,7 @@
 
     var audio = $('prompt-audio');
     audio.textContent = '';
-    audio.appendChild(UI.audioButton(function () { return promptSpeech(q); }, '문항을 다시 듣기'));
+    audio.appendChild(UI.audioButton(function () { return promptSpeech(q); }, I18N.t('quiz.listenAgain')));
 
     /* 이 문항이 내 언어로 온전히 나오지 않으면 그 사실을 남긴다.
        배지가 없으면 노동자는 왜 한국어가 보이는지 알 수 없고,

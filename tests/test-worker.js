@@ -51,7 +51,11 @@ function open(page, opts = {}) {
 
   // 4. 번역 이상 신고 안내
   const main = text(t.win.document.querySelector('main'));
-  has('말이 이상하면 알려 달라고 한다', main, '말이 이상하면 알려 주세요');
+  // ★ 이제 이 사람(크메르어)의 언어로 뜬다. 한국어 글자를 박아 두면
+  //   번역이 될수록 검사가 깨진다. 사전을 거쳐 "그 언어로 나오는가" 를 본다.
+  has('말이 이상하면 알려 달라고 한다 (내 언어로)', main, t.win.I18N.t('home.badTrans'));
+  ok('★ 크메르어 사용자에게 한국어 원문이 아니라 번역이 뜬다',
+    t.win.I18N.t('home.badTrans') !== t.win.I18N.t('home.badTrans', 'ko'));
   has('알린 사람을 기록하지 않는다고 말한다', main, '누구인지는 기록하지 않습니다');
 
   /* --- 아직 안 들은 상태면 교육으로 보낸다 --- */
