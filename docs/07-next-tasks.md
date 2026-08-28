@@ -53,7 +53,8 @@
 |---|---|
 | **개발을 이어가려면** | [`09-handover.md`](09-handover.md) — 구조 · 데이터 계약 · 작업 리듬 · **함정 모음** |
 | **손으로 확인하려면** | [`10-checklist.md`](10-checklist.md) — 체크리스트 · 성공/실패 · 경계 · 시연 코스 |
-| **발표를 준비하려면** | [`11-evaluation.md`](11-evaluation.md) — 자체 평가 · 시장 · 차별점 · AI 활용 · 예상 질문 |
+| **발표를 준비하려면** | [`presentation/`](presentation/README.md) — **발표 폴더** ★ 평가지표 8칸 대조 · 대본 · 시연 · 예상 질문 |
+| 발표 근거 원본 (시장조사 · 출처 15건) | [`11-evaluation.md`](11-evaluation.md) |
 | 사람이 읽는 전체 설명 | [`08-overview.md`](08-overview.md) |
 | **배포 주소** | **https://2026-ax-ton.vercel.app** — 살아 있습니다 |
 | **팀원용 전체 설명** | [`08-overview.md`](08-overview.md) — 프로젝트를 처음 보는 사람에게 이것 하나만 주면 됩니다 |
@@ -1004,7 +1005,8 @@ E층은 원래 "서버가 생긴 뒤" 목록이었습니다. **그중 하나만 
 | **프로젝트 전체 설명 (팀원에게 줄 것)** | [`08-overview.md`](08-overview.md) |
 | **개발을 이어갈 사람에게 (구조 · 함정 모음)** | [`09-handover.md`](09-handover.md) |
 | **손으로 확인할 목록 (성공/실패 · 경계 · 시연)** | [`10-checklist.md`](10-checklist.md) |
-| **자체 평가 · 시장 · 차별점 · AI 활용** | [`11-evaluation.md`](11-evaluation.md) |
+| **발표 준비 (평가지표 대조 · 대본 · 예상 질문)** | [`presentation/`](presentation/README.md) ★ |
+| 자체 평가 · 시장 · 차별점 · AI 활용 (근거 원본) | [`11-evaluation.md`](11-evaluation.md) |
 | 무엇이 먼저이고 무엇을 빼도 되는지 | [`06-feature-priority.md`](06-feature-priority.md) |
 | 폴더 · 데이터 · 화면 전체 지도 | [`01-project-map.md`](01-project-map.md) |
 | 옮겨 오면 되는 기획 시안 | [`mockups/README.md`](mockups/README.md) |

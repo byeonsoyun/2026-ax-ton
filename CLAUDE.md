@@ -78,7 +78,8 @@
 | 이 프로젝트 뭐야 (사람에게 줄 것) | `docs/08-overview.md` |
 | **개발을 이어가려면 (구조 · 데이터 계약 · 함정)** | `docs/09-handover.md` ★ |
 | **손으로 확인 (성공/실패 · 경계 · 시연 코스)** | `docs/10-checklist.md` ★ |
-| **발표 (자체 평가 · 시장 · 차별점 · AI 활용)** | `docs/11-evaluation.md` |
+| **발표 준비 (평가지표 대조 · 대본 · 예상 질문)** | `docs/presentation/` ★ |
+| 발표 근거 원본 (시장 · 출처 · 자체 평가) | `docs/11-evaluation.md` |
 | 왜 이 코드가 이렇게 생겼나 | `docs/devlog/byeonsoyun.md` |
 
 ### 아래 문서는 팀 시절 기록입니다
