@@ -412,6 +412,125 @@ var UI = (function () {
     return '';
   }
 
+  /* -------------------------------------------------------------------
+     오프라인 — 현장 인터넷이 약한 것을 전제한다 (E1)
+
+     화면 파일을 미리 담아 두는 일은 sw.js 가 하고, 여기서는 두 가지만 한다.
+       1. 등록한다 (13화면이 전부 이 파일을 읽으므로 여기가 유일한 자리다)
+       2. 지금 끊겼다는 것을 화면에 적는다
+
+     ★ file:// 에서는 등록하지 않는다.
+       더블클릭으로 열어 보는 것이 이 프로젝트의 확인 방법 전체다.
+       Service Worker 는 file:// 에서 등록되지 않을 뿐 아니라, 부르는 것만으로
+       예외가 나는 브라우저도 있다. 그래서 https 검사와 try/catch 둘 다 둔다.
+
+     ★ 끊긴 것을 조용히 넘기지 않는다.
+       음성이 안 나는 것을 화면에 적는 것(voiceNote)과 같은 이유다.
+       글을 못 읽는 사람에게 "왜 안 되는지" 를 말해 주지 않으면
+       그 화면은 그냥 고장난 화면이다.
+     ------------------------------------------------------------------- */
+
+  /* 배포 루트가 sw.js 의 자리다. worker/ · admin/ 아래 화면은 한 칸 위다.
+     절대경로(/sw.js)를 쓰면 file:// 에서 깨지므로 상대경로로 만든다. */
+  function swPath() {
+    var p = (typeof location !== 'undefined' && location.pathname) || '';
+    return (/\/(worker|admin)\//.test(p) ? '../' : './') + 'sw.js';
+  }
+
+  function registerSW() {
+    try {
+      if (typeof location === 'undefined' || location.protocol !== 'https:') return false;
+      if (typeof navigator === 'undefined' || !navigator.serviceWorker) return false;
+      navigator.serviceWorker.register(swPath()).catch(function () {
+        /* 등록이 안 돼도 화면은 그대로 돌아야 한다. 오프라인만 못 쓸 뿐이다. */
+      });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /* 이 기기에 실제로 담겨 있는가.
+     ★ "담겼을 것이다" 로 넘겨짚지 않는다. controller 가 있어야 진짜다.
+       음성을 브라우저 이름으로 넘겨짚지 않는 것과 같은 규칙이다. */
+  function offlineReady() {
+    try {
+      return !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function isOffline() {
+    return typeof navigator !== 'undefined' && navigator.onLine === false;
+  }
+
+  function offlineNote() {
+    if (!isOffline()) return '';
+    if (offlineReady()) {
+      return '인터넷이 끊겼습니다. 이 기기에 저장된 화면으로 그대로 이어집니다. ' +
+        '입력한 것도 이 기기에 남습니다.';
+    }
+    /* 아직 담기지 않았다. 이 화면은 지금 보이지만 다음 화면은 안 열릴 수 있다.
+       된다고 말해 놓고 안 되는 쪽이 훨씬 위험하다. */
+    return '인터넷이 끊겼습니다. 이 화면은 아직 이 기기에 저장되지 않아, ' +
+      '다른 화면으로 넘어가면 열리지 않을 수 있습니다.';
+  }
+
+  var offlineBar = null;
+
+  /* ★ 띠를 13개 HTML 에 같은 줄로 넣지 않는다.
+     같은 것을 열세 곳에 두면 언젠가 한 곳만 고쳐진다. #blocked 앞에 끼운다. */
+  function offlineBarNode() {
+    if (offlineBar) return offlineBar;
+
+    var bar = el('p', 'offline-note');
+    bar.setAttribute('role', 'status');
+    bar.setAttribute('aria-live', 'polite');
+
+    /* 아이콘 + 글자 + 색 3중. 흑백으로 봐도 뜻이 남아야 한다. */
+    var ico = el('span', null, '📴');
+    ico.setAttribute('aria-hidden', 'true');
+    bar.appendChild(ico);
+    bar.appendChild(document.createTextNode(' '));
+    bar.appendChild(el('b', null, '오프라인'));
+    bar.appendChild(document.createTextNode(' — '));
+    bar.appendChild(el('span', 'offline-body'));
+
+    var anchor = $('blocked');
+    if (anchor && anchor.parentNode) {
+      anchor.parentNode.insertBefore(bar, anchor);
+    } else {
+      var main = document.querySelector('main');
+      if (!main) return null;
+      main.insertBefore(bar, main.firstChild);
+    }
+
+    offlineBar = bar;
+    return bar;
+  }
+
+  function renderOffline() {
+    var note = offlineNote();
+    if (!note) {
+      if (offlineBar) offlineBar.hidden = true;
+      return;
+    }
+    var bar = offlineBarNode();
+    if (!bar) return;
+    bar.querySelector('.offline-body').textContent = note;
+    bar.hidden = false;
+  }
+
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    window.addEventListener('online', renderOffline);
+    window.addEventListener('offline', renderOffline);
+  }
+
+  /* ui.js 는 문서 끝에서 읽히므로 DOM 이 이미 있다. */
+  registerSW();
+  renderOffline();
+
   return {
     $: $, $$: $$, el: el,
     badge: badge, okBadge: okBadge, waitBadge: waitBadge,
@@ -427,6 +546,10 @@ var UI = (function () {
     // 음성 — 노동자 화면 전부가 쓴다
     speak: speak, stopSpeak: stopSpeak, audioButton: audioButton,
     hasVoice: hasVoice, onVoicesReady: onVoicesReady, voiceNote: voiceNote,
-    voiceBlocked: voiceBlocked, voiceWait: voiceWait
+    voiceBlocked: voiceBlocked, voiceWait: voiceWait,
+
+    // 오프라인 (E1) — 담긴 것으로 이어 가는지, 지금 끊겼는지
+    registerSW: registerSW, offlineReady: offlineReady,
+    offlineNote: offlineNote, renderOffline: renderOffline
   };
 })();

@@ -302,6 +302,22 @@ fieldset.formset[disabled] { opacity: .5; }
   line-height: 1.6;
 }
 
+/* 인터넷이 끊겼을 때만 뜬다 (E1).
+   .blocked 와 같은 모양이되 색은 "중지" 가 아니라 "기다림" 이다 —
+   끊긴 것은 고장이 아니고, 담겨 있으면 그대로 이어지기 때문이다.
+   아이콘(📴) + 글자(오프라인) + 색 3중이라 흑백으로 봐도 뜻이 남는다. */
+.offline-note {
+  margin: 0 0 var(--gap);
+  padding: 13px;
+  border: 1px solid #e6d3a6;
+  border-radius: 12px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: .85em;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
 /* 저장 직후 잠깐 뜨는 알림 — 저장됐다는 사실이 보여야 한다 */
 .toast {
   position: fixed;

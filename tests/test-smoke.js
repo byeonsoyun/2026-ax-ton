@@ -196,11 +196,29 @@ PAGES.forEach(([html, js, login]) => {
     // 주석 안의 URL(문서 참조)은 요청이 아니다. 실제로 불러오는 형태만 본다.
     if (/(?:src|href)\s*=\s*["']https?:/i.test(body)) offenders.push(rel + ' — 외부 src/href');
     if (/@import\s+url\(\s*["']?https?:/i.test(body)) offenders.push(rel + ' — 외부 @import');
-    if (/\b(fetch|XMLHttpRequest|WebSocket|EventSource)\s*\(/.test(body)) offenders.push(rel + ' — 네트워크 호출');
+    /* ★ sw.js 만 fetch 예외다 (E1).
+       Service Worker 의 fetch(req) 는 남의 서버를 부르는 것이 아니라,
+       브라우저가 이미 보내려던 같은 오리진 요청을 그대로 흘려보내는 것이다.
+       이것을 막으면 오프라인 캐시가 성립하지 않는다.
+       예외를 열었으니 아래에서 "같은 오리진만 가로채는지" 를 따로 본다 —
+       통째로 빼면 나중에 sw.js 에 CDN 호출을 넣어도 통과한다. */
+    const netRule = rel === 'sw.js'
+      ? /\b(XMLHttpRequest|WebSocket|EventSource)\s*\(/
+      : /\b(fetch|XMLHttpRequest|WebSocket|EventSource)\s*\(/;
+    if (netRule.test(body)) offenders.push(rel + ' — 네트워크 호출');
     if (/^\s*(import|export)\s/m.test(body) && f.endsWith('.js')) offenders.push(rel + ' — ES 모듈');
   });
 
   ok('src 전체에 외부 요청이 0건이다', offenders.length === 0, offenders.join(' | '));
+
+  /* sw.js 는 fetch 예외를 받았다. 그 대가로 여기서 더 조인다. */
+  {
+    const swSrc = fs.readFileSync(path.join(SRC, 'sw.js'), 'utf8');
+    const swUrls = swSrc.match(/https?:\/\/[^\s'")]+/g) || [];
+    ok('sw.js 에 외부 주소가 0건이다', swUrls.length === 0, swUrls.join(', '));
+    ok('★ sw.js 는 같은 오리진만 가로챈다 (fetch 예외를 받은 이유)',
+      swSrc.indexOf('self.location.origin') !== -1);
+  }
 
   // 주석은 규칙을 적어 둔 곳이라 위반이 아니다. 코드만 남기고 본다.
   const stripComments = (src) => src

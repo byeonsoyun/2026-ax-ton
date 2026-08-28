@@ -49,14 +49,25 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 {
   const t = read('docs/07-next-tasks.md');
 
+  /* ★ 배포할 때마다 해야 하는 일은 문서에 적혀 있어야 한다 (E1).
+     Service Worker 의 VERSION 을 안 올리면 옛 화면이 그대로 남아,
+     고쳤는데 안 고쳐진 것으로 보인다. 이건 코드로 막을 수 없어서
+     "적혀 있는지" 를 검사가 지킨다. */
+  has('★ 배포 때 sw.js 의 VERSION 을 올리라고 적혀 있다', t, 'VERSION');
+  has('sw.js 가 어디 있는지 적혀 있다', t, 'src/sw.js');
+  has('새 파일을 만들면 sw.js 목록에 더하라고 적혀 있다 (CLAUDE.md)',
+    read('CLAUDE.md'), 'sw.js');
+
   has('Claude Code 용 사용법이 맨 위에 있다', t, 'Claude Code 에게');
   has('포지션을 되묻지 않게 한다', t, '포지션을 묻지 마세요');
   has('하나의 목록임을 밝힌다', t, '하나의 우선순위 목록');
   has('여러 개를 동시에 벌이지 않게 한다', t, '여러 개를 동시에 벌이지 않습니다');
 
   // 우선순위 절이 다 있는가
+  /* E 절 이름이 바뀌었다 — E1(오프라인)이 서버 없이 끝나서
+     "E. 나중에" 가 더는 맞지 않는다 (2026-08-28). */
   ['A. 데이터 모양을 바꾸는 것', 'B. 값싸고 바로 이어지는 것', 'C. 화면 완성도',
-    'D. 큰 것', 'E. 나중에'].forEach((title) => {
+    'D. 큰 것', 'E. 서버가 있어야 하는 것'].forEach((title) => {
     has('절이 있다 — ' + title, t, '# ' + title);
   });
 
