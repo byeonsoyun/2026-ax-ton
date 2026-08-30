@@ -216,7 +216,16 @@ var UI = (function () {
      ★ 그 언어 음성이 기기에 없을 때 조용히 실패하지 않는다.
        크메르어 음성이 깔린 안드로이드는 흔하지 않다. 소리가 안 났는데
        난 줄 알고 넘어가면, 글자를 못 읽는 사람은 아무것도 못 받은 채 통과한다.
-       그래서 한국어로 읽고, 그 사실을 화면에 적는다 (voiceNote).
+       그래서 그 사실을 화면에 적는다 (voiceNote).
+
+     ★★ 그때 한국어로 대신 읽지 않는다 — 기본은 소리를 내지 않는 것이다.
+       크메르어 노동자에게 한국어 음성은 대부분 뜻이 닿지 않는다. 소리는
+       나는데 아무것도 전달되지 않으면 사람은 "들었다" 고 생각하고 넘어간다.
+       그게 이 제품이 막으려는 상황 그 자체다.
+
+       그래도 없애지는 않았다. 말은 알아듣는데 글은 못 읽는 사람이 흔하고,
+       그 사람에게는 한국어 음성이 유일한 통로다. 그래서 마이 화면에서
+       고르게 한다 (Store.prefs.voiceFallback · voiceSilent).
 
      ★★ "있다고 대답해 놓고 소리를 안 내는 브라우저" 도 조용히 실패하지 않는다.
        카카오톡 안에서 열리는 브라우저가 그렇다. speechSynthesis 가 있다고
@@ -237,6 +246,35 @@ var UI = (function () {
 
   function speechReady() {
     return typeof window !== 'undefined' && 'speechSynthesis' in window;
+  }
+
+  /* 지금 화면을 보는 사람의 언어. i18n.js 와 같은 통로를 쓴다. */
+  function myLang() {
+    try {
+      var u = (typeof Auth !== 'undefined') && Auth.current();
+      return (u && u.lang) || 'ko';
+    } catch (e) {
+      return 'ko';
+    }
+  }
+
+  /* 내 언어 음성이 이 기기에 없을 때 무엇을 할지 (마이 화면에서 고른다).
+     기본은 'silent' — 뜻이 안 닿는 소리가 나면 사람은 "들었다" 고 넘어간다. */
+  function voiceFallback() {
+    try { return Store.prefs.load().voiceFallback || 'silent'; } catch (e) { return 'silent'; }
+  }
+
+  /* 눌러도 소리가 안 나는 상태인가.
+
+     ★ 이걸 따로 두는 이유 — voiceBlocked() 는 "브라우저가 소리를 못 낸다" 이고,
+       이건 "낼 수는 있는데 이 사람 언어로는 못 낸다" 다. 원인이 다르면
+       사람이 할 수 있는 일도 다르다. 한쪽은 다른 브라우저로 열기,
+       한쪽은 마이에서 한국어로 듣기를 켜기다. */
+  function voiceSilent(langCode) {
+    var l = langCode || myLang();
+    if (!l || l === 'ko') return false;        // 한국어는 되돌림의 대상이 아니다
+    if (hasVoice(l) !== false) return false;   // 있거나 아직 모른다
+    return voiceFallback() !== 'ko';
   }
 
   var voiceWatchers = [];   // 음성 사정이 바뀌면 다시 그릴 화면 함수들
@@ -332,7 +370,18 @@ var UI = (function () {
 
     window.speechSynthesis.cancel();
 
-    if (hasVoice(lang) === false) {      // 없다고 확인된 경우에만 한국어로 돌린다
+    if (hasVoice(lang) === false) {      // 없다고 확인된 경우에만 판단한다
+      /* ★★ 기본은 소리를 내지 않는 것이다.
+         크메르어 노동자에게 한국어 음성은 대부분 뜻이 닿지 않는다.
+         소리는 나는데 아무것도 전달되지 않으면 사람은 "들었다" 고 생각하고
+         넘어간다 — 그게 이 제품이 막으려는 상황이다.
+
+         ★ 그래도 없애지 않고 고르게 둔 이유는, 말은 알아듣는데 글은 못 읽는
+           사람이 흔하기 때문이다. 그 사람에게는 한국어 음성이 유일한 통로다.
+
+         ★ 안 낼 때는 화면이 그 사실을 이미 적고 있어야 한다 (voiceNote).
+           조용히 아무 일도 안 일어나면 그게 가장 나쁜 실패다. */
+      if (lang !== 'ko' && voiceFallback() !== 'ko') return '';
       lang = 'ko';
       if (ko) text = ko;
     }
@@ -382,34 +431,63 @@ var UI = (function () {
      ★ 색만 바꾸지 않는다 — 그림(🔊 → 🔇)이 함께 바뀌고, 옆 안내 줄에 이유가 글로 남는다.
        흑백으로 봐도, 글자를 못 읽어도 뜻이 남아야 한다. */
   function paintAudioButtons() {
-    var off = voiceBlocked();
+    /* 브라우저가 못 내는 것과, 이 사람 언어로 못 내는 것 둘 다 🔇 다.
+       버튼 그림이 멀쩡한데 눌러도 소리가 안 나면 고장으로 읽힌다. */
+    var off = voiceBlocked() || voiceSilent();
+
+    /* ★ 왜 안 나는지를 화면 낭독기에도 같은 말로 준다.
+       "이 브라우저에서는" 이라고 못 박으면, 원인이 이 사람 언어의 음성일 때
+       거짓말이 된다 — 원인이 둘로 갈렸으므로 하나로 뭉뚱그리지 않는다.
+       voiceNote 와 한 통로를 쓴다. 두 곳에 적으면 언젠가 갈린다. */
+    var why = off ? voiceNote() : '';
+
     for (var i = 0; i < audioButtons.length; i++) {
       var a = audioButtons[i];
       a.ico.textContent = off ? '🔇' : '🔊';
-      a.btn.setAttribute('aria-label',
-        off ? a.label + ' — 이 브라우저에서는 소리가 나지 않습니다' : a.label);
+      a.btn.setAttribute('aria-label', why ? a.label + ' — ' + why : a.label);
       if (off) a.btn.classList.add('is-mute');
       else a.btn.classList.remove('is-mute');
     }
   }
 
-  /* 화면에 적을 한 줄. 문제가 없으면 빈 문자열 — 아무 말도 하지 않는다. */
-  function voiceNote(langCode) {
-    /* ★ 언어가 없는 것보다 이쪽을 먼저 말한다. 언어를 바꿔도 해결되지 않고,
-       사람이 할 수 있는 일(다른 브라우저로 열기)이 따로 있기 때문이다.
-
-       ★ 문제만 알려 주고 빠져나갈 길을 안 주면 알려 준 것이 아니다.
-         "지원하지 않습니다" 로 끝내면 글자를 못 읽는 사람은 거기서 끝난다. */
-    if (voiceBlocked()) {
-      return '이 화면에서는 소리가 나지 않습니다. 카카오톡 같은 앱 안에서 열면 그렇습니다. ' +
-        '오른쪽 위 ⋮ 또는 ⋯ 를 눌러 "다른 브라우저로 열기" 를 골라 주세요.';
-    }
-
-    if (hasVoice(langCode) === false) {
-      var l = Store.language(langCode);
-      return '이 기기에 ' + ((l && l.name) || langCode) + ' 음성이 없어 한국어로 읽어 드립니다.';
+  /* 지금 소리에 무슨 문제가 있는지. 없으면 ''.
+     ★ 원인마다 사람이 할 수 있는 일이 다르므로 하나로 뭉뚱그리지 않는다. */
+  function voiceNoteKey(langCode) {
+    if (voiceBlocked()) return 'voice.blocked';
+    var l = langCode || myLang();
+    if (l && l !== 'ko' && hasVoice(l) === false) {
+      return voiceFallback() === 'ko' ? 'voice.noneKo' : 'voice.noneSilent';
     }
     return '';
+  }
+
+  /* i18n.js 가 없는 화면(관리자)에서도 말은 나와야 하므로 한국어를 남겨 둔다.
+     ★ 이 표가 사전과 어긋나면 검사가 잡는다 (test-voicefallback.js). */
+  var VOICE_NOTE_KO = {
+    'voice.blocked': '이 화면에서는 소리가 나지 않습니다. 오른쪽 위 ⋮ 를 눌러 다른 브라우저로 열어 주세요.',
+    'voice.noneKo': '이 기기에 %s 음성이 없어 한국어로 읽어 드립니다.',
+    'voice.noneSilent': '이 기기에 %s 음성이 없어 소리가 나지 않습니다. 마이에서 한국어로 들을 수 있습니다.'
+  };
+
+  /* 화면에 적을 한 줄. 문제가 없으면 빈 문자열 — 아무 말도 하지 않는다. */
+  function voiceNote(langCode) {
+    var key = voiceNoteKey(langCode);
+    if (!key) return '';
+
+    /* ★ 문장과 %s 가 같은 언어여야 한다. I18N 에 코드를 넘기지 않으면
+       "지금 로그인한 사람" 의 언어를 쓰고, 그러면 한국어 문장 안에
+       크메르어 언어 이름이 들어간 반쪽 문장이 나온다. */
+    var l = langCode || myLang();
+
+    var name = '';
+    try {
+      var L = Store.language(l);
+      name = (L && (L.native || L.name)) || '';
+    } catch (e) { name = ''; }
+
+    var text = (typeof I18N !== 'undefined' && I18N.has(key, l))
+      ? I18N.t(key, l) : VOICE_NOTE_KO[key];
+    return String(text || '').replace('%s', name);
   }
 
   /* -------------------------------------------------------------------
@@ -655,6 +733,11 @@ var UI = (function () {
     // 음성 — 노동자 화면 전부가 쓴다
     speak: speak, stopSpeak: stopSpeak, audioButton: audioButton,
     hasVoice: hasVoice, onVoicesReady: onVoicesReady, voiceNote: voiceNote,
+    voiceNoteKey: voiceNoteKey, voiceSilent: voiceSilent, voiceFallback: voiceFallback,
+    /* 음성 사정이 바뀌었다고 알린다 — 🔊/🔇 버튼과 안내 줄이 함께 다시 그려진다.
+       마이 화면에서 되돌림을 고르면 이것을 부른다. 안 부르면 고른 사람은
+       "골랐는데 아무것도 안 바뀌었다" 를 보고 안 먹힌 줄 안다. */
+    notifyVoice: notifyVoice,
     voiceBlocked: voiceBlocked, voiceWait: voiceWait,
 
     // 오프라인 (E1) — 담긴 것으로 이어 가는지, 지금 끊겼는지

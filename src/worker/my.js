@@ -264,7 +264,12 @@
        글을 못 읽는 사람에게 고장으로 보인다. */
     var speech = speechForStuck(stuck);
     if (speech.text) {
-      var say = UI.el('button', 'btn-sm say', '🔊 읽어 주기');
+      /* ★ 소리가 안 나는 상태면 버튼 그림도 그렇게 보여야 한다.
+         멀쩡한 스피커 그림인데 눌러도 아무 일이 없으면 고장으로 읽힌다.
+         감추지는 않는다 — 왜 안 나는지는 화면 맨 위 안내 줄이 적고 있다. */
+      var mute = UI.voiceBlocked() || UI.voiceSilent(me.lang);
+      var say = UI.el('button', 'btn-sm say',
+        mute ? '🔇 소리가 안 납니다' : '🔊 읽어 주기');
       say.type = 'button';
       say.addEventListener('click', function () { UI.speak(speech); });
       head.appendChild(say);
@@ -464,6 +469,77 @@
     renderFontPick();
     UI.toast('글자를 ' + FONT_LABEL[code] + ' 로 바꿨습니다. 이 기기에서 계속 유지됩니다.');
   }
+
+  /* -----------------------------------------------------------------
+     3.5 내 언어 음성이 이 기기에 없을 때
+
+     ★ 기본은 소리를 내지 않는 것이다. 뜻이 닿지 않는 소리가 나면 사람은
+       "들었다" 고 생각하고 넘어간다 — 그게 이 제품이 막으려는 상황이다.
+       안 낼 때는 화면 맨 위 안내 줄(#voicenote)이 그 이유를 그 사람의
+       언어로 적는다. 조용히 아무 일도 안 일어나면 그게 가장 나쁜 실패다.
+
+     ★ 그래도 "한국어로 들려주기" 를 없애지 않는다 — 말은 알아듣는데 글은
+       못 읽는 사람이 흔하다. 이 제품이 겨냥한 것은 "문해력 없음" 이지
+       "한국어 전혀 모름" 이 아니다. 그 사람에게는 한국어 음성이 유일한 통로다.
+
+     ★ prefs 는 기기에 딸린다 (글자 크기와 같은 이유).
+       기기마다 들어 있는 음성이 다르므로 이건 그 기기의 사정이다.
+
+     ★ 한국어를 쓰는 노동자에게도 감추지 않는다. 기기 설정이고,
+       폰을 돌려 쓰는 상황이 실제로 있다.
+     ----------------------------------------------------------------- */
+
+  /* 아이콘 + 글자 두 겹으로 준다 — 색만으로 구분하지 않는다 */
+  var VOICE_CHIP = {
+    silent: { icon: '🔇', key: 'my.voiceSilent' },
+    ko:     { icon: '🔊', key: 'my.voiceKo' }
+  };
+
+  /* i18n.js 가 안 실린 화면에서도 글자가 비지 않아야 한다 */
+  function tt(key) {
+    return (typeof I18N === 'undefined') ? key : I18N.t(key);
+  }
+
+  function renderVoicePick() {
+    var box = $('pick-myvoice');
+    if (!box) return;
+    box.textContent = '';
+
+    /* ★ 읽는 통로는 UI.voiceFallback() 하나다. 여기서 Store.prefs 를 또
+       읽으면 판정이 두 곳으로 갈린다 (phraseOk · qtext 와 같은 이유). */
+    var now = UI.voiceFallback();
+
+    Store.VOICE_FALLBACKS.forEach(function (code) {
+      var spec = VOICE_CHIP[code];
+      box.appendChild(UI.chip({
+        type: 'radio', name: 'myvoice', value: code,
+        icon: spec.icon, label: tt(spec.key),
+        checked: code === now
+      }));
+    });
+  }
+
+  function saveVoiceFallback(code) {
+    var result = Store.prefs.update(function (data) {
+      data.voiceFallback = code;
+    });
+
+    if (!result.ok) {
+      UI.toast('저장하지 못했습니다. 이 브라우저의 저장소가 막혀 있습니다.');
+      renderVoicePick();          // 고른 표시를 원래대로 되돌린다
+      return;
+    }
+
+    renderVoicePick();
+
+    /* ★ 🔊/🔇 버튼과 안내 줄은 ui.js 가 들고 있다. 여기서 다시 그려 달라고
+       알린다 — 새로고침해야 바뀌는 설정은 바뀌지 않는 설정과 구분되지 않는다. */
+    UI.notifyVoice();
+
+    /* 사전을 거친다 — 여기서 한국어를 박으면, 한국어를 못 알아듣는 사람이
+       오는 자리에 한국어만 남는다 */
+    UI.toast(tt('my.voiceFallback') + ' : ' + tt(VOICE_CHIP[code].key));
+  }
   /* -----------------------------------------------------------------
      4. 인쇄되는 증빙
 
@@ -545,6 +621,7 @@
     renderLangPick();
     renderI18nNote();
     renderFontPick();
+    renderVoicePick();
     renderHistory();
     renderReports();
     renderProof();
@@ -555,13 +632,18 @@
   $('pick-myfont').addEventListener('change', function (e) {
     if (e.target && e.target.value) saveFontScale(e.target.value);
   });
+  $('pick-myvoice').addEventListener('change', function (e) {
+    if (e.target && e.target.value) saveVoiceFallback(e.target.value);
+  });
   $('btn-print').addEventListener('click', function () {
     renderProof();     // 발급 시각을 누르는 순간으로
     window.print();
   });
 
   window.addEventListener('pagehide', UI.stopSpeak);
-  UI.onVoicesReady(renderVoiceNote);
+  /* ★ 안내 줄만 다시 그리면 복기의 "읽어 주기" 버튼은 스피커 그림으로 남는다.
+     눌러도 소리가 안 나는 버튼이 멀쩡한 얼굴을 하고 있으면 고장으로 읽힌다. */
+  UI.onVoicesReady(function () { renderVoiceNote(); renderHistory(); });
 
   window.addEventListener('storage', function (e) {
     if (e.key === Store.progress.KEY || e.key === Store.courses.KEY ||

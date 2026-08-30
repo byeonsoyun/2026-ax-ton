@@ -32,6 +32,18 @@ var Seed = (function () {
          사람이 있어야 한다. 07·11 은 이미 기록이 있어서 그 확인이 안 된다. */
     { userId: 'W-4821-03', pw: '1234', role: 'worker',
       name: '', title: '', siteName: '대성정밀', lang: 'vi', processId: 'p-assembly' },
+    /* 한국인 노동자.
+       ★ 한국어도 노동자의 언어 중 하나다. 음성이 없을 때 한국어로 되돌리던
+         것을 그만두면서(voiceFallback), 한국어는 "되돌림" 이 아니라 "그 사람의
+         언어" 로만 나와야 한다는 규칙이 생겼다. 그것을 확인하려면 한국어를
+         쓰는 노동자가 필요하다 — UI.voiceSilent() 가 한국어에는 늘 거짓이다.
+
+       ★ 조립에 둔 이유 — 조립을 겨냥한 교육이 아직 없다. 프레스에 두면
+         프레스 교육의 대상 인원과 대시보드 조치 목록이 함께 바뀌어,
+         이 계정과 상관없는 시연 숫자가 흔들린다. 이 계정의 용도는
+         노동자 화면 확인이라 관리자 쪽에 안 나와도 된다. */
+    { userId: 'W-4821-31', pw: '1234', role: 'worker',
+      name: '', title: '', siteName: '대성정밀', lang: 'ko', processId: 'p-assembly' },
     { userId: 'kim@daesung.co.kr', pw: '1234', role: 'admin',
       name: '김현수', title: '현장 관리자 · 생산팀장', siteName: '대성정밀', lang: '', processId: '' },
     { userId: 'oper@safety.kr', pw: '1234', role: 'operator',
@@ -57,7 +69,8 @@ var Seed = (function () {
     workers: [
       { id: 'W-4821-07', lang: 'km', processId: 'p-press' },
       { id: 'W-4821-11', lang: 'id', processId: 'p-paint' },
-      { id: 'W-4821-03', lang: 'vi', processId: 'p-assembly' }
+      { id: 'W-4821-03', lang: 'vi', processId: 'p-assembly' },
+      { id: 'W-4821-31', lang: 'ko', processId: 'p-assembly' }
     ]
   };
 

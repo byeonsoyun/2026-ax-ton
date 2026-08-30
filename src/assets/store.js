@@ -274,12 +274,32 @@ var Store = (function () {
         ★ 목록이 아니라 값 하나다. 늘어날 설정이 생기면 여기 필드를 더한다. */
   var FONT_SCALES = ['small', 'normal', 'large'];
 
+  /* 내 언어 음성이 이 기기에 없을 때 무엇을 할지.
+
+       silent — 소리를 내지 않는다 (기본)
+       ko     — 한국어로 읽어 준다
+
+     ★ 기본이 silent 인 이유 — 크메르어 노동자에게 한국어 음성은 대부분
+       뜻이 닿지 않는다. 소리는 나는데 아무것도 전달되지 않으면,
+       사람은 "들었다" 고 생각하고 넘어간다. 그게 이 제품이 막으려는 상황이다.
+
+     ★ 그런데 ko 를 없애지도 않는다 — 말은 알아듣는데 글은 못 읽는 사람이
+       흔하다. 이 제품이 겨냥한 것은 "문해력 없음" 이지 "한국어 전혀 모름" 이
+       아니다. 그 사람에게 한국어 음성은 유일한 통로일 수 있다.
+       그래서 없애는 대신 마이 화면에서 고르게 한다.
+
+     ★ 계정이 아니라 기기에 딸린다 (fontScale 과 같은 이유).
+       기기마다 있는 음성이 다르므로 이건 그 기기의 사정이다. */
+  var VOICE_FALLBACKS = ['silent', 'ko'];
+
   var prefs = makeStore('prefs',
-    function () { return { fontScale: 'normal' }; },
+    function () { return { fontScale: 'normal', voiceFallback: 'silent' }; },
     function (d) {
       d = obj(d);
       return {
-        fontScale: FONT_SCALES.indexOf(d.fontScale) === -1 ? 'normal' : d.fontScale
+        fontScale: FONT_SCALES.indexOf(d.fontScale) === -1 ? 'normal' : d.fontScale,
+        voiceFallback: VOICE_FALLBACKS.indexOf(d.voiceFallback) === -1
+          ? 'silent' : d.voiceFallback
       };
     });
 
@@ -547,6 +567,7 @@ var Store = (function () {
     accounts: accounts, session: session, setup: setup, library: library,
     courses: courses, progress: progress, reports: reports, posts: posts,
     prefs: prefs, orders: orders, FONT_SCALES: FONT_SCALES,
+    VOICE_FALLBACKS: VOICE_FALLBACKS,
     orderOpen: orderOpen, askedQuestion: askedQuestion,
 
     // 공통

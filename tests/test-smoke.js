@@ -48,8 +48,9 @@ PAGES.forEach(([html, js, login]) => {
     before.every((k) => typeof UI[k] === 'function'),
     JSON.stringify(before.filter((k) => typeof UI[k] !== 'function')));
 
-  const added = ['speak', 'stopSpeak', 'audioButton', 'hasVoice', 'onVoicesReady', 'voiceNote'];
-  ok('음성 함수 6개가 새로 들어왔다',
+  const added = ['speak', 'stopSpeak', 'audioButton', 'hasVoice', 'onVoicesReady', 'voiceNote',
+    'voiceNoteKey', 'voiceSilent', 'voiceFallback', 'notifyVoice'];
+  ok('음성 함수 10개가 새로 들어왔다',
     added.every((k) => typeof UI[k] === 'function'),
     JSON.stringify(added.filter((k) => typeof UI[k] !== 'function')));
 
@@ -63,9 +64,19 @@ PAGES.forEach(([html, js, login]) => {
   } catch (e) { threw = e.message; }
   ok('음성이 없는 환경에서도 예외를 던지지 않는다', threw === null, threw);
   /* ★ jsdom 에는 speechSynthesis 가 아예 없다 — "기능이 없는 브라우저" 와 같은 상태다.
-     문제만 알리고 끝내지 않는다. 빠져나갈 길을 함께 준다. */
-  has('음성을 못 쓰면 그 사실을 말한다', UI.voiceNote('km'), '소리가 나지 않습니다');
-  has('★ 빠져나갈 길까지 알려 준다', UI.voiceNote('km'), '다른 브라우저로 열기');
+     문제만 알리고 끝내지 않는다. 빠져나갈 길을 함께 준다.
+
+     ★ 검사에 한국어를 박지 않는다 (test-i18n.js 와 같은 규칙).
+       화면에 나오는 글자는 이 사람의 언어(크메르어)다. 한국어로 견주면
+       번역을 고칠 때마다 검사가 깨지고, 그러면 번역을 막는 검사가 된다.
+       빠져나갈 길이 있는지는 사전의 한국어 원문에서 본다 — 원문은
+       번역돼도 바뀌지 않으므로 이 단정은 썩지 않는다. */
+  const I = t.win.I18N;
+  eq('음성을 못 쓰면 그 사실을 그 사람의 언어로 말한다',
+    UI.voiceNote('km'), I.t('voice.blocked', 'km'));
+  ok('★ 한국어 원문이 그대로 나오지 않는다 (번역이 실제로 쓰인다)',
+    UI.voiceNote('km') !== I.t('voice.blocked', 'ko'));
+  has('★ 빠져나갈 길까지 알려 준다', I.t('voice.blocked', 'ko'), '다른 브라우저');
   eq('음성을 못 쓰는 상태로 본다', UI.voiceBlocked(), true);
 }
 
@@ -76,7 +87,7 @@ PAGES.forEach(([html, js, login]) => {
   const t = boot('worker/learn.html', { login: 'W-4821-07' });
   const S = t.win.Store;
 
-  eq('accounts 5개', S.accounts.load().length, 5);
+  eq('accounts 6개', S.accounts.load().length, 6);   // 한국인 노동자 W-4821-31 이 늘었다
   eq('설비 3대', S.setup.load().equipments.length, 3);
   eq('안전 문구 6개', S.library.load().length, 6);
   eq('교육 2개', S.courses.load().length, 2);
@@ -97,6 +108,12 @@ PAGES.forEach(([html, js, login]) => {
   eq('글자 크기 기본값', S.prefs.load().fontScale, 'normal');
   ok('글자 크기 후보가 셋', S.FONT_SCALES.length === 3, JSON.stringify(S.FONT_SCALES));
 
+  /* ★ 내 언어 음성이 이 기기에 없을 때의 기본은 "소리 안 냄" 이다.
+       뜻이 닿지 않는 소리가 나면 사람은 "들었다" 고 생각하고 넘어간다.
+       기본을 'ko' 로 되돌리면 이 기능이 있는 이유가 사라진다. */
+  eq('★ 음성 되돌림 기본값은 소리 안 냄', S.prefs.load().voiceFallback, 'silent');
+  eq('후보가 둘 (silent · ko)', S.VOICE_FALLBACKS.join(','), 'silent,ko');
+
   S.prefs.save({ fontScale: 'large' });
   S.prefs.save({ fontScale: 'large' });
   t.win.Seed.fill();
@@ -105,6 +122,10 @@ PAGES.forEach(([html, js, login]) => {
   ok('★ 이상한 값은 기본값으로 되돌린다',
     (S.prefs.save({ fontScale: 'huge' }), S.prefs.load().fontScale === 'normal'),
     S.prefs.load().fontScale);
+
+  ok('★ 음성 되돌림도 이상한 값은 기본값으로 되돌린다',
+    (S.prefs.save({ voiceFallback: 'en' }), S.prefs.load().voiceFallback === 'silent'),
+    S.prefs.load().voiceFallback);
 
   // progress 의 기존 필드가 그대로인지 (P3·P4 가 읽는 모양)
   const rows = S.progress.load();
@@ -149,9 +170,9 @@ PAGES.forEach(([html, js, login]) => {
   const t = boot('index.html', { seed: false, page: 'assets/login.js' });
 
   ok('index.html 오류 0건', t.errors.length === 0, t.errors.join(' | '));
-  eq('★ 첫 방문이면 계정이 채워진다', t.win.Store.accounts.load().length, 5);
-  eq('시연 계정 목록에 5개가 그려진다',
-    t.$('demo-accounts').querySelectorAll('li.demo-account').length, 5);
+  eq('★ 첫 방문이면 계정이 채워진다', t.win.Store.accounts.load().length, 6);
+  eq('시연 계정 목록에 6개가 그려진다',
+    t.$('demo-accounts').querySelectorAll('li.demo-account').length, 6);
   eq('★ 채웠으면 채웠다고 화면에 적는다', t.$('seed-auto').hidden, false);
   ok('아직 로그인 화면에 머문다 (자동으로 넘어가지 않는다)',
     t.nav.length === 0, t.nav.join(' | '));
@@ -173,7 +194,7 @@ PAGES.forEach(([html, js, login]) => {
 
   eq('★ 쓰던 데이터를 덮어쓰지 않는다', t.win.Store.setup.load().site.name, '한빛금속');
   eq('덮어쓰지 않았으면 채웠다고 말하지도 않는다', t.$('seed-auto').hidden, true);
-  eq('계정은 그대로 5개', t.win.Store.accounts.load().length, 5);
+  eq('계정은 그대로 6개', t.win.Store.accounts.load().length, 6);
 }
 
 /* -------------------------------------------------------------------
@@ -291,7 +312,8 @@ function bootWithSpeech(mode) {
   ok('노동자 홈에 음성 버튼이 있다', !!btn);
   eq('★ 버튼이 처음부터 음소거 그림이다', btn ? btn.textContent : '', '🔇');
   ok('★ 색만으로 구분하지 않는다', btn ? btn.classList.contains('is-mute') : false);
-  has('★ 화면에도 빠져나갈 길을 적는다', t.win.UI.voiceNote('km'), '다른 브라우저로 열기');
+  eq('★ 화면에도 그 사람의 언어로 이유를 적는다',
+    t.win.UI.voiceNote('km'), t.win.I18N.t('voice.blocked', 'km'));
 }
 
 {
@@ -311,7 +333,8 @@ function bootWithSpeech(mode) {
   t.win.document.body.click();
   t.win.UI.speak({ text: '시험', lang: 'km' });
   eq('★ 못 읽겠다고 하면 바로 알아챈다', t.win.UI.voiceBlocked(), true);
-  has('무엇을 하면 되는지 알려 준다', t.win.UI.voiceNote('km'), '다른 브라우저로 열기');
+  eq('무엇을 하면 되는지 그 사람의 언어로 알려 준다',
+    t.win.UI.voiceNote('km'), t.win.I18N.t('voice.blocked', 'km'));
 }
 
 {
@@ -486,8 +509,10 @@ function bootWithSpeech(mode) {
 
   setTimeout(() => {
     eq('★ 소리가 안 나면 알아챈다 (카카오톡 안 브라우저)', t.win.UI.voiceBlocked(), true);
-    has('★ 조용히 넘어가지 않고 화면에 적는다', t.win.UI.voiceNote('km'), '소리가 나지 않습니다');
-    has('★ 무엇을 하면 되는지 알려 준다', t.win.UI.voiceNote('km'), '다른 브라우저로 열기');
+    eq('★ 조용히 넘어가지 않고 화면에 적는다',
+      t.win.UI.voiceNote('km'), t.win.I18N.t('voice.blocked', 'km'));
+    has('★ 무엇을 하면 되는지 알려 준다',
+      t.win.I18N.t('voice.blocked', 'ko'), '다른 브라우저');
 
     /* ★ 글자를 못 읽는 사람에게 문장은 닿지 않는다. 그림이 바뀌어야 한다. */
     const after = t.win.document.querySelector('.btn-audio');

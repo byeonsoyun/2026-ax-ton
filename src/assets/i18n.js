@@ -156,6 +156,18 @@ var I18N = (function () {
     'voice.netNotice': { ko: '이 기능만 인터넷이 필요합니다. 브라우저가 소리를 알아듣는 데 씁니다.', km: 'មុខងារនេះតែប៉ុណ្ណោះត្រូវការអ៊ីនធឺណិត។ កម្មវិធីរុករកប្រើវាដើម្បីស្តាប់។', id: 'Hanya fitur ini yang butuh internet. Peramban memakainya untuk mengenali suara.', vi: 'Chỉ tính năng này cần mạng. Trình duyệt dùng nó để nhận diện giọng nói.', ne: 'यो सुविधालाई मात्र इन्टरनेट चाहिन्छ। ब्राउजरले आवाज बुझ्न प्रयोग गर्छ।', th: 'เฉพาะฟังก์ชันนี้ที่ต้องใช้อินเทอร์เน็ต เบราว์เซอร์ใช้เพื่อรู้จำเสียง' },
     'voice.fromVoice': { ko: '말한 것을 옮김', km: 'ប្តូរពីសំឡេង', id: 'Dari suara', vi: 'Từ giọng nói', ne: 'बोलीबाट', th: 'จากเสียง' },
 
+    /* 소리에 문제가 있을 때. %s 자리에 그 사람 언어 이름이 들어간다.
+       ★ 원인마다 사람이 할 수 있는 일이 다르므로 문장을 나눠 둔다. */
+    'voice.blocked':    { ko: '이 화면에서는 소리가 나지 않습니다. 오른쪽 위 ⋮ 를 눌러 다른 브라우저로 열어 주세요.', km: 'អេក្រង់នេះមិនចេញសំឡេងទេ។ សូមចុច ⋮ ខាងលើស្តាំ ហើយបើកក្នុងកម្មវិធីរុករកផ្សេង។', id: 'Layar ini tidak mengeluarkan suara. Tekan ⋮ di kanan atas lalu buka di peramban lain.', vi: 'Màn hình này không phát ra tiếng. Nhấn ⋮ ở góc trên bên phải rồi mở bằng trình duyệt khác.', ne: 'यो पर्दामा आवाज आउँदैन। माथि दायाँको ⋮ थिचेर अर्को ब्राउजरमा खोल्नुहोस्।', th: 'หน้านี้ไม่มีเสียง กด ⋮ มุมขวาบนแล้วเปิดในเบราว์เซอร์อื่น' },
+    'voice.noneSilent': { ko: '이 기기에 %s 음성이 없어 소리가 나지 않습니다. 마이에서 한국어로 들을 수 있습니다.', km: 'ឧបករណ៍នេះគ្មានសំឡេង %s ទេ ដូច្នេះមិនចេញសំឡេង។ អ្នកអាចបើកស្តាប់ជាភាសាកូរ៉េនៅទំព័រ ខ្ញុំ។', id: 'Perangkat ini tidak punya suara %s jadi tidak ada suara. Anda bisa memilih suara Korea di halaman Saya.', vi: 'Thiết bị này không có giọng %s nên không phát tiếng. Bạn có thể bật tiếng Hàn ở trang Của tôi.', ne: 'यो यन्त्रमा %s आवाज नभएकाले आवाज आउँदैन। मेरो पृष्ठमा कोरियन आवाज छान्न सकिन्छ।', th: 'อุปกรณ์นี้ไม่มีเสียง %s จึงไม่มีเสียง เลือกเสียงเกาหลีได้ที่หน้าของฉัน' },
+    'voice.noneKo':     { ko: '이 기기에 %s 음성이 없어 한국어로 읽어 드립니다.', km: 'ឧបករណ៍នេះគ្មានសំឡេង %s ទេ ដូច្នេះនឹងអានជាភាសាកូរ៉េ។', id: 'Perangkat ini tidak punya suara %s jadi dibacakan dalam bahasa Korea.', vi: 'Thiết bị này không có giọng %s nên sẽ đọc bằng tiếng Hàn.', ne: 'यो यन्त्रमा %s आवाज नभएकाले कोरियनमा पढिन्छ।', th: 'อุปกรณ์นี้ไม่มีเสียง %s จึงอ่านเป็นภาษาเกาหลี' },
+
+    /* 마이 화면 — 내 언어 음성이 없을 때 무엇을 할지 고르는 칸 */
+    'my.voiceFallback':       { ko: '내 언어 음성이 없을 때', km: 'ពេលគ្មានសំឡេងភាសាខ្ញុំ', id: 'Bila suara bahasa saya tidak ada', vi: 'Khi không có giọng tiếng của tôi', ne: 'मेरो भाषाको आवाज नहुँदा', th: 'เมื่อไม่มีเสียงภาษาของฉัน' },
+    'my.voiceSilent':         { ko: '소리 안 냄',            km: 'មិនចេញសំឡេង',      id: 'Tanpa suara',        vi: 'Không phát tiếng',  ne: 'आवाज नबजाउने',   th: 'ไม่มีเสียง' },
+    'my.voiceKo':             { ko: '한국어로 들려주기',     km: 'ស្តាប់ជាភាសាកូរ៉េ', id: 'Dengarkan dalam bahasa Korea', vi: 'Nghe bằng tiếng Hàn', ne: 'कोरियनमा सुन्ने', th: 'ฟังเป็นภาษาเกาหลี' },
+    'my.voiceFallbackWhy':    { ko: '뜻이 닿지 않는 소리가 나면 들었다고 착각하게 됩니다. 그래서 소리를 안 내는 쪽이 기본입니다.', km: 'បើសំឡេងចេញតែមិនយល់អត្ថន័យ អ្នកនឹងគិតថាបានស្តាប់ហើយ។ ដូច្នេះការមិនចេញសំឡេងជាលំនាំដើម។', id: 'Jika terdengar suara yang tidak dimengerti, Anda akan mengira sudah paham. Karena itu tanpa suara adalah bawaannya.', vi: 'Nếu phát ra tiếng mà bạn không hiểu, bạn sẽ tưởng là đã nghe rồi. Vì vậy mặc định là không phát tiếng.', ne: 'अर्थ नबुझिने आवाज आयो भने सुनेजस्तो लाग्छ। त्यसैले आवाज नबजाउने नै पूर्वनिर्धारित हो।', th: 'ถ้ามีเสียงที่ฟังไม่เข้าใจ คุณจะเข้าใจผิดว่าได้ฟังแล้ว จึงตั้งค่าเริ่มต้นเป็นไม่มีเสียง' },
+
     /* 이 화면 자체에 대한 고지 */
     'i18n.unreviewed': { ko: '이 화면 안내의 번역은 아직 검수 전입니다.', km: 'ការបកប្រែនៃការណែនាំនេះមិនទាន់ត្រួតពិនិត្យទេ។', id: 'Terjemahan panduan layar ini belum diperiksa.', vi: 'Bản dịch hướng dẫn màn hình này chưa được kiểm duyệt.', ne: 'यस पर्दाको निर्देशनको अनुवाद अझै जाँच भएको छैन।', th: 'คำแปลคำแนะนำหน้านี้ยังไม่ได้ตรวจสอบ' }
   };

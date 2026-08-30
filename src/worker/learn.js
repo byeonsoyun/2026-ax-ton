@@ -120,6 +120,14 @@
     return (t && t.text) ? t : null;
   }
 
+  /* 이 사람에게 번역이 필요한가.
+
+     ★ 한국어를 쓰는 노동자에게는 한국어 원문이 곧 그 사람의 언어다.
+       translations.ko 는 앞으로도 생기지 않으므로, 없다고 "번역 준비 중" 을
+       띄우면 그 배지가 영원히 남는다 — 화면이 거짓말을 하게 된다.
+       (한국어도 노동자의 언어 중 하나다. 되돌림이 아니다.) */
+  function needsTranslation() { return me.lang !== 'ko'; }
+
   /* -----------------------------------------------------------------
      음성 안내 줄 — 이 기기에서 내 언어 음성이 나오는지
      ----------------------------------------------------------------- */
@@ -185,7 +193,8 @@
       tags.appendChild(badgeFor(state));
       // 검수를 못 지난 문구가 있으면 몇 개가 빠졌는지 밝힌다
       if (total > usable) tags.appendChild(UI.waitBadge('검수 대기 ' + (total - usable) + '개 제외'));
-      if (!translationCoverage(course)) tags.appendChild(UI.waitBadge('내 언어 번역 준비 중'));
+      if (needsTranslation() && !translationCoverage(course))
+        tags.appendChild(UI.waitBadge('내 언어 번역 준비 중'));
       body.appendChild(tags);
 
       open.appendChild(body);
@@ -283,9 +292,11 @@
     } else {
       // 내 언어 번역이 없다. 숨기지 않고 한국어를 띄우고 그 사실을 배지로 남긴다.
       card.appendChild(UI.el('p', 'translated', phrase.ko));
-      var miss = UI.el('p', 'original');
-      miss.appendChild(UI.waitBadge('내 언어 번역 준비 중'));
-      card.appendChild(miss);
+      if (needsTranslation()) {
+        var miss = UI.el('p', 'original');
+        miss.appendChild(UI.waitBadge('내 언어 번역 준비 중'));
+        card.appendChild(miss);
+      }
     }
 
     var listen = UI.el('div', 'listen');

@@ -79,6 +79,14 @@
     return (t && t.text) ? t : null;
   }
 
+  /* 이 사람에게 번역이 필요한가.
+
+     ★ 한국어를 쓰는 노동자에게는 한국어 원문이 곧 그 사람의 언어다.
+       translations.ko 는 앞으로도 생기지 않으므로, 없다고 "번역 준비 중" 을
+       띄우면 그 배지가 영원히 남는다 — 화면이 거짓말을 하게 된다.
+       (한국어도 노동자의 언어 중 하나다. 되돌림이 아니다.) */
+  function needsTranslation() { return me.lang !== 'ko'; }
+
   /* -----------------------------------------------------------------
   /* 오늘 띄울 문구들. 검수를 지난 것만, 내 언어 기준으로 판정한다.
 
@@ -187,7 +195,7 @@
          노동자가 이 지시를 믿을 근거가 생긴다 — 검수를 지나지 않은 말은
          아예 안 나온다는 것이 이 제품의 약속이다. */
     note.appendChild(UI.okBadge('검수 완료'));
-    if (!t) note.appendChild(UI.waitBadge('내 언어 번역 준비 중'));
+    if (!t && needsTranslation()) note.appendChild(UI.waitBadge('내 언어 번역 준비 중'));
 
     var listen = $('today-listen');
     listen.textContent = '';
