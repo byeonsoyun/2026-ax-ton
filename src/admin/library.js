@@ -471,7 +471,10 @@
 
     if (negationFlipped(ko, back)) {
       var w = UI.el('div', 'warnbox');
-      w.appendChild(UI.el('strong', null, '⚠ 뜻이 뒤집혔을 수 있습니다'));
+      var wt = UI.el('strong', null);
+    wt.appendChild(UI.iconBox('alert', null));
+    wt.appendChild(document.createTextNode(' 뜻이 뒤집혔을 수 있습니다'));
+    w.appendChild(wt);
       w.appendChild(UI.el('p', null,
         '한쪽에만 "않 · 마십시오 · 금지" 같은 부정 표현이 있습니다. ' +
         '"손을 넣지 마십시오" 가 "손을 넣어도 됩니다" 로 바뀌면 정반대 지시가 됩니다. ' +

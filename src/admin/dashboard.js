@@ -281,9 +281,8 @@
       var head = UI.el('div', 'bar-head');
 
       var what = UI.el('span', 'what');
-      var ico = UI.el('span', null, item.icon + ' ');
-      ico.setAttribute('aria-hidden', 'true');
-      what.appendChild(ico);
+      what.appendChild(UI.iconBox(item.icon, 'ico'));
+      what.appendChild(document.createTextNode(' '));
       what.appendChild(document.createTextNode(langName(item.lang) + ' · ' + item.label));
       what.appendChild(UI.el('em', null, item.right + '/' + item.total + '문항'));
       head.appendChild(what);
@@ -325,7 +324,9 @@
       var q = Store.askedQuestion(course, row.quiz, i);
       if (!q) return;
       var haz = hazardOf(q.hazard);
-      out.push(haz ? haz.icon + ' ' + haz.label : (QLABEL[q.type] || q.type));
+      /* ★ 글자로 이어 붙이는 자리다 (음성으로도 읽는다). 그림을 섞지 않고
+         이름만 쓴다 — 낭독기가 이모지 이름을 읽어 버리면 문장이 이상해진다. */
+      out.push(haz ? haz.label : (QLABEL[q.type] || q.type));
     });
     return out;
   }
@@ -530,7 +531,7 @@
 
       var top = UI.el('div', 'queue-top');
       var title = UI.el('strong');
-      var ico = UI.el('span', null, (haz ? haz.icon : '⚠') + ' ');
+      var ico = UI.iconBox(haz ? haz.icon : 'alert', null);
       ico.setAttribute('aria-hidden', 'true');
       title.appendChild(ico);
       title.appendChild(document.createTextNode(
@@ -611,7 +612,7 @@
         return row && (row.quiz && row.quiz.at || row.learnedAt);
       }).filter(Boolean).sort();
 
-      var li = UI.itemRow((eq && eq.icon) || '⚙', course.title,
+      var li = UI.itemRow((eq && eq.icon) || 'gear', course.title,
         [(eq ? eq.name : '삭제된 설비'),
           '이수 ' + done + ' / ' + mine.length + '명',
           dates.length ? '마지막 실시 ' + UI.formatDate(dates[dates.length - 1]) : '실시 기록 없음'

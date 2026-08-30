@@ -1,6 +1,6 @@
 /* 회귀 검사 — ui.js · seed.js 를 고쳤으니 11개 화면 전부 오류 없이 뜨는지 본다.
    다른 세 분 담당 화면이 내 변경으로 깨지면 안 된다. */
-const { boot, ok, eq, has, report } = require('./harness');
+const { boot, ok, eq, has, report, iconName } = require('./harness');
 
 const PAGES = [
   ['worker/home.html',      'worker/home.js',      'W-4821-07'],
@@ -310,7 +310,7 @@ function bootWithSpeech(mode) {
   eq('★ 음성 기능이 없으면 처음부터 못 쓰는 것으로 본다', t.win.UI.voiceBlocked(), true);
   const btn = t.win.document.querySelector('.btn-audio');
   ok('노동자 홈에 음성 버튼이 있다', !!btn);
-  eq('★ 버튼이 처음부터 음소거 그림이다', btn ? btn.textContent : '', '🔇');
+  eq('★ 버튼이 처음부터 음소거 그림이다', iconName(btn), 'speaker-off');
   ok('★ 색만으로 구분하지 않는다', btn ? btn.classList.contains('is-mute') : false);
   eq('★ 화면에도 그 사람의 언어로 이유를 적는다',
     t.win.UI.voiceNote('km'), t.win.I18N.t('voice.blocked', 'km'));
@@ -502,7 +502,7 @@ function bootWithSpeech(mode) {
 
   const before = t.win.document.querySelector('.btn-audio');
   ok('노동자 홈에 음성 버튼이 있다', !!before);
-  eq('처음에는 스피커 그림이다', before ? before.textContent : '', '🔊');
+  eq('처음에는 스피커 그림이다', iconName(before), 'speaker');
   eq('누르기 전에는 고장이 아니다', t.win.UI.voiceBlocked(), false);
 
   if (before) before.click();          // 사람이 손으로 눌렀다
@@ -516,7 +516,7 @@ function bootWithSpeech(mode) {
 
     /* ★ 글자를 못 읽는 사람에게 문장은 닿지 않는다. 그림이 바뀌어야 한다. */
     const after = t.win.document.querySelector('.btn-audio');
-    eq('★ 버튼 그림이 음소거로 바뀐다', after ? after.textContent : '', '🔇');
+    eq('★ 버튼 그림이 음소거로 바뀐다', iconName(after), 'speaker-off');
     ok('색만으로 구분하지 않는다 (표시용 class 도 붙는다)',
       after ? after.classList.contains('is-mute') : false);
 

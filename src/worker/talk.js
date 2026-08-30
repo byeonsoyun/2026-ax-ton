@@ -348,7 +348,7 @@
        "내 것인지" 를 따지지 않는다. 따질 수 있으면 익명이 아니다. */
     if (item.anonymous || !item.author) {
       var note = UI.el('p', 'anon-note');
-      note.appendChild(UI.el('span', 'ico', '🕶'));
+      note.appendChild(UI.iconBox('glasses', 'ico'));
       note.appendChild(document.createTextNode(
         ' 이름을 감추고 쓴 글입니다. 누가 썼는지 저장하지 않으므로 ' +
         '글쓴이 본인도 고치거나 지울 수 없습니다.'));
@@ -360,12 +360,16 @@
 
     var row = UI.el('div', 'btn-row');
 
-    var edit = UI.el('button', 'btn-sm', '✏ 고치기');
+    var edit = UI.el('button', 'btn-sm');
+    edit.appendChild(UI.iconBox('pencil', null));
+    edit.appendChild(document.createTextNode(' 고치기'));
     edit.type = 'button';
     edit.addEventListener('click', function () { startEdit(item.id); });
     row.appendChild(edit);
 
-    var del = UI.el('button', 'btn-sm danger', '🗑 지우기');
+    var del = UI.el('button', 'btn-sm danger');
+    del.appendChild(UI.iconBox('trash', null));
+    del.appendChild(document.createTextNode(' 지우기'));
     del.type = 'button';
     del.addEventListener('click', function () { removePost(item.id); });
     row.appendChild(del);

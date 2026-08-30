@@ -117,7 +117,7 @@
   function badge(node, done, doneText) {
     node.className = 'badge ' + (done ? 'badge-ok' : 'badge-neutral');
     node.textContent = '';
-    var icon = UI.el('span', null, done ? '✓' : '○');
+    var icon = UI.iconBox(done ? 'check' : 'circle', null);
     icon.setAttribute('aria-hidden', 'true');
     node.appendChild(icon);
     node.appendChild(document.createTextNode(' ' + (done ? doneText : '미선택')));
@@ -354,7 +354,7 @@
 
       var li = UI.el('li', 'report-item');
 
-      var ico = UI.el('span', 'ico', haz ? haz.icon : '⚠');
+      var ico = UI.iconBox(haz ? haz.icon : 'alert', 'ico');
       ico.setAttribute('aria-hidden', 'true');
       li.appendChild(ico);
 

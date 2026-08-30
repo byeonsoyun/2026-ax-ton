@@ -18,7 +18,7 @@
      test-voice.js 는 말로 알리기(받아쓰기)의 익명성을 보는 묶음이라 주제가 다르다. */
 const fs = require('fs');
 const path = require('path');
-const { boot, ok, eq, has, report, SRC } = require('./harness');
+const { boot, ok, eq, has, report, SRC, iconName, iconNames } = require('./harness');
 
 const ui = fs.readFileSync(path.join(SRC, 'assets/ui.js'), 'utf8');
 const myjs = fs.readFileSync(path.join(SRC, 'worker/my.js'), 'utf8');
@@ -137,7 +137,7 @@ function pickTo(t, code) {
   /* 글자를 못 읽는 사람에게 문장은 닿지 않는다. 그림이 닿는다. */
   const btn = t.win.document.querySelector('.btn-audio');
   ok('홈에 음성 버튼이 있다', !!btn);
-  eq('★ 버튼 그림이 음소거다', btn ? btn.textContent : '', '🔇');
+  eq('★ 버튼 그림이 음소거다', iconName(btn), 'speaker-off');
   ok('색만으로 구분하지 않는다 (표시용 class 도 붙는다)',
     btn ? btn.classList.contains('is-mute') : false);
 
@@ -171,7 +171,7 @@ function pickTo(t, code) {
   eq('음소거 상태가 아니다', UI.voiceSilent('km'), false);
 
   const btn = t.win.document.querySelector('.btn-audio');
-  eq('버튼도 스피커 그림', btn ? btn.textContent : '', '🔊');
+  eq('버튼도 스피커 그림', iconName(btn), 'speaker');
   ok('음소거 표시가 없다', btn ? !btn.classList.contains('is-mute') : false);
 
   /* ★★ 소리가 나도 안내를 없애지 않는다.
@@ -191,12 +191,12 @@ function pickTo(t, code) {
   const t = open('home', { fallback: 'ko' });
   const btn = () => t.win.document.querySelector('.btn-audio');
 
-  eq('처음에는 스피커 그림', btn() ? btn().textContent : '', '🔊');
+  eq('처음에는 스피커 그림', iconName(btn()), 'speaker');
 
   t.win.Store.prefs.update((d) => { d.voiceFallback = 'silent'; });
   t.win.UI.notifyVoice();
 
-  eq('★ 새로고침 없이 버튼 그림이 바뀐다', btn() ? btn().textContent : '', '🔇');
+  eq('★ 새로고침 없이 버튼 그림이 바뀐다', iconName(btn()), 'speaker-off');
   const note = t.$('voicenote');
   has('★ 안내 줄도 함께 바뀐다', text(note),
     t.win.I18N.t('voice.noneSilent', 'km').replace('%s', t.win.Store.language('km').native));
@@ -275,8 +275,9 @@ function pickTo(t, code) {
 
   /* 아이콘 + 글자 두 겹 — 색만으로 구분하지 않는다 */
   const boxText = text(box);
-  has('소리 안 냄 쪽에 음소거 그림', boxText, '🔇');
-  has('한국어로 듣기 쪽에 스피커 그림', boxText, '🔊');
+  const chipIcons = iconNames(box);
+  ok('소리 안 냄 쪽에 음소거 그림', chipIcons.indexOf('speaker-off') !== -1, chipIcons.join(','));
+  ok('한국어로 듣기 쪽에 스피커 그림', chipIcons.indexOf('speaker') !== -1, chipIcons.join(','));
 
   /* 글자도 그 사람의 언어로 */
   has('★ 칩 글자가 크메르어다', boxText, I.t('my.voiceSilent', 'km'));

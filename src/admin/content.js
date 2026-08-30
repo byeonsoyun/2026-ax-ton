@@ -472,7 +472,10 @@
 
     if (Review.negationFlipped(koText, backText)) {
       var warn = UI.el('div', 'warnbox');
-      warn.appendChild(UI.el('strong', null, '⚠ 뜻이 뒤집혔을 수 있습니다'));
+      var wt = UI.el('strong', null);
+    wt.appendChild(UI.iconBox('alert', null));
+    wt.appendChild(document.createTextNode(' 뜻이 뒤집혔을 수 있습니다'));
+    warn.appendChild(wt);
       warn.appendChild(UI.el('p', null,
         '한쪽에만 "않 · 마십시오 · 금지" 같은 부정 표현이 있습니다. ' +
         '"손을 넣지 마십시오" 가 "손을 넣어도 됩니다" 로 바뀌면 정반대 지시가 됩니다. ' +
@@ -866,7 +869,14 @@
       var tr = UI.el('tr');
 
       tr.appendChild(UI.el('td', null, c.title));
-      tr.appendChild(UI.el('td', null, eq ? eq.icon + ' ' + eq.name : '삭제된 설비'));
+      var td = UI.el('td', null);
+      if (eq) {
+        td.appendChild(UI.iconBox(eq.icon, 'ico'));
+        td.appendChild(document.createTextNode(' ' + eq.name));
+      } else {
+        td.textContent = '삭제된 설비';
+      }
+      tr.appendChild(td);
 
       var langCell = UI.el('td');
       var chips = UI.el('div', 'chips');
@@ -1043,7 +1053,7 @@
   function badge(node, done, doneText, todoText) {
     node.className = 'badge ' + (done ? 'badge-ok' : 'badge-neutral');
     node.textContent = '';
-    var icon = UI.el('span', null, done ? '✓' : '○');
+    var icon = UI.iconBox(done ? 'check' : 'circle', null);
     icon.setAttribute('aria-hidden', 'true');
     node.appendChild(icon);
     node.appendChild(document.createTextNode(' ' + (done ? doneText : todoText)));
@@ -1058,7 +1068,9 @@
     if (ready) {
       UI.fillSelect($('draft-equip'), state.equipments,
         function (e) { return e.id; },
-        function (e) { return e.icon + '  ' + e.name; });
+      /* ★ <option> 안에는 그림을 넣을 수 없다. 이모지를 남기면 이 목록만
+         옛 말투로 남으므로 이름만 쓴다 (그림은 고른 뒤 화면에서 보인다). */
+        function (e) { return e.name; });
       if (!draft.equipmentId) draft.equipmentId = $('draft-equip').value;
       $('draft-equip').value = draft.equipmentId;
 

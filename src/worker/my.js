@@ -167,7 +167,7 @@
 
       var li = UI.el('li', 'course-card');
 
-      var ico = UI.el('span', 'ico', (eq && eq.icon) || '⚙');
+      var ico = UI.iconBox((eq && eq.icon) || 'gear', 'ico');
       ico.setAttribute('aria-hidden', 'true');
       li.appendChild(ico);
 
@@ -268,8 +268,10 @@
          멀쩡한 스피커 그림인데 눌러도 아무 일이 없으면 고장으로 읽힌다.
          감추지는 않는다 — 왜 안 나는지는 화면 맨 위 안내 줄이 적고 있다. */
       var mute = UI.voiceBlocked() || UI.voiceSilent(me.lang);
-      var say = UI.el('button', 'btn-sm say',
-        mute ? '🔇 소리가 안 납니다' : '🔊 읽어 주기');
+      var say = UI.el('button', 'btn-sm say');
+      say.appendChild(UI.iconBox(mute ? 'speaker-off' : 'speaker', null));
+      say.appendChild(document.createTextNode(
+        mute ? ' 소리가 안 납니다' : ' 읽어 주기'));
       say.type = 'button';
       say.addEventListener('click', function () { UI.speak(speech); });
       head.appendChild(say);
@@ -330,7 +332,7 @@
       var haz = Store.hazard(r.hazard);
 
       var li = UI.el('li', 'report-item');
-      var ico = UI.el('span', 'ico', haz ? haz.icon : '⚠');
+      var ico = UI.iconBox(haz ? haz.icon : 'alert', 'ico');
       ico.setAttribute('aria-hidden', 'true');
       li.appendChild(ico);
 

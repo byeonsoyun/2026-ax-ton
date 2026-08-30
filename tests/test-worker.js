@@ -1,5 +1,5 @@
 /* 노동자 화면 4개 (홈 · 기능8 신고 · 기능7 소통 · 마이) — 실제 DOM 검증 */
-const { boot, ok, eq, has, report } = require('./harness');
+const { boot, ok, eq, has, report, iconName } = require('./harness');
 
 const text = (n) => (n ? n.textContent.trim().replace(/\s+/g, ' ') : '');
 const click = (win, node) => node.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
@@ -42,7 +42,8 @@ function open(page, opts = {}) {
   const cells = [...t.$('bigmenu').querySelectorAll('.bigmenu-cell')];
   eq('메뉴 4개', cells.length, 4);
   ok('메뉴마다 픽토그램이 있다',
-    cells.every((c) => text(c.querySelector('.ico')).length > 0));
+    cells.every((c) => !!iconName(c.querySelector('.ico'))),
+    cells.map((c) => iconName(c.querySelector('.ico'))).join(','));
   ok('★ 메뉴마다 음성 버튼이 있다',
     cells.every((c) => !!c.querySelector('.btn-audio')));
   const hrefs = cells.map((c) => c.querySelector('a').getAttribute('href'));
@@ -989,7 +990,7 @@ const asWorker11 = (opts = {}) => open('home', Object.assign({ login: 'W-4821-11
 
   /* 글자를 한 자도 안 읽어도 무슨 일인지 알 수 있어야 한다 */
   ok('★ 소리로 들을 수 있다', !!item.querySelector('.btn-audio'));
-  ok('★ 그림이 함께 있다', text(item.querySelector('.pict')).length > 0);
+  ok('★ 그림이 함께 있다', !!iconName(item.querySelector('.pict')));
 
   const go = item.querySelector('a[href="learn.html"]');
   ok('★ 다시 들으러 가는 큰 버튼이 있다', !!go, text(item));

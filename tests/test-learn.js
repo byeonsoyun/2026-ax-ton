@@ -1,5 +1,5 @@
 /* 기능3 안전교육 수강 — 실제 DOM 검증 */
-const { boot, ok, eq, has, report } = require('./harness');
+const { boot, ok, eq, has, report, iconName } = require('./harness');
 
 const text = (n) => (n ? n.textContent.trim().replace(/\s+/g, ' ') : '');
 
@@ -37,7 +37,7 @@ const text = (n) => (n ? n.textContent.trim().replace(/\s+/g, ' ') : '');
   // ph-1 의 크메르어 번역이 크게, 한국어 원문이 작게
   eq('크메르어 번역이 본문', text(t.$('phrase-card').querySelector('.translated')), 'កុំដាក់ដៃចូល');
   has('한국어 원문도 함께', text(t.$('phrase-card').querySelector('.original')), '손을 넣지 마십시오');
-  eq('큰 픽토그램', text(t.$('phrase-card').querySelector('.pict')), '⚙');
+  eq('큰 픽토그램', iconName(t.$('phrase-card').querySelector('.pict')), 'gear');
 
   /* --- 끝까지 듣기 --- */
   const next = () => t.$('btn-next').dispatchEvent(new t.win.MouseEvent('click', { bubbles: true }));

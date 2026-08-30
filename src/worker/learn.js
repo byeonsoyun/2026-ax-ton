@@ -180,7 +180,7 @@
       var open = UI.el('button', 'course-open');
       open.type = 'button';
 
-      var ico = UI.el('span', 'ico', (eq && eq.icon) || '⚙');
+      var ico = UI.iconBox((eq && eq.icon) || 'gear', 'ico');
       ico.setAttribute('aria-hidden', 'true');
       open.appendChild(ico);
 
@@ -281,7 +281,7 @@
     /* 픽토그램 — 설비 아이콘을 쓴다.
        문구마다 다른 그림을 주려면 library 에 icon 필드가 필요하고,
        library 는 기능9(P4) 소유라 지금은 손대지 않는다. */
-    var pict = UI.el('p', 'pict', (eq && eq.icon) || '⚠');
+    var pict = UI.iconBox((eq && eq.icon) || 'alert', 'pict', 'p');
     pict.setAttribute('aria-hidden', 'true');
     card.appendChild(pict);
 

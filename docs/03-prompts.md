@@ -107,7 +107,7 @@
 미통과는 노동자의 실패가 아니라 교육의 실패로 적어.
 
 [지켜야 할 것]
-- 외부 요청 0건. CDN·웹폰트·외부 이미지·npm 패키지 금지. 픽토그램은 이모지
+- 외부 요청 0건. CDN·웹폰트·외부 이미지·아이콘 폰트·npm 패키지 금지. 픽토그램은 `assets/icons.js`
 - innerHTML 금지. UI.el 로 textContent 만
 - ES 모듈(import/export) 금지. file:// 에서 CORS 로 막혀
 - 상태는 색만으로 구분하지 않기. 아이콘+글자+색 (UI.okBadge 등)
@@ -179,7 +179,7 @@ my     — 회원정보, 수강 이력, 수강 증빙 출력, 신고 이력
 ★ 위험요소 신고는 익명이 기본이야. Store.reports 에 신고자를 알아볼 수 있는 값을
   절대 넣지 마. 익명이 깨지면 아무도 신고를 안 하게 되고 제품의 전제가 무너져.
 ★ 증빙은 생성 후 수정 불가. 미이수 항목을 숨기는 경로를 만들지 마.
-- 외부 요청 0건. CDN·웹폰트·외부 이미지·npm 패키지 금지. 픽토그램은 이모지
+- 외부 요청 0건. CDN·웹폰트·외부 이미지·아이콘 폰트·npm 패키지 금지. 픽토그램은 `assets/icons.js`
 - innerHTML 금지. UI.el 로 textContent 만
 - ES 모듈(import/export) 금지. file:// 에서 CORS 로 막혀
 - 상태는 색만으로 구분하지 않기. 아이콘+글자+색 (UI.okBadge 등)
@@ -265,7 +265,7 @@ docs/mockups/12-admin-dashboard.html 에 정적 목업이 있어.
 ★ 언어는 기능1에서 등록한 것(Store.setup.load().languages)만 나와야 해.
 
 [그 외 지켜야 할 것]
-- 외부 요청 0건. CDN·웹폰트·외부 이미지·npm 패키지 금지. 픽토그램은 이모지
+- 외부 요청 0건. CDN·웹폰트·외부 이미지·아이콘 폰트·npm 패키지 금지. 픽토그램은 `assets/icons.js`
 - innerHTML 금지. UI.el 로 textContent 만
 - ES 모듈(import/export) 금지. file:// 에서 CORS 로 막혀
 - 상태는 색만으로 구분하지 않기. 아이콘+글자+색 (UI.okBadge 등)
@@ -356,7 +356,7 @@ docs/mockups/13-operator-library.html 에 정적 목업이 있어.
 옮기는 법은 docs/mockups/README.md 를 봐.
 
 [그 외 지켜야 할 것]
-- 외부 요청 0건. CDN·웹폰트·외부 이미지·npm 패키지 금지. 픽토그램은 이모지
+- 외부 요청 0건. CDN·웹폰트·외부 이미지·아이콘 폰트·npm 패키지 금지. 픽토그램은 `assets/icons.js`
 - innerHTML 금지. UI.el 로 textContent 만
 - ES 모듈(import/export) 금지. file:// 에서 CORS 로 막혀
 - 상태는 색만으로 구분하지 않기. 아이콘+글자+색

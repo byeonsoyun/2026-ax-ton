@@ -135,7 +135,7 @@
   }
 
   function gate(ico, title, why, actions) {
-    $('gate-ico').textContent = ico;
+    UI.setIcon($('gate-ico'), ico);
     $('gate-title').textContent = title;
     $('gate-why').textContent = why;
     var box = $('gate-actions');
@@ -212,7 +212,7 @@
       dots.appendChild(dot);
     });
 
-    $('quiz-kind').textContent = kind.ico;
+    UI.setIcon($('quiz-kind'), kind.ico);
     $('quiz-prompt').textContent = qt(q, 'prompt');
 
     var audio = $('prompt-audio');
@@ -257,7 +257,7 @@
 
     var box = $('consequence');
     if (consequenceText) {
-      $('consequence-ico').textContent = correct ? '✅' : '⚠';
+      UI.setIcon($('consequence-ico'), correct ? 'check-circle' : 'alert');
       $('consequence-text').textContent = consequenceText;
       box.hidden = false;
       UI.speak(say(consequenceText, consequenceKo));
@@ -605,7 +605,7 @@
     var panel = $('result-panel');
     panel.className = 'result-panel ' + (r.passed ? 'pass' : 'fail');
 
-    $('result-ico').textContent = r.passed ? '✅' : '🔁';
+    UI.setIcon($('result-ico'), r.passed ? 'check-circle' : 'repeat');
     $('result-title').textContent = r.passed ? '이해도 검증을 통과했습니다' : '아직 통과하지 못했습니다';
     $('result-score').textContent = r.score + '점';
     $('result-note').textContent = r.total

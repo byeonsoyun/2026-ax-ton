@@ -27,21 +27,50 @@ var UI = (function () {
     return node;
   }
 
+  /* 아이콘 하나. 이름이든 이모지든 받는다.
+     ★ icons.js 가 없거나 모르는 값이면 글자를 그대로 넣는다 —
+       조용히 사라지지 않는다 (담당자가 넣은 그림문자도 그대로 보인다). */
+  function iconNode(value) {
+    if (typeof Icons !== 'undefined' && Icons && typeof Icons.node === 'function') {
+      return Icons.node(value);
+    }
+    return document.createTextNode(value == null ? '' : String(value));
+  }
+
+  /* 아이콘을 담는 칸. 뜻은 옆 글자가 나르므로 낭독기에서는 숨긴다. */
+  function iconBox(value, className, tag) {
+    var box = el(tag || 'span', className || null);
+    box.setAttribute('aria-hidden', 'true');
+    box.appendChild(iconNode(value));
+    return box;
+  }
+
+  /* 이미 있는 칸의 그림만 갈아 끼운다 (화면이 다시 그릴 때).
+     ★ textContent = 이모지 대신 이것을 쓴다. */
+  function setIcon(node, value) {
+    if (!node) return node;
+    node.textContent = '';
+    node.setAttribute('aria-hidden', 'true');
+    node.appendChild(iconNode(value));
+    return node;
+  }
+
   /* 상태 배지 — 아이콘 + 글자 + 색.
-     흑백으로 봐도 뜻이 남아야 한다 (SCREEN §4 · PRD §9.4) */
+     흑백으로 봐도 뜻이 남아야 한다 (SCREEN §4 · PRD §9.4)
+
+     ★ 아이콘 이름은 모양이 서로 달라야 한다 — 체크 / 찬 원 / 삼각형 / 빈 원.
+       색이 사라지는 흑백 인쇄에서 뜻을 나르는 것은 모양이다. */
   function badge(kind, icon, text) {
     var node = el('span', 'badge ' + kind);
-    var i = el('span', null, icon);
-    i.setAttribute('aria-hidden', 'true');
-    node.appendChild(i);
+    node.appendChild(iconBox(icon, 'ico'));
     node.appendChild(document.createTextNode(' ' + text));
     return node;
   }
 
-  function okBadge(text)      { return badge('badge-ok', '✓', text); }
-  function waitBadge(text)    { return badge('badge-wait', '●', text); }
-  function stopBadge(text)    { return badge('badge-stop', '!', text); }
-  function neutralBadge(text) { return badge('badge-neutral', '○', text); }
+  function okBadge(text)      { return badge('badge-ok', 'check', text); }
+  function waitBadge(text)    { return badge('badge-wait', 'dot', text); }
+  function stopBadge(text)    { return badge('badge-stop', 'alert', text); }
+  function neutralBadge(text) { return badge('badge-neutral', 'circle', text); }
 
   /* 교육 기한 배지 — courses[].dueAt 을 기능2(발급 목록)와 기능6(대시보드)이
      같은 판정으로 읽는다. 이 계산을 화면마다 두면 한쪽만 고쳐져서
@@ -78,10 +107,10 @@ var UI = (function () {
     if (opts.disabled) input.disabled = true;
 
     var box = el('span', 'chip');
-    if (opts.icon) box.appendChild(el('span', 'ico', opts.icon));
+    if (opts.icon) box.appendChild(iconBox(opts.icon, 'ico'));
     if (opts.label) box.appendChild(el('span', null, opts.label));
     if (opts.sub) box.appendChild(el('span', 'sub', opts.sub));
-    box.appendChild(el('span', 'mark', '✓'));
+    box.appendChild(iconBox('check', 'mark'));
 
     label.appendChild(input);
     label.appendChild(box);
@@ -139,7 +168,7 @@ var UI = (function () {
   /* 목록 한 줄 — 아이콘 + 제목 + 부제 */
   function itemRow(icon, title, meta) {
     var li = el('li', 'item');
-    li.appendChild(el('span', 'ico', icon));
+    li.appendChild(iconBox(icon, 'ico'));
     var body = el('div', 'body');
     body.appendChild(el('strong', null, title));
     if (meta) body.appendChild(el('p', 'meta', meta));
@@ -160,7 +189,7 @@ var UI = (function () {
     if (chipNode) {
       chipNode.className = 'role-chip ' + (user.role === 'operator' ? 'operator' : 'admin');
       chipNode.textContent = '';
-      var ico = el('span', null, user.role === 'operator' ? '🔍' : '🛠');
+      var ico = iconBox(user.role === 'operator' ? 'search' : 'tools', 'ico');
       ico.setAttribute('aria-hidden', 'true');
       chipNode.appendChild(ico);
       chipNode.appendChild(document.createTextNode(' ' + Store.role(user.role).label));
@@ -415,8 +444,7 @@ var UI = (function () {
     var btn = el('button', 'btn-audio');
     btn.type = 'button';
     btn.setAttribute('aria-label', label || '소리로 듣기');
-    var ico = el('span', null, '🔊');
-    ico.setAttribute('aria-hidden', 'true');
+    var ico = iconBox('speaker', 'ico');
     btn.appendChild(ico);
     btn.addEventListener('click', function () {
       speak(typeof getSpeech === 'function' ? getSpeech() : getSpeech);
@@ -443,7 +471,8 @@ var UI = (function () {
 
     for (var i = 0; i < audioButtons.length; i++) {
       var a = audioButtons[i];
-      a.ico.textContent = off ? '🔇' : '🔊';
+      a.ico.textContent = '';
+      a.ico.appendChild(iconNode(off ? 'speaker-off' : 'speaker'));
       a.btn.setAttribute('aria-label', why ? a.label + ' — ' + why : a.label);
       if (off) a.btn.classList.add('is-mute');
       else a.btn.classList.remove('is-mute');
@@ -488,6 +517,16 @@ var UI = (function () {
     var text = (typeof I18N !== 'undefined' && I18N.has(key, l))
       ? I18N.t(key, l) : VOICE_NOTE_KO[key];
     return String(text || '').replace('%s', name);
+  }
+
+  /* HTML 에 박혀 있는 이모지를 선 아이콘으로 바꿔 끼운다.
+
+     ★ HTML 의 이모지를 지우지 않는 이유 — JS 가 멈추면 탭이 통째로 비어 보인다.
+       i18n.js 가 한국어 원문을 남겨 두는 것과 같은 대비책이다.
+       여기서 하는 일은 "있으면 더 좋게 바꾸는 것" 이다. */
+  function upgradeIcons() {
+    if (typeof Icons === 'undefined' || !Icons || typeof Icons.upgrade !== 'function') return;
+    try { Icons.upgrade(document); } catch (e) {}
   }
 
   /* -------------------------------------------------------------------
@@ -567,7 +606,7 @@ var UI = (function () {
     bar.setAttribute('aria-live', 'polite');
 
     /* 아이콘 + 글자 + 색 3중. 흑백으로 봐도 뜻이 남아야 한다. */
-    var ico = el('span', null, '📴');
+    var ico = iconBox('wifi-off', 'ico');
     ico.setAttribute('aria-hidden', 'true');
     bar.appendChild(ico);
     bar.appendChild(document.createTextNode(' '));
@@ -715,6 +754,7 @@ var UI = (function () {
 
   /* ui.js 는 문서 끝에서 읽히므로 DOM 이 이미 있다. */
   applyI18n();
+  upgradeIcons();
   registerSW();
   renderOffline();
 
@@ -729,6 +769,9 @@ var UI = (function () {
     fillAdminBar: fillAdminBar, fillWorkerBar: fillWorkerBar,
     markCurrentTab: markCurrentTab,
     warnIfBlocked: warnIfBlocked, formatDate: formatDate,
+
+    // 아이콘 — 이름이든 이모지든 받아 선 그림으로 (icons.js)
+    icon: iconNode, iconBox: iconBox, setIcon: setIcon, upgradeIcons: upgradeIcons,
 
     // 음성 — 노동자 화면 전부가 쓴다
     speak: speak, stopSpeak: stopSpeak, audioButton: audioButton,

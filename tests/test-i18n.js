@@ -9,7 +9,7 @@
      들어오면 검수를 우회하는 통로가 새로 생긴다. */
 const fs = require('fs');
 const path = require('path');
-const { boot, ok, eq, has, report, SRC } = require('./harness');
+const { boot, ok, eq, has, report, SRC, iconName } = require('./harness');
 
 const src = fs.readFileSync(path.join(SRC, 'assets/i18n.js'), 'utf8');
 
@@ -119,7 +119,7 @@ const LANGS = ['km', 'id', 'vi', 'ne', 'th'];
   has('로그아웃 버튼도 그 언어로', out.textContent, I18N.DICT['action.logout'].km);
 
   /* 아이콘은 그대로여야 한다 — 글을 못 읽는 사람에게 닿는 것이 그림이다 */
-  has('★ 탭 아이콘이 그대로 남아 있다', tabs[0].textContent, '🏠');
+  eq('★ 탭 아이콘이 그대로 남아 있다 (글자가 번역돼도 그림은 그 자리)', iconName(tabs[0]), 'home');
 
   /* 다른 언어 사용자에게는 그 언어로 — 언어가 정말 사람마다 갈리는지 */
   const idb = boot('worker/home.html', { login: 'W-4821-11', page: 'worker/home.js' });

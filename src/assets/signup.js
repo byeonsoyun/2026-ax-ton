@@ -46,7 +46,9 @@
 
     UI.fillSelect($('join-proc'), setup.processes,
       function (p) { return p.id; },
-      function (p) { return p.icon + '  ' + p.name; });
+      /* ★ <option> 안에는 그림을 넣을 수 없다. 이모지를 남기면 이 목록만
+         옛 말투로 남으므로 이름만 쓴다 (그림은 고른 뒤 화면에서 보인다). */
+      function (p) { return p.name; });
 
     // 사업장 설정이 아직 없으면 노동자 가입이 성립하지 않는다. 이유를 적어 준다.
     var hint = $('join-lang-hint');

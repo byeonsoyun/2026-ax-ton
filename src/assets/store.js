@@ -65,10 +65,13 @@ var Store = (function () {
   ];
 
   /* 검수 상태 3종 — SCREEN 기능9 의 데이터 정의를 그대로 쓴다 */
+  /* ★ icon 은 icons.js 의 아이콘 이름이다 (글자가 아니다).
+       모양이 서로 달라야 흑백 인쇄에서도 뜻이 남는다 —
+       체크 / 찬 원 / 경고 삼각형. 색은 badge 가 따로 나른다. */
   var PHRASE_STATUS = {
-    reviewed: { label: '검수 완료', badge: 'badge-ok',   icon: '✓' },
-    waiting:  { label: '검수 대기', badge: 'badge-wait', icon: '●' },
-    stopped:  { label: '사용 중지', badge: 'badge-stop', icon: '■' }
+    reviewed: { label: '검수 완료', badge: 'badge-ok',   icon: 'check' },
+    waiting:  { label: '검수 대기', badge: 'badge-wait', icon: 'dot' },
+    stopped:  { label: '사용 중지', badge: 'badge-stop', icon: 'alert' }
   };
 
   function arr(v) { return Array.isArray(v) ? v : []; }

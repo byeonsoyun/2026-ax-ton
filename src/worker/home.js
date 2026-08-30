@@ -158,7 +158,7 @@
 
     if (!now) {
       box.className = 'today empty-today';
-      $('today-pict').textContent = '📋';
+      UI.setIcon($('today-pict'), 'clipboard');
       $('today-text').textContent = '아직 안전 문구가 준비되지 않았습니다.';
       $('today-ko').textContent = '';
       $('today-note').textContent = '';
@@ -170,7 +170,7 @@
     var phrase = now.phrase;
     box.className = 'today';
 
-    var eqIcon = '⚠';
+    var eqIcon = 'alert';
     var state = Store.setup.load();
     myCourses().some(function (c) {
       if ((c.phraseIds || []).indexOf(phrase.id) === -1) return false;
@@ -180,7 +180,7 @@
     });
 
     var t = translationOf(phrase);
-    $('today-pict').textContent = eqIcon;
+    UI.setIcon($('today-pict'), eqIcon);
     $('today-text').textContent = t ? t.text : phrase.ko;
     $('today-ko').textContent = t ? phrase.ko : '';
 
@@ -247,7 +247,7 @@
     list.forEach(function (x) {
       var item = UI.el('div', 'order-item');
 
-      var pict = UI.el('p', 'pict', '🔁');
+      var pict = UI.iconBox('repeat', 'pict', 'p');
       pict.setAttribute('aria-hidden', 'true');
       item.appendChild(pict);
 
@@ -335,9 +335,7 @@
   function bigLink(icon, label, href) {
     var a = UI.el('a', 'btn btn-primary');
     a.href = href;
-    var ico = UI.el('span', null, icon);
-    ico.setAttribute('aria-hidden', 'true');
-    a.appendChild(ico);
+    a.appendChild(UI.iconBox(icon, null));
     a.appendChild(document.createTextNode(' ' + label));
     return a;
   }
@@ -388,9 +386,7 @@
 
       var a = UI.el('a', 'bigmenu-link');
       a.href = item.href;
-      var ico = UI.el('span', 'ico', item.icon);
-      ico.setAttribute('aria-hidden', 'true');
-      a.appendChild(ico);
+      a.appendChild(UI.iconBox(item.icon, 'ico'));
       a.appendChild(UI.el('span', 'name', item.label));
 
       var badge = menuBadge(item);

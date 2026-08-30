@@ -29,7 +29,7 @@
   function badge(node, done, doneText, todoText) {
     node.className = 'badge ' + (done ? 'badge-ok' : 'badge-neutral');
     node.textContent = '';
-    var icon = UI.el('span', null, done ? '✓' : '○');
+    var icon = UI.iconBox(done ? 'check' : 'circle', null);
     icon.setAttribute('aria-hidden', 'true');
     node.appendChild(icon);
     node.appendChild(document.createTextNode(' ' + (done ? doneText : todoText)));
@@ -112,7 +112,9 @@
     $('equip-fields').disabled = !hasProcess;
     UI.fillSelect($('equip-proc'), state.processes,
       function (p) { return p.id; },
-      function (p) { return p.icon + '  ' + p.name; });
+      /* ★ <option> 안에는 그림을 넣을 수 없다. 이모지를 남기면 이 목록만
+         옛 말투로 남으므로 이름만 쓴다 (그림은 고른 뒤 화면에서 보인다). */
+      function (p) { return p.name; });
     renderEquipments(state);
     badge($('b-equip'), state.equipments.length > 0, state.equipments.length + '대', '미설정');
 
@@ -127,7 +129,9 @@
       function (code) { return langName(code); });
     UI.fillSelect($('worker-proc'), state.processes,
       function (p) { return p.id; },
-      function (p) { return p.icon + '  ' + p.name; });
+      /* ★ <option> 안에는 그림을 넣을 수 없다. 이모지를 남기면 이 목록만
+         옛 말투로 남으므로 이름만 쓴다 (그림은 고른 뒤 화면에서 보인다). */
+      function (p) { return p.name; });
     renderWorkers(state);
     badge($('b-worker'), state.workers.length > 0, state.workers.length + '명', '미설정');
 
@@ -194,7 +198,7 @@
       return;
     }
     state.workers.forEach(function (w) {
-      var li = UI.itemRow('👷', w.id, langName(w.lang) + ' · ' + processName(state, w.processId));
+      var li = UI.itemRow('helmet', w.id, langName(w.lang) + ' · ' + processName(state, w.processId));
       li.appendChild(deleteButton(w.id + ' 삭제', function () { removeWorker(w); }));
       list.appendChild(li);
     });

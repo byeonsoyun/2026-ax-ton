@@ -1,5 +1,5 @@
 /* 기능4 이해도 검증 — 실제 DOM 검증 */
-const { boot, ok, eq, has, report } = require('./harness');
+const { boot, ok, eq, has, report, iconName } = require('./harness');
 
 const text = (n) => (n ? n.textContent.trim().replace(/\s+/g, ' ') : '');
 const click = (win, node) => node.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
@@ -39,7 +39,7 @@ function openQuiz(opts) {
   eq('문항 화면이 뜬다', t.$('view-quiz').hidden, false);
   has('문항 1 / 3', text(t.$('step-count')), '문항 1 / 3');
   has('유형을 적는다', text(t.$('step-count')), '위험 지점 짚기');
-  eq('유형 픽토그램', text(t.$('quiz-kind')), '👆');
+  eq('유형 픽토그램', iconName(t.$('quiz-kind')), 'touch');
   has('문항을 읽어 준다', t.$('prompt-audio').innerHTML, 'btn-audio');
 
   const svg = t.$('quiz-body').querySelector('.quiz-figure svg');
@@ -74,7 +74,7 @@ function openQuiz(opts) {
   /* --- 문항 2: choice --- */
   click(t.win, t.$('btn-next'));
   has('문항 2 / 3', text(t.$('step-count')), '문항 2 / 3');
-  eq('선택지 유형 픽토그램', text(t.$('quiz-kind')), '☑');
+  eq('선택지 유형 픽토그램', iconName(t.$('quiz-kind')), 'checkbox');
 
   const choices = t.$('quiz-body').querySelectorAll('.choice-btn');
   eq('선택지 3개', choices.length, 3);
@@ -84,12 +84,12 @@ function openQuiz(opts) {
   eq('정답 표시', choices[1].getAttribute('data-mark'), 'ok');
   // ★ 이 노동자는 크메르어다. 결과 문장도 크메르어로 나온다 (i18n)
   has('결과를 크메르어로 말한다', text(t.$('consequence-text')), 'ដុំដែកនឹងមិនធ្លាក់ទេ');
-  eq('맞았을 때 아이콘', text(t.$('consequence-ico')), '✅');
+  eq('맞았을 때 아이콘', iconName(t.$('consequence-ico')), 'check-circle');
 
   /* --- 문항 3: match --- */
   click(t.win, t.$('btn-next'));
   has('문항 3 / 3', text(t.$('step-count')), '문항 3 / 3');
-  eq('연결 유형 픽토그램', text(t.$('quiz-kind')), '🔗');
+  eq('연결 유형 픽토그램', iconName(t.$('quiz-kind')), 'link');
   has('마지막 문항은 결과 보기', text(t.$('btn-next')), '결과 보기');
 
   const rows = t.$('quiz-body').querySelectorAll('.match-row');
@@ -223,7 +223,7 @@ function openQuiz(opts) {
   click(t.win, choices[0]);   // 물을 뿌린다
   has('오답의 결과를 인도네시아어로 말한다', text(t.$('consequence-text')),
     'Menyiram air pada api cat membuat api menyebar');
-  eq('틀렸을 때 아이콘', text(t.$('consequence-ico')), '⚠');
+  eq('틀렸을 때 아이콘', iconName(t.$('consequence-ico')), 'alert');
   eq('정답도 함께 표시', choices[1].getAttribute('data-mark'), 'ok');
 
   click(t.win, t.$('btn-next'));
@@ -468,7 +468,7 @@ function openQuiz(opts) {
   has('★ 내린 문항을 빼고 낸다 — 3문항이 아니라 2문항',
     text(t.$('step-count')), '문항 1 / 2');
   ok('★ 내린 문항이 첫 문항으로 나오지 않는다',
-    text(t.$('quiz-kind')) !== '👆', text(t.$('quiz-kind')));
+    iconName(t.$('quiz-kind')) !== 'touch', iconName(t.$('quiz-kind')));
 
   /* 그래도 courses 에서는 안 지웠다 — 옛 기록이 가리킬 곳이 남아야 한다 */
   eq('★ 배열에서는 빠지지 않았다',

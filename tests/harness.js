@@ -56,6 +56,7 @@ function boot(pageRelPath, opts = {}) {
   run('assets/auth.js');
   run('assets/i18n.js');   // 노동자 화면 <head> 에 실린다 (UI-1)
   run('assets/seed.js');
+  run('assets/icons.js');  // ui.js 보다 먼저 실려야 한다 (선 아이콘)
 
   if (opts.seed !== false) win.Seed.fill();
   if (opts.login) {
@@ -70,6 +71,28 @@ function boot(pageRelPath, opts = {}) {
   if (opts.page) run(opts.page, { shimLocation: true });
 
   return { dom, win, errors, nav, run, $: (id) => win.document.getElementById(id) };
+}
+
+/* 아이콘 이름 — 선 아이콘(icons.js)이 붙었으면 data-icon, 아니면 글자 그대로.
+
+   ★ 검사가 이모지 글자를 단정하면, 그림을 바꾸는 순간 전부 깨진다.
+     그런데 깨진 검사가 지키던 것은 "이 자리에 뜻이 맞는 그림이 있는가" 였다.
+     이름으로 견주면 그림을 바꿔도 그 뜻이 남는다.
+     (test-i18n.js 가 한국어 글자 대신 사전을 견주는 것과 같은 이유다.) */
+function iconName(node) {
+  if (!node) return '';
+  const tag = node.tagName ? String(node.tagName).toLowerCase() : '';
+  const svg = tag === 'svg' ? node
+    : (node.querySelector ? node.querySelector('svg[data-icon]') : null);
+  if (svg) return svg.getAttribute('data-icon') || '';
+  return (node.textContent || '').trim();
+}
+
+/* 안에 든 아이콘 이름 전부 (칩 여러 개가 든 칸을 볼 때) */
+function iconNames(node) {
+  if (!node || !node.querySelectorAll) return [];
+  return [...node.querySelectorAll('svg[data-icon]')]
+    .map((s) => s.getAttribute('data-icon'));
 }
 
 // --- 아주 작은 단정 도구 ---
@@ -101,4 +124,4 @@ function report(title) {
   return fails.length === 0;
 }
 
-module.exports = { boot, ok, eq, has, report, SRC };
+module.exports = { boot, ok, eq, has, report, SRC, iconName, iconNames };

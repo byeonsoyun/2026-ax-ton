@@ -223,7 +223,8 @@ Store.progress.update(function (list) {        // 읽기 → 고치기 → 저�
 문서(`PRD-safety.pdf` `SCREEN-safety.pdf`)에서 온 제약입니다. 나중에 뜯어고치면 비용이 큽니다.
 
 - **외부 요청 0건.** CDN · 웹폰트 · 외부 이미지 · npm 패키지를 쓰지 마세요.
-  픽토그램은 이모지입니다. 덕분에 인터넷 없이 `file://` 로 열려 확인이 가장 빠릅니다
+  **픽토그램은 `assets/icons.js` 의 선 아이콘입니다** (좌표만 든 인라인 SVG).
+  덕분에 인터넷 없이 `file://` 로 열려 확인이 가장 빠릅니다
   - **예외 둘.** `sw.js` 의 `fetch(req)`(같은 오리진 요청을 그대로 흘려보내는 것)와
     **신고 화면의 받아쓰기**(브라우저가 소리를 인식 서버로 보냅니다).
     둘 다 **화면과 주석에 그 사실을 적어 뒀고**, 검사가 "그 밖의 외부 주소는 0건" 을 지킵니다.
@@ -234,6 +235,13 @@ Store.progress.update(function (list) {        // 읽기 → 고치기 → 저�
   기존 파일들처럼 `var X = (function () { ... })()` 형태로 쓰세요
 - **색상만으로 상태를 구분하지 않습니다.** 배지는 아이콘 + 글자 + 색 3중
   (`UI.okBadge` `UI.waitBadge` `UI.stopBadge` `UI.neutralBadge`). 흑백으로 봐도 뜻이 남아야 합니다
+- **★ 이모지를 새로 넣지 않습니다.** 그림이 필요하면 `assets/icons.js` 에 아이콘을
+  더하고 `UI.iconBox(이름, 'ico')` · `UI.setIcon(칸, 이름)` 으로 씁니다.
+  이모지는 기기마다 다르게 그려지고 말투가 가볍습니다.
+  **`tests/test-icons.js` 가 화면 13개를 실제로 그려 이모지가 남았는지 봅니다** —
+  새 버튼에 이모지를 넣으면 그 검사가 깨집니다.
+  다만 **HTML 의 이모지는 지우지 않습니다** — JS 가 멈췄을 때의 대비책입니다
+  (`Icons.upgrade()` 가 뜰 때 바꿔 끼웁니다)
 - **터치 타깃** — 노동자 화면은 전부 60px(`--tap-min`). 장갑 낀 손으로 조작합니다.
   관리자 화면은 주요 버튼만 60px 이고 표 안 보조 조작은 40px(`.btn-sm`)
 - **노동자 화면은 문해력을 전제하지 않습니다.** 모든 안내에 음성을 병행하고,
@@ -259,6 +267,9 @@ Store.progress.update(function (list) {        // 읽기 → 고치기 → 저�
 <script src="../assets/auth.js"></script>
 <script>Auth.require('worker');</script>
 ```
+
+그리고 문서 끝에 **`icons.js` 를 `ui.js` 보다 먼저** 실어야 합니다
+(`ui.js` 가 아이콘을 부르는 쪽입니다). `tests/test-icons.js` 가 순서를 봅니다.
 
 ---
 
