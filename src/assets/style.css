@@ -16,33 +16,81 @@
 
   --tap-min: 60px;          /* 터치 타깃 하한 — 장갑 착용 상태 조작 */
   --gap: 12px;
-  --radius: 14px;
+  --radius: 16px;
+  --radius-lg: 22px;
+  --radius-sm: 11px;
 
   --ink: #14181d;
   --ink-2: #4a545f;
   --ink-3: #78838f;
-  --line: #dfe4ea;
-  --bg: #f4f6f8;
+  --line: #e2e5eb;
+  --bg: #f5f6f9;
   --surface: #ffffff;
+  --track: #edeff3;         /* 막대 바탕 — 아직 안 찬 부분 */
 
-  --brand: #10529b;
+  /* -----------------------------------------------------------------
+     ★ 트랙 색 (2026-08-30)
+
+     같은 폰을 돌려 쓰기 때문에 "지금 누구 화면인가" 가 한눈에 보여야 한다.
+     그래서 트랙마다 색을 다르게 둔다 — 담당자·운영자는 보라, 노동자는 빨강.
+
+       기본값(여기)      = 보라  → 로그인·회원가입·관리자 화면
+       worker/worker.css = 빨강  → 노동자 화면에서 아래 값을 덮어쓴다
+
+     화면 CSS 는 이 이름들만 쓴다. 색을 바꿀 일이 생기면 두 곳(여기와
+     worker.css 맨 위)만 고치면 되고, 화면 파일은 건드리지 않는다.
+
+     ★ 왜 색이 두 단계인가 —
+       --brand 는 글자로도 쓰이고 바탕으로도 쓰인다. 그래서 흰 글자와도,
+       흰 바탕과도 4.5:1 을 넘는 중간 짙기로 잡았다.
+       디자인 시안의 밝은 색(막대·그러데이션)은 --brand-vivid 로 따로 둔다.
+       글자가 얹히지 않는 장식에만 쓴다.
+     ----------------------------------------------------------------- */
+
+  --brand: #5a45c2;         /* 주 색 — 흰 글자 위/아래 모두 5.9:1 */
   --brand-ink: #ffffff;
-  --brand-soft: #e8f0fa;
+  --brand-strong: #43308f;  /* 눌린 상태 · 머리띠 그러데이션 끝 */
+  --brand-deep: #3e2d87;    /* 옅은 바탕 위 글자 */
+  --brand-soft: #f1eefe;    /* 옅은 바탕 */
+  --brand-line: #d7cefa;    /* 옅은 바탕의 테두리 */
+  --brand-vivid: #8b7cf6;   /* 장식용 밝은 색 — 글자를 얹지 않는다 */
+  --brand-vivid-2: #a99bfa; /* 그러데이션 끝 */
+  --brand-focus: #8b7cf6;   /* 초점 테두리 */
+  --brand-glow: rgba(90, 69, 194, .30);   /* 버튼 그림자 */
+  --brand-tint: #faf9ff;    /* 표 hover 처럼 아주 옅게 */
 
   --ok: #1c6b3a;
   --ok-soft: #e4f2e9;
+  --ok-line: #b6ddc5;
   --warn: #8a5a00;
   --warn-soft: #fbf0d9;
-  --stop: #a32218;
-  --stop-soft: #fbe7e5;
+  --warn-line: #e6d3a6;
+
+  /* ★ 위험 빨강은 노동자 트랙의 브랜드 빨강(--brand-vivid: 밝은 산호색)과
+     반드시 달라 보여야 한다. 그래서 더 짙고 푸른 쪽으로 내린 진홍이다.
+     배지는 원래 아이콘 + 글자 + 색 3중이지만, 색까지 겹치면 안 된다. */
+  --stop: #8f1420;
+  --stop-soft: #f9e3e6;
+  --stop-line: #eec0c6;
+
+  /* 노동자 화면 안에서 "지금 담당자로 들어와 있다" 를 알리는 색.
+     worker.css 가 --brand 를 빨강으로 덮어써도 이 값은 그대로 보라로 남는다.
+     그래야 노동자 화면 위에 뜬 담당자용 안내가 담당자 색으로 보인다. */
+  --admin-accent: #5a45c2;
+  --admin-accent-soft: #f1eefe;
 
   /* 깊이 — 테두리 하나로만 구분하면 화면이 납작해 보인다.
      ★ 저사양 안드로이드를 생각해 blur 를 얕게 쓴다 (PRD §9.1). */
   --shadow-1: 0 1px 2px rgba(20, 24, 29, .05), 0 1px 1px rgba(20, 24, 29, .04);
-  --shadow-2: 0 2px 6px rgba(20, 24, 29, .07), 0 1px 2px rgba(20, 24, 29, .05);
+  --shadow-2: 0 3px 10px rgba(20, 24, 29, .08), 0 1px 2px rgba(20, 24, 29, .05);
+  --shadow-3: 0 6px 18px rgba(20, 24, 29, .10), 0 2px 4px rgba(20, 24, 29, .05);
 }
 
 * { box-sizing: border-box; }
+
+/* 초점 테두리 — 트랙 색을 따라간다. 키보드로만 다니는 사람이
+   지금 어디 있는지 항상 보여야 한다 (PRD §9.4). */
+:focus-visible { outline: 3px solid var(--brand-focus); outline-offset: 2px; }
 
 /* -------------------------------------------------------------------
    선 아이콘 (icons.js)
@@ -186,7 +234,7 @@ body {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 14px;
+  padding: 15px;
   box-shadow: var(--shadow-1);
 }
 
@@ -233,15 +281,19 @@ body {
 }
 
 .btn-primary {
-  background: var(--brand);
+  background: linear-gradient(180deg, var(--brand) 0%, var(--brand-strong) 100%);
   color: var(--brand-ink);
+  box-shadow: 0 2px 8px var(--brand-glow);
 }
+.btn-primary:hover { background: var(--brand-strong); }
+.btn-primary:active { box-shadow: none; transform: translateY(1px); }
 
 .btn-ghost {
-  background: var(--surface);
-  color: var(--brand);
-  border-color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand-deep);
+  border-color: var(--brand-line);
 }
+.btn-ghost:hover { border-color: var(--brand); color: var(--brand); }
 
 .btn-quiet {
   background: var(--surface);
@@ -261,7 +313,7 @@ body {
   border-radius: 50%;
   background: var(--brand-soft);
   color: var(--brand);
-  border: 1px solid #c3d8ef;
+  border: 1px solid var(--brand-line);
   font-size: 22px;
   display: flex;
   align-items: center;
@@ -280,7 +332,7 @@ body {
 .btn-audio.is-mute {
   background: var(--warn-soft);
   color: var(--warn);
-  border-color: #e6d3a6;
+  border-color: var(--warn-line);
   border-style: dashed;
 }
 
@@ -301,9 +353,9 @@ body {
   white-space: nowrap;
 }
 
-.badge-ok      { background: var(--ok-soft);   color: var(--ok);    border-color: #b6ddc5; }
-.badge-wait    { background: var(--warn-soft); color: var(--warn);  border-color: #e6d3a6; }
-.badge-stop    { background: var(--stop-soft); color: var(--stop);  border-color: #edbdb8; }
+.badge-ok      { background: var(--ok-soft);   color: var(--ok);    border-color: var(--ok-line); }
+.badge-wait    { background: var(--warn-soft); color: var(--warn);  border-color: var(--warn-line); }
+.badge-stop    { background: var(--stop-soft); color: var(--stop);  border-color: var(--stop-line); }
 .badge-neutral { background: #eef1f4;          color: var(--ink-2); border-color: var(--line); }
 
 /* -------------------------------------------------------------------

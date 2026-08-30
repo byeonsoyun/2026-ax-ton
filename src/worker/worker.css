@@ -20,6 +20,37 @@
 
 
 /* ===================================================================
+   ★ 노동자 트랙의 색 (2026-08-30)
+
+   style.css 의 :root 기본값은 보라(담당자·운영자)다. 이 파일은 노동자
+   화면에서만 실리므로, 여기서 덮어쓰면 노동자 화면 전체가 빨강이 된다.
+   화면 CSS 는 그대로 var(--brand) 만 쓰면 된다.
+
+   같은 폰을 돌려 쓰기 때문에 "지금 누구 화면인가" 가 한눈에 보여야 한다.
+   머리띠 색이 보라면 담당자, 빨강이면 노동자다.
+
+   ★ 위험 빨강(--stop)과 겹치지 않게 잡았다 —
+     --stop 은 짙은 진홍(#8f1420), 여기 브랜드는 그보다 밝고 따뜻한
+     산호빛이다. 배지는 원래 아이콘 + 글자 + 색 3중이지만, 안전 화면에서
+     "주 색"과 "위험 색"이 같아 보이면 위험 표시가 묻힌다.
+   =================================================================== */
+
+:root {
+  --brand: #c0392c;         /* 흰 글자와 5.6:1, 흰 바탕 위 글자로도 5.6:1 */
+  --brand-ink: #ffffff;
+  --brand-strong: #9a2a1f;
+  --brand-deep: #8c2a20;
+  --brand-soft: #fdeeeb;
+  --brand-line: #f6ccc4;
+  --brand-vivid: #f4685c;   /* 장식용 — 글자를 얹지 않는다 */
+  --brand-vivid-2: #fb9083;
+  --brand-focus: #ef6a5e;
+  --brand-glow: rgba(192, 57, 44, .28);
+  --brand-tint: #fffaf9;
+}
+
+
+/* ===================================================================
    [P1] 여기부터
    =================================================================== */
 
@@ -31,7 +62,7 @@
 .voicenote {
   margin: 0 0 var(--gap);
   padding: 10px 12px;
-  border: 1px solid #e6d3a6;
+  border: 1px solid var(--warn-line);
   border-left: 5px solid var(--warn);
   border-radius: var(--radius);
   background: var(--warn-soft);
@@ -89,8 +120,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--brand-soft);
+  color: var(--brand-deep);
   font-size: 28px;
 }
 
@@ -116,7 +148,7 @@
   gap: 6px;
 }
 
-.course-open:focus-visible { outline: 3px solid #7aa8d8; outline-offset: 2px; }
+.course-open:focus-visible { outline: 3px solid var(--brand-focus); outline-offset: 2px; }
 
 /* -------------------------------------------------------------------
    기능3 · 수강 진행 — 문구 한 장씩
@@ -295,7 +327,7 @@
   background: rgba(217, 164, 6, .14);
 }
 
-.zone:focus-visible { outline: 3px solid #7aa8d8; outline-offset: 2px; }
+.zone:focus-visible { outline: 3px solid var(--brand-focus); outline-offset: 2px; }
 
 /* 누른 자리 표시 — 아이콘 + 색 두 겹. 색을 지워도 맞고 틀림이 남는다 */
 .zone[data-mark]::after {
@@ -411,7 +443,7 @@
 
 .choice-btn .text { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
 
-.choice-btn:focus-visible { outline: 3px solid #7aa8d8; outline-offset: 2px; }
+.choice-btn:focus-visible { outline: 3px solid var(--brand-focus); outline-offset: 2px; }
 
 .choice-btn[data-mark="ok"] { border-color: var(--ok); background: var(--ok-soft); }
 .choice-btn[data-mark="ok"] .no { background: var(--ok); color: #fff; border-color: var(--ok); }
@@ -466,7 +498,7 @@
   overflow-wrap: anywhere;
 }
 
-.match-btn:focus-visible { outline: 3px solid #7aa8d8; outline-offset: 2px; }
+.match-btn:focus-visible { outline: 3px solid var(--brand-focus); outline-offset: 2px; }
 .match-btn[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); }
 .match-btn[data-mark="ok"] { border-color: var(--ok); background: var(--ok-soft); }
 .match-btn[data-mark="no"] { border-color: var(--stop); background: var(--stop-soft); }
@@ -506,7 +538,7 @@
   margin: var(--gap) 0 0;
   padding: 14px;
   border-radius: var(--radius);
-  border: 1px solid #e6d3a6;
+  border: 1px solid var(--warn-line);
   border-left: 5px solid var(--warn);
   background: var(--warn-soft);
   display: flex;
@@ -552,9 +584,9 @@
 
 .result-panel .scorenote { margin: 4px 0 0; font-size: .84em; color: var(--ink-2); }
 
-.result-panel.pass { border-color: #b6ddc5; background: var(--ok-soft); }
+.result-panel.pass { border-color: var(--ok-line); background: var(--ok-soft); }
 .result-panel.pass .score { color: var(--ok); }
-.result-panel.fail { border-color: #edbdb8; background: var(--stop-soft); }
+.result-panel.fail { border-color: var(--stop-line); background: var(--stop-soft); }
 .result-panel.fail .score { color: var(--stop); }
 
 /* 미통과 화면에서 가장 중요한 한 줄.
@@ -652,7 +684,7 @@
   padding: 20px 16px;
   border-radius: var(--radius);
   background: var(--brand-soft);
-  border: 1px solid #c3d8ef;
+  border: 1px solid var(--brand-line);
   text-align: center;
   margin-bottom: var(--gap);
 }
@@ -736,7 +768,7 @@
 
 /* 끝난 것 */
 .stage-track li[data-state="done"] {
-  border-color: #b6ddc5;
+  border-color: var(--ok-line);
   background: var(--ok-soft);
   color: var(--ok);
 }
@@ -795,9 +827,9 @@
   border: 1px solid var(--line);
 }
 
-.voice-state.is-live { background: var(--brand-soft); color: var(--brand); border-color: #b9d2ee; }
-.voice-state.is-ok   { background: var(--ok-soft);   color: var(--ok);    border-color: #b6ddc5; }
-.voice-state.is-warn { background: var(--warn-soft); color: var(--warn);  border-color: #e6d3a6; }
+.voice-state.is-live { background: var(--brand-soft); color: var(--brand); border-color: var(--brand-line); }
+.voice-state.is-ok   { background: var(--ok-soft);   color: var(--ok);    border-color: var(--ok-line); }
+.voice-state.is-warn { background: var(--warn-soft); color: var(--warn);  border-color: var(--warn-line); }
 .voice-state[hidden] { display: none; }
 
 .voice-privacy,
@@ -857,7 +889,7 @@
   overflow-wrap: anywhere;
 }
 
-.bigmenu-link:focus-visible { outline: 3px solid #7aa8d8; outline-offset: 2px; border-radius: 10px; }
+.bigmenu-link:focus-visible { outline: 3px solid var(--brand-focus); outline-offset: 2px; border-radius: 10px; }
 
 @media (max-width: 360px) {
   .bigmenu { grid-template-columns: 1fr; }
@@ -1015,7 +1047,7 @@
   cursor: pointer;
 }
 
-.post-open:focus-visible { outline: 3px solid #7aa8d8; outline-offset: 2px; border-radius: var(--radius); }
+.post-open:focus-visible { outline: 3px solid var(--brand-focus); outline-offset: 2px; border-radius: var(--radius); }
 
 .post-open .body { flex: 1 1 auto; min-width: 0; }
 .post-open .body strong { display: block; font-size: 1em; overflow-wrap: anywhere; }
@@ -1134,7 +1166,7 @@
 .proof-meta td { overflow-wrap: anywhere; }
 
 /* 미통과·미수강 줄을 옅게 만들지 않는다. 흐리게 두는 것도 숨기는 것이다. */
-.proof-table tbody tr[data-state="fail"] td { background: #fff8f7; }
+.proof-table tbody tr[data-state="fail"] td { background: #fdf4f5; }
 .proof-table tbody tr[data-state="none"] td,
 .proof-table tbody tr[data-state="noquiz"] td { background: #fafbfc; }
 
@@ -1246,7 +1278,7 @@
   padding: 8px 0;
 }
 
-.stuck-list li + li { border-top: 1px solid #f0d6d2; }
+.stuck-list li + li { border-top: 1px solid #f0d8db; }
 
 .stuck-list .ico { font-size: 1.6em; flex: 0 0 auto; }
 .stuck-list .body { flex: 1 1 auto; min-width: 0; }
@@ -1292,7 +1324,7 @@
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: #f7f9fb;
+  background: var(--bg);
   font-size: .9em;
   line-height: 1.55;
   color: var(--ink-2);
@@ -1347,7 +1379,7 @@
 }
 
 .btn-round:active { background: #eef2f6; }
-.btn-round:focus-visible { outline: 3px solid #7aa8d8; outline-offset: 2px; }
+.btn-round:focus-visible { outline: 3px solid var(--brand-focus); outline-offset: 2px; }
 
 .today-pos {
   margin: 0;
@@ -1397,9 +1429,9 @@
 .admin-here {
   margin: 0 0 12px;
   padding: 10px 12px;
-  border-left: 4px solid var(--brand);
+  border-left: 4px solid var(--admin-accent);
   border-radius: 0 10px 10px 0;
-  background: #f2f6fb;
+  background: var(--admin-accent-soft);
   font-size: .9em;
   line-height: 1.55;
   color: var(--ink-2);
@@ -1414,7 +1446,7 @@
   min-height: 40px;
   line-height: 40px;
   font-weight: 700;
-  color: var(--brand);
+  color: var(--admin-accent);
 }
 
 /* 탭바를 감출 수 있어야 한다.
