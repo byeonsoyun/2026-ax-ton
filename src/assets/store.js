@@ -360,6 +360,52 @@ var Store = (function () {
       document.documentElement.setAttribute('data-font', bootScale);
     }
   } catch (e) { /* 기본 크기로 간다 */ }
+
+
+  /* -----------------------------------------------------------------
+     지금 어디서 열렸는가 — 개발 자리인가, 배포된 자리인가 (2026-08-30)
+
+     화면 여덟 개의 맨 아래에는 "여기부터 채우시면 됩니다" 칸이 있다.
+     남은 일을 적어 둔 개발용 메모다. 그것이 **배포 주소에서 보이면
+     시연 중에 "아직 안 만든 화면" 으로 읽힌다.** 그렇다고 지우면
+     무엇이 남았는지를 잃는다.
+
+     그래서 지우지 않고 **자리에 따라 감춘다.**
+
+       <html data-env="dev">   file:// · localhost · 브랜치 미리보기
+                               → 칸이 보인다 (개발할 때 봐야 하니까)
+       <html data-env="live">  배포 주소 (2026-ax-ton.vercel.app)
+                               → 칸이 감춰진다 (시연에서 안 보여야 하니까)
+
+     ★ 감추는 쪽이 CSS 의 기본값이다 (app.css 의 `.todo { display: none }`).
+       이 스크립트가 멈춰도 배포 주소에서는 여전히 안 보인다.
+       실패해도 시연이 안전한 쪽으로 기울여 뒀다.
+
+     ★ 브랜치 미리보기 주소에는 `-git-` 이 들어간다
+       (예: 2026-ax-ton-git-develop-….vercel.app). 그것으로 갈라낸다.
+     ----------------------------------------------------------------- */
+  function whereAmI() {
+    try {
+      if (typeof location === 'undefined') return 'dev';
+      if (location.protocol === 'file:') return 'dev';
+
+      var host = String(location.hostname || '').toLowerCase();
+      if (!host) return 'dev';
+      if (host === 'localhost' || host === '127.0.0.1' || host === '::1') return 'dev';
+      if (host.indexOf('.local') !== -1) return 'dev';
+      if (host.indexOf('-git-') !== -1) return 'dev';   // Vercel 브랜치 미리보기
+
+      return 'live';
+    } catch (e) {
+      return 'live';        /* 모르겠으면 감추는 쪽으로 — 시연이 우선이다 */
+    }
+  }
+
+  var ENV = whereAmI();
+  try {
+    if (document.documentElement) document.documentElement.setAttribute('data-env', ENV);
+  } catch (e) { /* 기본값(감춤)으로 간다 */ }
+
   var ALL = [accounts, session, setup, library, courses, progress, reports, posts,
              prefs, orders];
 
@@ -570,6 +616,7 @@ var Store = (function () {
     accounts: accounts, session: session, setup: setup, library: library,
     courses: courses, progress: progress, reports: reports, posts: posts,
     prefs: prefs, orders: orders, FONT_SCALES: FONT_SCALES,
+    env: ENV, isDev: ENV === 'dev',
     VOICE_FALLBACKS: VOICE_FALLBACKS,
     orderOpen: orderOpen, askedQuestion: askedQuestion,
 

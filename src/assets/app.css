@@ -555,18 +555,51 @@ fieldset.formset[disabled] { opacity: .5; }
 body.has-tabbar .page { padding-bottom: 100px; }
 
 /* ===================================================================
-   아직 만들지 않은 화면 — 껍데기 안내
+   아직 만들지 않은 화면 — 껍데기 안내 (★ 개발 자리에서만 보인다)
 
    빈 화면에 아무것도 없으면 "고장 났나?" 로 읽힌다.
-   무엇이 들어올 자리인지, 누가 만드는지 적어 둔다.
+   무엇이 들어올 자리인지 적어 둔다.
+
+   ★★ 2026-08-30 — 배포 주소에서는 감춘다.
+
+   이 칸은 개발자에게 하는 말이다. 시연 중에 화면 맨 아래에 뜨면
+   보는 사람은 "아직 안 만든 화면" 으로 읽는다. 그렇다고 지우면
+   무엇이 남았는지를 잃는다 (tests/test-docs.js 가 여덟 화면에 이 칸이
+   있는지, 안에 적힌 항목이 낡지 않았는지 지금도 본다).
+
+   그래서 지우지 않고 자리에 따라 감춘다.
+
+     감추는 것이 기본값이다. store.js 가 <head> 에서 지금 어디인지 보고
+     개발 자리면 <html data-env="dev"> 를 붙이고, 그때만 다시 보인다.
+     ★ 스크립트가 멈춰도 배포 주소에서는 안 보인다 —
+       실패해도 시연이 안전한 쪽으로 기울여 뒀다.
+
+     보이는 곳 : file:// · localhost · 브랜치 미리보기(-git- 이 든 주소)
+     안 보이는 곳 : 배포 주소 (2026-ax-ton.vercel.app)
+
+   자세한 것은 docs/09-handover.md §8.2-3.
    =================================================================== */
 
-.todo {
+.todo { display: none; }
+
+html[data-env="dev"] .todo {
+  display: block;
   border: 1px dashed #c8d0d8;
   border-radius: var(--radius);
   background: #fbfcfd;
   padding: 22px 18px;
 }
+
+/* 개발 자리에서만 보이는 칸이라는 것을 칸 자신이 말한다.
+   그래야 "배포에서도 이게 보이나?" 를 두 번 걱정하지 않는다. */
+html[data-env="dev"] .todo > h2::before {
+  content: '개발 화면에서만 보입니다 · ';
+  font-size: .78em;
+  font-weight: 800;
+  letter-spacing: .02em;
+  color: var(--ink-3);
+}
+
 .todo h2 {
   margin: 0 0 6px;
   font-size: 1.05em;
