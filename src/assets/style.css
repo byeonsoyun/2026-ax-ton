@@ -116,6 +116,27 @@
 .badge > .ico,
 .btn-audio > .ico { display: inline-flex; line-height: 1; }
 
+/* ★ 배지 안의 그림은 배지 글자 크기를 따른다 (2026-08-30)
+
+   배지는 어느 칸에나 들어간다. 그 칸이 자기 .ico 를 크게 잡아 뒀으면
+   (예전 `.course-open .ico` 52px · `.bigmenu-link .ico` 34px 처럼)
+   배지 아이콘이 그 값을 물려받아 **글자보다 큰 그림**이 됐다.
+   그때그때 칸마다 고치는 대신 여기서 한 번 끊는다.
+   앞으로 새 칸이 생겨도 배지는 흔들리지 않는다. */
+.badge > .ico {
+  font-size: 1em;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  filter: none;
+  opacity: 1;
+}
+
 html, body {
   margin: 0;
   padding: 0;

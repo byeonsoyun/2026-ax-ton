@@ -310,4 +310,73 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
   ok('★ 화면에 P1~P4 표기가 남아 있지 않다', withP.length === 0, withP.join(', '));
 }
 
+/* =================================================================
+   화면이 가로로 밀리지 않는가 — 2026-08-30 에 세 군데서 다쳤다
+
+   실제 밀림은 브라우저에서만 잴 수 있다 (jsdom 은 배치를 계산하지 않는다).
+   그래서 여기서는 **다시 그렇게 될 수 있는 모양**을 잡는다.
+   세 가지 다 "좁은 화면에서 화면이 통째로 옆으로 밀린" 원인이었다.
+   ================================================================= */
+{
+  const worker = read('src/worker/worker.css');
+  const admin  = read('src/admin/admin.css');
+  const shared = read('src/assets/style-admin.css');
+  const base   = read('src/assets/style.css');
+  const talk   = read('src/worker/talk.js');
+
+  /* --- 1. 같은 이름을 두 화면이 나눠 쓰지 않는가 --------------------
+     .anon-note 를 신고 화면(큰 익명 고지)과 소통 화면(한 줄 안내)이
+     같이 쓰고 있었다. 뒤에 있는 규칙이 앞의 것을 덮어,
+     이 제품에서 가장 중요한 문장이 네 칸짜리 가로줄로 찌그러져 있었다. */
+  const anonNoteBlocks = (worker.match(/^\.anon-note\s*\{/gm) || []).length;
+  ok('★ .anon-note 를 정의한 곳이 하나뿐이다 (신고 화면의 익명 고지)',
+    anonNoteBlocks === 1, '찾은 개수: ' + anonNoteBlocks);
+  ok('★ 소통 화면의 한 줄 안내는 .anon-line 을 쓴다',
+    talk.includes("'anon-line'") && !talk.includes("'anon-note'"));
+  ok('.anon-line 규칙이 있다', /^\.anon-line\s*\{/m.test(worker));
+
+  /* --- 2. 칸의 .ico 규칙이 배지 안까지 흘러들지 않는가 --------------
+     .course-open .ico 는 52px 짜리 색 상자다. 그 안에 배지가 들어가면
+     배지의 체크 표시까지 52px 이 되어 글자보다 큰 그림이 됐다. */
+  ok('★ .course-open 의 아이콘 규칙은 바로 아래 자식만 잡는다',
+    /\.course-open\s*>\s*\.ico\s*\{/.test(worker) && !/\.course-open\s+\.ico\s*\{/.test(worker));
+  ok('★ .bigmenu-link 의 아이콘 규칙도 바로 아래 자식만 잡는다',
+    /\.bigmenu-link\s*>\s*\.ico\s*\{/.test(worker) && !/\.bigmenu-link\s+\.ico\s*\{/.test(worker));
+  ok('★ 배지 안의 그림은 배지 글자 크기를 따른다 (새 칸이 생겨도 안 흔들리게)',
+    /\.badge\s*>\s*\.ico\s*\{[^}]*font-size:\s*1em/.test(base));
+
+  /* --- 3. 긴 이름표가 한 줄로 버티지 않는가 -------------------------
+     .btn-sm 은 표 안에서는 짧지만("보기"), 표 밖에서는 문장만큼 길다
+     ("문구 전체 검수 완료 — 안전 지시로 쓴다"). 한 줄로 버티면
+     버튼이 카드를 넓히고 카드가 화면을 밀어낸다. */
+  ok('★ .btn-sm 이 기본으로 한 줄을 고집하지 않는다',
+    !/^\.btn-sm\s*\{[^}]*white-space:\s*nowrap/m.test(shared));
+  ok('표 안의 .btn-sm 만 한 줄로 남는다',
+    /table\.data\s+\.btn-sm\s*\{[^}]*white-space:\s*nowrap/.test(shared));
+
+  /* --- 4. 격자 칸이 줄어들 수 있는가 --------------------------------
+     격자 칸은 기본이 min-width: auto 라, 안에 든 것이 줄바꿈을 거부하면
+     칸이 제 몫보다 넓어지고 그대로 화면이 밀린다. */
+  ok('★ .bigmenu-cell 이 줄어들 수 있다 (min-width: 0)',
+    /\.bigmenu-cell\s*\{[^}]*min-width:\s*0/.test(worker));
+  ok('★ .queue-item 안의 것들이 줄어들 수 있다 (min-width: 0)',
+    /\.queue-item\s*>\s*\*\s*\{[^}]*min-width:\s*0/.test(shared));
+
+  /* --- 5. PC 에서 표가 화면을 밀어내지 않는가 ------------------------
+     넓은 화면에서 .tablewrap 의 가로 스크롤을 꺼 뒀더니, 문구 라이브러리의
+     표가 1024~1400px 에서 화면 전체를 옆으로 밀었다. 노트북이 그 구간이다. */
+  const wide = admin.slice(admin.indexOf('@media (min-width: 1024px)'));
+  ok('★ 넓은 화면에서 .tablewrap 의 가로 스크롤을 끄지 않는다',
+    !/\.tablewrap\s*\{[^}]*overflow-x:\s*visible/.test(wide));
+  ok('인쇄에서는 표를 통째로 펼친다 (종이에는 스크롤이 없다)',
+    /\.tablewrap\s*\{[^}]*overflow:\s*visible/.test(admin));
+
+  /* --- 6. 폰에서 큰 메뉴가 한 칸으로 서는가 --------------------------
+     한 칸에 음성 버튼 60px + 그림 + 이름 + 배지가 들어간다.
+     흔한 폰(320~430px)에서 두 칸으로 나누면 배지가 세 줄로 접힌다. */
+  const bp = worker.match(/@media \(max-width: (\d+)px\) \{\s*\.bigmenu \{ grid-template-columns: 1fr;/);
+  ok('★ 큰 메뉴가 한 칸으로 서는 기준이 430px(가장 큰 폰)보다 넓다',
+    !!bp && Number(bp[1]) >= 430, bp ? bp[1] + 'px' : '규칙을 못 찾음');
+}
+
 report('문서 — 물어보기만 해도 다음 할 일을 찾을 수 있는가');

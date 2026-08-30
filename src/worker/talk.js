@@ -193,7 +193,7 @@
            익명은 신고하는 사람을 지키려고 있는 것이지
            답하는 사람을 지키려고 있는 것이 아니다. */
       if (isAdmin() && pair[1] === 'canon') {
-        box.appendChild(UI.el('p', 'anon-note',
+        box.appendChild(UI.el('p', 'anon-line',
           '담당자의 답글은 이름을 감출 수 없습니다. ' +
           '공식 답변이 누구의 말인지 드러나야 노동자가 믿고 따를 수 있습니다.'));
         return;
@@ -347,7 +347,7 @@
     /* 감춘 글 — 누구의 글이든 여기서는 손댈 수 없다.
        "내 것인지" 를 따지지 않는다. 따질 수 있으면 익명이 아니다. */
     if (item.anonymous || !item.author) {
-      var note = UI.el('p', 'anon-note');
+      var note = UI.el('p', 'anon-line');
       note.appendChild(UI.iconBox('glasses', 'ico'));
       note.appendChild(document.createTextNode(
         ' 이름을 감추고 쓴 글입니다. 누가 썼는지 저장하지 않으므로 ' +

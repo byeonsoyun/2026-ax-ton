@@ -113,7 +113,10 @@
   cursor: pointer;
 }
 
-.course-open .ico {
+/* ★ 바로 아래 자식만 (2026-08-30 에 `.course-open .ico` → `> .ico` 로 좁힘).
+   그냥 두면 이 칸 안에 들어온 배지의 아이콘까지 52px 짜리 분홍 상자가 됐다 —
+   "✓ 완료" 의 체크가 글자보다 커지고 배지 밖으로 삐져나왔다. */
+.course-open > .ico {
   flex: 0 0 auto;
   width: 52px;
   height: 52px;
@@ -865,6 +868,11 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
+
+  /* ★ 격자 칸은 기본이 min-width: auto 다. 안에 든 배지가 한 줄로 버티면
+     칸이 제 몫보다 넓어지고, 화면이 통째로 옆으로 밀린다 (2026-08-30).
+     0 으로 내려 칸이 줄어들 수 있게 한다. */
+  min-width: 0;
 }
 
 .bigmenu-link {
@@ -880,7 +888,8 @@
   color: inherit;
 }
 
-.bigmenu-link .ico { font-size: 34px; line-height: 1; }
+/* ★ 여기도 바로 아래 자식만. 배지 아이콘까지 34px 이 되면 안 된다 */
+.bigmenu-link > .ico { font-size: 34px; line-height: 1; }
 
 .bigmenu-link .name {
   font-size: .84em;
@@ -889,9 +898,26 @@
   overflow-wrap: anywhere;
 }
 
+/* 배지는 원래 한 줄로 버틴다(.badge 의 white-space: nowrap).
+   좁은 칸 안에서는 줄을 바꾸게 둔다 — "2개 중 1개 남음" 처럼 긴 것이 있다.
+   버티게 두면 칸이 넓어지는 것으로 끝나지 않고 화면이 밀린다. */
+.bigmenu-link .badge {
+  white-space: normal;
+  text-align: center;
+  line-height: 1.35;
+}
+
 .bigmenu-link:focus-visible { outline: 3px solid var(--brand-focus); outline-offset: 2px; border-radius: 10px; }
 
-@media (max-width: 360px) {
+/* ★ 두 칸으로 나눌지 말지 (2026-08-30 에 360px → 460px 로 올림)
+
+   한 칸에는 음성 버튼 60px + 그림 + 이름 + 배지가 들어간다.
+   폭이 460px 보다 좁으면 두 칸으로 나눴을 때 한 칸이 170px 언저리가 되고,
+   그 안에서 배지가 세 줄로 접힌다. 장갑 낀 손으로 누르는 자리다.
+
+   흔한 폰이 320~430px 이므로 폰에서는 전부 한 칸이 된다.
+   메뉴가 네 개뿐이라 한 칸으로 세워도 길지 않다. */
+@media (max-width: 460px) {
   .bigmenu { grid-template-columns: 1fr; }
 }
 
@@ -1190,6 +1216,7 @@
   .pagehead,
   .card,
   .anon-note,
+  .anon-line,
   .today,
   .bigmenu,
   .blocked,
@@ -1316,7 +1343,17 @@
   padding: 0 16px;
 }
 
-.anon-note {
+/* ★ 소통 화면의 한 줄 안내 (2026-08-30 에 .anon-note → .anon-line 으로 갈랐다)
+
+   예전에는 이것도 .anon-note 였다. 그런데 신고 화면(기능8)의 익명 고지도
+   같은 이름을 쓰고 있었다. 이 규칙이 파일 뒤에 있어서 앞의 것을 덮었고,
+   **신고 화면에서 가장 중요한 문장이 네 칸짜리 가로줄로 찌그러져 있었다** —
+   폰에서는 "이름을 / 남기 / 지 / 않습 / 니다" 처럼 한 글자씩 접혔다.
+
+   이름이 같으면 언젠가 한쪽이 다른 쪽을 덮는다. 그래서 이름을 갈랐다.
+     .anon-note — 신고 화면의 큰 익명 고지 (가운데 정렬 세로 쌓기)
+     .anon-line — 소통 화면의 한 줄 안내 (아이콘 + 글 가로 배치) */
+.anon-line {
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -1330,7 +1367,7 @@
   color: var(--ink-2);
 }
 
-.anon-note .ico { font-size: 1.2em; flex: 0 0 auto; }
+.anon-line .ico { font-size: 1.2em; flex: 0 0 auto; }
 
 /* 되돌릴 수 없는 것이라 이쪽은 경고가 맞다 */
 .anon-warn {

@@ -764,8 +764,15 @@ table.data .chips .badge { font-size: .68em; }
     max-width: 460px;
   }
 
-  /* 표는 넓게 씁니다 — 가로 스크롤이 줄어듭니다 */
-  .tablewrap { overflow-x: visible; }
+  /* ★ 여기서 .tablewrap 의 가로 스크롤을 끄지 않습니다 (2026-08-30 에 되돌림).
+
+     예전에는 `overflow-x: visible` 이었습니다 — "PC 는 넓으니 스크롤이 필요 없다".
+     그런데 문구 라이브러리의 표는 1024~1400px 에서 칸보다 넓습니다.
+     스크롤을 꺼 두면 표가 제 칸을 넘어 **화면 전체를 옆으로 밀어냅니다.**
+     노트북(1280·1366)이 그 구간에 그대로 들어갑니다.
+
+     `auto` 로 두면 들어가는 표에는 스크롤막대가 안 생기므로 잃는 것이 없습니다.
+     인쇄에서는 위쪽 @media print 가 따로 visible 로 풀어 줍니다. */
 
   /* QR 은 종이에 붙일 것이라 넓은 화면에서 좀 더 크게 */
   .qr-box svg { width: 260px; height: 260px; }
