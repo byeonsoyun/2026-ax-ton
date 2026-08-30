@@ -613,6 +613,7 @@ git checkout main && git merge --ff-only develop && git push origin main
 | **담을 목록에 새 파일을 빠뜨림** | 온라인에서는 멀쩡해서 사람 눈으로 못 잡음. `tests/test-offline.js` 가 `src/` 와 대조 |
 | **`skipWaiting()`** | 보던 중에 파일이 갈려 **옛 HTML + 새 JS** 반쪽 화면 | 
 | **`VERSION` 을 안 올리고 배포** | 고쳤는데 안 고쳐진 것으로 보임. Service Worker 의 가장 흔한 사고 |
+| **★ `VERSION` 을 올렸는데도 옛 화면** | **새로고침만으로는 안 바뀐다.** `skipWaiting()` 을 일부러 안 부르므로, 새 판은 **그 사이트의 탭을 전부 닫았다 다시 열 때** 들어온다. 2026-08-30 에 배포 확인하다 겪음 — `caches.keys()` 에 `safety-v6` 과 `safety-v7` 이 같이 있으면 아직 옛 판이 화면을 쥐고 있는 것이다. **시연 전에는 탭을 한 번 다 닫으세요** |
 | **"오프라인 가능" 을 고정 문구로 박음** | `file://` 이나 아직 안 담긴 상태에서도 그렇게 말함 → **화면이 거짓말**. `UI.offlineReady()` 로 실제 `controller` 를 보고 그림 |
 | **`file://` 에서 등록을 시도** | 부르는 것만으로 예외가 나는 브라우저가 있음. **`https:` 검사 + `try/catch` 둘 다** |
 
