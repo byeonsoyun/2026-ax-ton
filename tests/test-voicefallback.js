@@ -25,6 +25,7 @@ const myjs = fs.readFileSync(path.join(SRC, 'worker/my.js'), 'utf8');
 const myhtml = fs.readFileSync(path.join(SRC, 'worker/my.html'), 'utf8');
 
 const text = (n) => (n ? n.textContent.trim().replace(/\s+/g, ' ') : '');
+const click = (win, node) => node.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
 
 /* 이 기기에 들어 있는 음성을 내가 정한다.
    "크메르어 음성이 없는 폰" 이 이 기능이 겨냥한 상황이고,
@@ -240,11 +241,34 @@ function pickTo(t, code) {
 
   /* ★★ 배지를 없앤 것이 아니라 한국어에만 안 띄운 것이다.
      이 짝이 없으면 "배지를 통째로 지웠다" 와 구분되지 않는다.
-     W-4821-11(인도네시아어)의 오늘의 문구에는 ph-6 처럼 그 언어 번역이
-     없는 것이 걸리므로 배지가 그대로 뜬다 — 숨기지 않는다는 규칙이 살아 있다. */
+     W-4821-11(인도네시아어)의 문구 풀에는 그 언어 번역이 있는 것과
+     없는 것(ph-6)이 섞여 있다. 없는 쪽에서는 배지가 뜨고, 있는 쪽에서는
+     안 뜬다 — 숨기지 않으면서 거짓말도 하지 않는다는 규칙이 살아 있다.
+
+     ★ 오늘 무엇이 걸렸는지로 단정하지 않는다. 오늘의 문구는 날짜로 돌기
+       때문에(home.js todayIndex) 어느 날에 검사를 돌리느냐로 통과와 실패가
+       갈린다. 실제로 그렇게 격일로 깨졌다 — 09-handover 함정 표에 적어 둔
+       "날짜가 지나면 썩는 단정" 을 이 검사가 그대로 밟고 있었다.
+       그래서 좌우 넘기기로 한 바퀴 돌며 모든 자리를 본다. 날짜가 바뀌어도
+       뜻이 그대로 남고, 오히려 원래 보려던 것(둘 다 있는가)을 더 정확히 본다. */
   const id = open('home', { login: 'W-4821-11' });
-  has('★★ 번역이 없는 사람에게는 그대로 알린다 (숨긴 것이 아니다)',
-    text(id.$('today-note')), '내 언어 번역 준비 중');
+  const idTotal = Number(text(id.$('today-pos')).split('/')[1].trim());
+  ok('★ 인도네시아어 노동자에게는 넘겨 볼 문구가 둘 이상이다 (아래 짝의 전제)',
+    idTotal >= 2, '문구 ' + idTotal + '개');
+
+  const idNotes = [];
+  for (let i = 0; i < idTotal; i++) {
+    idNotes.push(text(id.$('today-note')));
+    click(id.win, id.$('today-next'));
+  }
+  const seen = idNotes.join(' | ');
+
+  ok('★★ 번역이 없는 사람에게는 그대로 알린다 (숨긴 것이 아니다)',
+    idNotes.some((n) => n.indexOf('내 언어 번역 준비 중') !== -1), seen);
+  ok('★ 번역이 있는 문구에서는 그 배지를 띄우지 않는다 (늘 뜨면 뜻이 없다)',
+    idNotes.some((n) => n.indexOf('내 언어 번역 준비 중') === -1), seen);
+  ok('★ 어느 자리에서도 "검수 완료" 는 빠지지 않는다',
+    idNotes.every((n) => n.indexOf('검수 완료') !== -1), seen);
 
   /* 판정이 두 화면에 같은 모양으로 있는지 — 한쪽만 고치면 두 화면이 다른 말을 한다 */
   const homejs = fs.readFileSync(path.join(SRC, 'worker/home.js'), 'utf8');
