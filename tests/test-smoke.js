@@ -159,6 +159,49 @@ PAGES.forEach(([html, js, login]) => {
 }
 
 /* -------------------------------------------------------------------
+   내보내기 / 불러오기 — 기기 사이를 옮길 때 무엇이 빠지는가
+
+   ★ 서버가 없으므로 이것이 기기 사이를 옮기는 유일한 통로다
+     (docs/09-handover.md · CLAUDE.md). 그런데 여기서 조용히 빠지는 칸이
+     있으면, 옮긴 사람은 없어진 줄도 모른다. 실제로 orders(재교육 지시)가
+     빠져 있었고 어떤 검사도 그것을 보지 않았다.
+
+   ★ prefs 는 빠지는 것이 맞다 — 글자 크기와 음성 되돌림은 계정이 아니라
+     그 기기의 설정이다. "빠졌다" 와 "일부러 뺐다" 를 검사가 갈라 놓는다.
+   ------------------------------------------------------------------- */
+{
+  const t = boot('admin/setup.html', { login: 'kim@daesung.co.kr', page: 'admin/setup.js' });
+  const S = t.win.Store;
+
+  const orderId = S.orders.load()[0].id;      // 예시 데이터의 재교육 지시
+  const dumped = JSON.parse(S.exportAll());
+
+  /* 초기화(ALL)가 지우는 칸과 내보내기(PAIRS)가 담는 칸이 어긋나면
+     "지워지긴 하는데 백업에는 없는" 데이터가 생긴다. */
+  const CARRIED = ['accounts', 'session', 'setup', 'library',
+                   'courses', 'progress', 'reports', 'posts', 'orders'];
+  CARRIED.forEach((key) => {
+    ok('내보내기가 ' + key + ' 를 담는다', dumped[key] !== undefined,
+      Object.keys(dumped).join(', '));
+  });
+  ok('★ prefs 는 일부러 담지 않는다 (그 기기의 설정이다)',
+    dumped.prefs === undefined, Object.keys(dumped).join(', '));
+
+  eq('★★ 재교육 지시가 내보내기에 담긴다', (dumped.orders || []).length, 1);
+
+  /* 되불러왔을 때 살아 오는가 — 담기기만 하고 안 돌아오면 같은 사고다 */
+  S.orders.save([]);
+  eq('지웠으니 지금은 없다', S.orders.load().length, 0);
+
+  const back = S.importAll(JSON.stringify(dumped));
+  ok('불러오기가 성공한다', back.ok === true, JSON.stringify(back));
+  eq('★★ 되불러오면 재교육 지시가 살아 온다', S.orders.load().length, 1);
+  /* ★ 여기서 undefined 끼리 견주면 빠져 있어도 통과한다.
+       그래서 내보내기 전에 붙들어 둔 id 와 견준다. */
+  eq('지시의 내용도 그대로다', (S.orders.load()[0] || {}).id, orderId);
+}
+
+/* -------------------------------------------------------------------
    로그인 화면 — 첫 방문에 예시 데이터를 자동으로 채우는가 (V1)
 
    배포 주소에 QR 로 들어온 사람은 "예시 데이터 채우기" 버튼을 누를 수 없다.
