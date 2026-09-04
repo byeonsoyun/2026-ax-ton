@@ -416,10 +416,19 @@ var Store = (function () {
      발표 전 백업하거나 다른 기기로 옮길 통로가 하나는 있어야 한다.
      ----------------------------------------------------------------- */
 
+  /* ★ prefs 는 일부러 뺀다. 글자 크기와 음성 되돌림은 계정이 아니라
+       "그 기기" 의 설정이다 (my.js). 옮겨 온 기기에는 그 기기의 화면과
+       그 기기에 깔린 음성이 있으므로, 남의 기기 설정이 따라오면 안 된다.
+
+     ★★ orders 는 반드시 넣는다. 여기서 빠져 있었고, 그래서
+       내보내기 → 불러오기를 지나면 재교육 지시가 조용히 사라졌다.
+       서버가 없어서 이 통로가 기기 사이를 옮기는 유일한 길인데,
+       그 길에서 데이터가 없어지면 옮긴 사람은 없어진 줄도 모른다.
+       ALL(초기화용)과 어긋나 있었던 것이 원인이라 아래 검사로 묶어 둔다. */
   var PAIRS = [
     [accounts, 'accounts'], [session, 'session'], [setup, 'setup'],
     [library, 'library'], [courses, 'courses'], [progress, 'progress'],
-    [reports, 'reports'], [posts, 'posts']
+    [reports, 'reports'], [posts, 'posts'], [orders, 'orders']
   ];
 
   function exportAll() {
